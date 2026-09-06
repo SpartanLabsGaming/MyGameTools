@@ -6,6 +6,8 @@ import com.spartanlabs.generaltools.Color
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.Square
+// 1.2 Spartan Gaming
+import com.spartanlabs.gaming.event.GameEvent
 //endregion
 
 //region 2. Intended Function
@@ -107,13 +109,14 @@ open class Alive(
     /**
      * Orders this actor to attack [target]: it will close to [attackRange], then swing on a
      * loop until told otherwise. Fires [onAttackIssued] here and [Alive.onTargetedByAttack] on
-     * [target].
+     * [target], and publishes [GameEvent.AttackIssued] on the world bus.
      */
     fun issueAttack(target: Alive) {
         attackState = AttackState.ISSUED
         attackTarget = target
         onAttackIssued()
         target.onTargetedByAttack()
+        world?.events?.publish(GameEvent.AttackIssued(this, target))
     }
 
     /** Hook run on the attacker the moment [issueAttack] is called. Does nothing by default. */
@@ -168,11 +171,12 @@ open class Alive(
     /** Rolls [target]'s [evasion]; on a miss the swing is dropped, otherwise it proceeds to [hit]. */
     private infix fun attemptHit(target: Alive) = if (Math.random() > target.evasion) hit(target) else Unit
 
-    /** A landed swing: [onHitting] / [onHitBy] hooks, then [dealDamage]. */
+    /** A landed swing: [onHitting] / [onHitBy] hooks, then [dealDamage], then [GameEvent.AttackLanded]. */
     private infix fun hit(target: Alive) {
         this onHitting target
         target onHitBy this
         this dealDamage target
+        world?.events?.publish(GameEvent.AttackLanded(this, target, damage.value))
     }
 
     /** Hook run on the attacker when a swing lands. Does nothing by default. */
@@ -185,7 +189,7 @@ open class Alive(
     private infix fun dealDamage(target: Alive) {
         this onDamaging target
         target onDamaged this
-        target takeDamage damage.value
+        target.takeDamage(source = this, incomingDamage = damage.value)
     }
 
     /** Hook run on the attacker as damage is dealt. Does nothing by default. */
@@ -194,9 +198,26 @@ open class Alive(
     /** Hook run on the target as damage is dealt to it. Does nothing by default. */
     protected open infix fun onDamaged(attacker: Alive) {}
 
-    /** Subtracts [incomingDamage], after [calculateDamageTaken], from [health]. */
-    private infix fun takeDamage(incomingDamage: Double) {
-        health.current -= calculateDamageTaken(incomingDamage)
+    /**
+     * The [Alive] whose damage last reduced this actor's [health], or `null` if none is known.
+     * Read by [die] to attribute [GameEvent.EntityDied.killer]; cleared when the actor is alive
+     * again after a respawn.
+     */
+    private var lastDamagedBy: Alive? = null
+
+    /**
+     * Subtracts [incomingDamage], after [calculateDamageTaken], from [health], records
+     * [source] as the [lastDamagedBy], and publishes [GameEvent.DamageDealt].
+     *
+     * @param source the actor that dealt the damage, or `null` when nothing tracked it
+     * @param incomingDamage the raw amount before [calculateDamageTaken]
+     */
+    private fun takeDamage(source: Alive?, incomingDamage: Double) {
+        val applied = calculateDamageTaken(incomingDamage)
+        if (applied == 0.0) return
+        lastDamagedBy = source
+        health.current -= applied
+        world?.events?.publish(GameEvent.DamageDealt(source, this, applied))
     }
 
     /** Converts raw [incomingDamage] into the amount actually lost; the base rule passes it through unchanged. */
@@ -246,13 +267,23 @@ open class Alive(
             }
         }
         onDeath()
+        world?.events?.publish(GameEvent.EntityDied(this, lastDamagedBy))
     }
 
     /** Extension point invoked once after [die] has applied the [deathResponse]. Does nothing by default. */
     protected open fun onDeath() {}
 
-    /** Triggers [die] the first tick [health] is depleted, and re-arms it once the actor is alive again. */
-    private fun contemplateLife() = if (!isAlive) die() else deathHandled = false
+    /**
+     * Triggers [die] the first tick [health] is depleted, and re-arms it - clearing
+     * [lastDamagedBy] - once the actor is alive again.
+     */
+    private fun contemplateLife() {
+        if (!isAlive) die()
+        else {
+            deathHandled = false
+            lastDamagedBy = null
+        }
+    }
     //endregion
     //region HEALTH BAR
     /** [healthBar]'s width at full health, captured before any tick scales it down. */

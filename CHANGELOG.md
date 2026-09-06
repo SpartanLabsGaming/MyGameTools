@@ -19,6 +19,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   `id: Long` (the object's `EntityId`, or `0` when unowned / for a pre-3.1 payload), so
   clients can address objects by id instead of by list position (closes #3). The field is
   decode-defaulted, so an older payload without it still deserializes.
+- **Typed event bus.** `World.events` is an `EventBus` that publishes a `GameEvent` stream -
+  `EntitySpawned` / `EntityRemoved` as objects join and leave, and `AttackIssued`,
+  `AttackLanded`, `DamageDealt`, `EntityDied` (with the killer, when known) from combat.
+  Delivery is synchronous, single-threaded, in subscription order, and a listener that throws
+  is caught and logged without disrupting the tick.
 
 ## [3.0.0] — 2026-09-04
 

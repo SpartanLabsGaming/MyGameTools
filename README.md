@@ -111,7 +111,8 @@ classDiagram
 | `Alive` | open | Adds combat: health, damage, attack timing/range/speed, evasion, faction, and `Player` ownership |
 | `Projectile` / `HomingProjectile` / `DirectionalProjectile` | open/final | Travel-and-hit entities: home in on one target, or pierce in a straight line |
 | `Player` | final | Owns a roster of `Alive` actors and tracks which are still living |
-| `World` | final | Owns every `GameObject`, rebuilds the `Quadtree` and the `EntityId` index each frame, and drives the tick loop |
+| `World` | final | Owns every `GameObject`, rebuilds the `Quadtree` and the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
+| `EventBus` | final | Synchronous, single-threaded `GameEvent` publish/subscribe, delivered in order with per-listener fault isolation |
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
 | `GameServer` | final | UDP transport: handshakes, a single shared multiplexed socket, input decoding, JSON broadcast |
 
@@ -125,6 +126,7 @@ classDiagram
 - **Projectiles** that either chase a single target (`HomingProjectile`) or pierce everything along a straight line for a limited lifetime (`DirectionalProjectile`).
 - **Ownership model** — `Player` and `Alive.owner` are kept in sync automatically; an actor lives on at most one roster at a time.
 - **Stable entity identity** — every object a `World` owns gets an `EntityId`, assigned in acquisition order and never reused. `World.byId(id)` resolves it (and returns `null` once it is gone — exactly the signal a command handler wants), and every `DrawableSnapshot` carries that `id` so clients track objects across frames instead of by list position.
+- **Typed event bus** — `World.events` publishes a `GameEvent` stream (`EntitySpawned`, `EntityRemoved`, `AttackIssued`, `AttackLanded`, `DamageDealt`, `EntityDied`, …) so networking, scoring, or AI can react to what the simulation does without being wired into the code that does it. Synchronous, in-order, single-threaded; a throwing listener is isolated.
 - **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, each tagged with its `EntityId`, ready to JSON-encode and ship to clients.
 
 ### 📊 Stat System
