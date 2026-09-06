@@ -127,6 +127,7 @@ classDiagram
 - **Ownership model** — `Player` and `Alive.owner` are kept in sync automatically; an actor lives on at most one roster at a time.
 - **Stable entity identity** — every object a `World` owns gets an `EntityId`, assigned in acquisition order and never reused. `World.byId(id)` resolves it (and returns `null` once it is gone — exactly the signal a command handler wants), and every `DrawableSnapshot` carries that `id` so clients track objects across frames instead of by list position.
 - **Typed event bus** — `World.events` publishes a `GameEvent` stream (`EntitySpawned`, `EntityRemoved`, `AttackIssued`, `AttackLanded`, `DamageDealt`, `EntityDied`, …) so networking, scoring, or AI can react to what the simulation does without being wired into the code that does it. Synchronous, in-order, single-threaded; a throwing listener is isolated.
+- **Deterministic tick** — every random choice the engine makes goes through a seeded `RandomSource` (`World(seed)` / `World.rng`), so a fixed seed and a fixed input sequence reproduce the run exactly. `World.tickCount` counts frames. The seed is logged on construction; pin it to replay a failure.
 - **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, each tagged with its `EntityId`, ready to JSON-encode and ship to clients.
 
 ### 📊 Stat System
