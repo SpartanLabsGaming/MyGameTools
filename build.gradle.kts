@@ -34,7 +34,7 @@ dependencies {
 
     // Tests supply the logback implementation the facade binds to, so that the
     // library's structured logging is actually exercised and visible.
-    testImplementation("ch.qos.logback:logback-classic:1.5.18")
+    testImplementation("ch.qos.logback:logback-classic:1.6.3")
 }
 
 // A GameServer binds the fixed common UDP port, so no two test tasks that start one may run
