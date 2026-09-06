@@ -33,6 +33,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   and the `AttackEndReason` enum: a caller can now break off a pending or in-progress attack
   (the actor keeps its current destination), and the `AttackCancelled` / `AttackEnded` events
   report both exits (closes #1).
+- **Opt-in `SimulationLoop`.** `com.spartanlabs.gaming.simulation.SimulationLoop` drives
+  `World.tick()` on a daemon thread at a fixed timestep, with a bounded catch-up after a
+  stall; `LoopSettings` (`tickRateHz`, `maxCatchUpTicks`) is live-tunable from any thread.
+  `SimulationLoop.advance()` exposes the timestep step for callers driving their own loop.
+  Nothing in the engine depends on it - `World.tick()` remains the primitive.
 
 ### Fixed
 - **`Alive` no longer keeps attacking a target that has died or left the world.** The attack
