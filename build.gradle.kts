@@ -23,7 +23,7 @@ dependencies {
     api("io.github.spartanlaboratories:GeneralTools:2.0.1")
 
     // Serialization
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Logging - the library only ever binds to the slf4j facade, so that consumers
     // remain free to pick their own implementation.
