@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Test-only logging configuration.
+
+    The library itself binds only to the slf4j facade; this supplies the implementation
+    behind it while tests run, so the structured lifecycle logging in the networking
+    layer is actually emitted and can be eyeballed in the test output.
+-->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- The networking layer is the code under test, so follow it down to DEBUG. -->
+    <logger name="com.spartanlabs.gaming.networking" level="DEBUG"/>
+    <logger name="GameServer" level="DEBUG"/>
+
+    <!-- WebTools narrates every datagram at TRACE/DEBUG; INFO keeps the output readable. -->
+    <logger name="com.spartanlabs.webtools" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
