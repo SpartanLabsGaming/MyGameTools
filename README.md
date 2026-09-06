@@ -156,14 +156,14 @@ GameTools is published to **Maven Central**.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.spartanlabsgaming:GameTools:3.0.0")
+    implementation("io.github.spartanlabsgaming:GameTools:3.1.0")
 }
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
 dependencies {
-    implementation 'io.github.spartanlabsgaming:GameTools:3.0.0'
+    implementation 'io.github.spartanlabsgaming:GameTools:3.1.0'
 }
 ```
 
@@ -172,7 +172,7 @@ dependencies {
 <dependency>
     <groupId>io.github.spartanlabsgaming</groupId>
     <artifactId>GameTools</artifactId>
-    <version>3.0.0</version>
+    <version>3.1.0</version>
 </dependency>
 ```
 
