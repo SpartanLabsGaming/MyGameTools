@@ -128,23 +128,97 @@ open class Alive(
     protected open fun onTargetedByAttack() {}
 
     /**
-     * One tick of the attack cycle: while a target is out of [attackRange] this actor walks
-     * toward it, and once in range it swings via [progressAttack]. A failed distance check is
-     * logged and treated as in-range so the actor keeps engaging.
+     * Calls off any pending or in-progress attack from outside. The actor keeps its current
+     * [destination] - issue a fresh move order separately if it should go somewhere. A no-op
+     * if the actor is not attacking.
+     *
+     * Fires [onAttackCancelled] and publishes [GameEvent.AttackCancelled]. This is the caller's
+     * exit from the attack loop; an attack that stops because the target died or left the world
+     * ends through [onAttackEnded] instead.
      */
-    private fun considerAttack() = when (attackState) {
-        AttackState.NONE -> {}
-        AttackState.ISSUED -> {
-            val distance = distanceFrom(attackTarget!!).getOrElse {
-                log.warn("Failed to calculate distance between two Alives during attack stage")
-                0.0
+    fun cancelAttack() {
+        if (attackState == AttackState.NONE) return
+        val formerTarget = attackTarget
+        clearAttack()
+        log.debug("An Alive's attack was cancelled")
+        onAttackCancelled()
+        world?.events?.publish(GameEvent.AttackCancelled(this, formerTarget))
+    }
+
+    /** Hook run on the attacker when [cancelAttack] calls off its attack. Does nothing by default. */
+    protected open fun onAttackCancelled() {}
+
+    /** Hook run on the attacker when its attack stops on its own because the target can no longer be fought. */
+    protected open fun onAttackEnded(reason: AttackEndReason) {}
+
+    /** Why an [Alive]'s attack stopped without [cancelAttack] being called. */
+    enum class AttackEndReason {
+        /** The target's [health] ran out. */
+        TARGET_DIED,
+
+        /** The target left its [World] while still alive. */
+        TARGET_REMOVED
+    }
+
+    /** Resets the attack cycle to [AttackState.NONE], forgetting the target and any swing progress. */
+    private fun clearAttack() {
+        attackState = AttackState.NONE
+        attackTarget = null
+        attackProgress = 0.0
+    }
+
+    /**
+     * One tick of the attack cycle. First, if the current target can no longer be fought - it
+     * died, or left the world - the attack is ended via [onAttackEnded] and
+     * [GameEvent.AttackEnded]. Otherwise, while the target is out of [attackRange] this actor
+     * walks toward it, and once in range it swings via [progressAttack]. A failed distance
+     * check is logged and treated as in-range so the actor keeps engaging.
+     */
+    private fun considerAttack() {
+        if (attackState != AttackState.NONE && endAttackIfTargetLost()) return
+        when (attackState) {
+            AttackState.NONE -> {}
+            AttackState.ISSUED -> {
+                val distance = distanceFrom(attackTarget!!).getOrElse {
+                    log.warn("Failed to calculate distance between two Alives during attack stage")
+                    0.0
+                }
+                if (distance > attackRange)
+                    destination = attackTarget!!.location
+                else
+                    attackState = AttackState.INPROGRESS
             }
-            if (distance > attackRange)
-                destination = attackTarget!!.location
-            else
-                attackState = AttackState.INPROGRESS
+            AttackState.INPROGRESS -> progressAttack()
         }
-        AttackState.INPROGRESS -> progressAttack()
+    }
+
+    /**
+     * If [attackTarget] can no longer be fought, clears the attack, fires [onAttackEnded] and
+     * [GameEvent.AttackEnded], and returns `true` so the caller bails out; otherwise `false`.
+     */
+    private fun endAttackIfTargetLost(): Boolean {
+        val reason = when {
+            attackTarget == null -> return false
+            !attackTarget!!.isAlive -> AttackEndReason.TARGET_DIED
+            attackTargetLeftWorld() -> AttackEndReason.TARGET_REMOVED
+            else -> return false
+        }
+        val formerTarget = attackTarget
+        clearAttack()
+        log.debug("An Alive stopped attacking: {}", reason)
+        onAttackEnded(reason)
+        world?.events?.publish(GameEvent.AttackEnded(this, formerTarget, reason))
+        return true
+    }
+
+    /**
+     * `true` only when [attackTarget] once belonged to a [World] and no longer does - never for
+     * a target that was never added to one, so worldless combat is unaffected.
+     */
+    private fun attackTargetLeftWorld(): Boolean {
+        val target = attackTarget ?: return false
+        val targetWorld = target.world ?: return false
+        return target !in targetWorld.gameObjects && target !in targetWorld.removeList
     }
 
     /** Accrues swing progress by [attackSpeed] each tick and, once it reaches [attackTime], lands a swing. */
