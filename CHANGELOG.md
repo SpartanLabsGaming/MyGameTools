@@ -29,6 +29,16 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   fixed sequence of calls reproduces a run exactly. `Alive`'s evasion roll now goes through
   it instead of `Math.random()`. `World.tickCount` counts frames, and `World.tick()` now
   documents its exact order of operations. The seed is logged on construction.
+- **`Alive.cancelAttack()`** plus the `onAttackCancelled()` / `onAttackEnded(reason)` hooks
+  and the `AttackEndReason` enum: a caller can now break off a pending or in-progress attack
+  (the actor keeps its current destination), and the `AttackCancelled` / `AttackEnded` events
+  report both exits (closes #1).
+
+### Fixed
+- **`Alive` no longer keeps attacking a target that has died or left the world.** The attack
+  cycle now checks its target at the top of every tick and ends itself - firing
+  `onAttackEnded` and `GameEvent.AttackEnded` - instead of walking to the target's last
+  position and swinging forever (closes #2).
 
 ## [3.0.0] — 2026-09-04
 

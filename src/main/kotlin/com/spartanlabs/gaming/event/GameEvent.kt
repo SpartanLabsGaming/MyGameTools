@@ -73,6 +73,25 @@ sealed interface GameEvent {
      */
     data class EntityDied(val entity: Alive, val killer: Alive?) : GameEvent
 
-    // Attack-lifecycle events (AttackCancelled, AttackEnded) are added with the
-    // Alive.cancelAttack work - see issues #1 / #2.
+    /**
+     * An [Alive]'s attack was called off from outside via [Alive.cancelAttack].
+     *
+     * @property attacker the actor that had been attacking
+     * @property formerTarget the actor it had been attacking, or `null` if none was set
+     */
+    data class AttackCancelled(val attacker: Alive, val formerTarget: Alive?) : GameEvent
+
+    /**
+     * An [Alive]'s attack stopped on its own because the target could no longer be fought -
+     * it died, or left the world - rather than because [Alive.cancelAttack] was called.
+     *
+     * @property attacker the actor that had been attacking
+     * @property formerTarget the actor it had been attacking
+     * @property reason why the attack ended
+     */
+    data class AttackEnded(
+        val attacker: Alive,
+        val formerTarget: Alive?,
+        val reason: Alive.AttackEndReason,
+    ) : GameEvent
 }
