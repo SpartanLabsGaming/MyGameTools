@@ -12,7 +12,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.spartanlabsgaming", "gametools", "3.1.0")
+    coordinates("io.github.spartanlabsgaming", "gametools", "4.0.0")
     pom {
         name.set("GameTools")
         description.set("Umbrella artifact re-exporting every GameTools module (gametools-core, gametools-net).")
