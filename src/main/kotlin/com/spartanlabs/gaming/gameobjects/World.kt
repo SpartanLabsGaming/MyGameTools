@@ -4,21 +4,60 @@ package com.spartanlabs.gaming.gameobjects
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.EventBus
 import com.spartanlabs.gaming.event.GameEvent
+import com.spartanlabs.gaming.simulation.RandomSource
+import com.spartanlabs.gaming.simulation.SeededRandom
 import com.spartanlabs.gaming.spatial.Quadtree
+//endregion
+
+//region 3. Utility / Catch-all
+// 3.2 Kotlin
+// 3.2.1 Standard library
+import kotlin.random.Random
 //endregion
 
 /**
  * A container for everything the game is simulating: a flat list of [gameObjects], a
  * [quadtree] spatial index over the [VisibleObject]s among them, an [EntityId] index ([byId])
- * over every object it owns, and an [events] bus that reports what happens each tick.
+ * over every object it owns, an [events] bus that reports what happens each tick, and a
+ * seeded [rng] source that makes those ticks reproducible.
  *
- * [World] does not run itself - an external game loop calls [tick] once per frame. Each tick
- * rebuilds [quadtree] from the current positions of the owned objects, re-indexes [byId],
- * announces newly joined objects, then advances every owned object by one step and finally
- * drops the ones queued for removal. The indexes are rebuilt first so that an object's
- * [GameObject.tick] can query indexes that stay consistent for the whole frame.
+ * [World] does not run itself - an external game loop calls [tick] once per frame.
+ *
+ * ### What one [tick] does, in order
+ * 1. [tickCount] is incremented.
+ * 2. [quadtree] is rebuilt from the current positions of the owned [VisibleObject]s.
+ * 3. [byId] is rebuilt from [gameObjects]; [GameEvent.EntitySpawned] fires for any object seen
+ *    for the first time, in [gameObjects] order.
+ * 4. every owned object is [GameObject.tick]ed, in [gameObjects] insertion order, over a
+ *    snapshot of the list taken before the pass - so an object may add to [gameObjects] or
+ *    [removeList] during its own tick without disturbing the pass (a mid-pass addition is
+ *    numbered and ticked from the *next* frame).
+ * 5. everything queued in [removeList] is dropped and a [GameEvent.EntityRemoved] fires for each.
+ *
+ * [GameEvent]s are delivered synchronously as they are published, not batched at the end.
+ * Given the same [seed] and the same sequence of external calls, two worlds produce the same
+ * result.
+ *
+ * @param seed the seed for [random]; defaults to a fresh value, logged on construction so a
+ *   run can be reproduced by pinning it
  */
-class World {
+class World(val seed: Long = Random.nextLong()) {
+
+    init {
+        log.info("World created with seed {}", seed)
+    }
+
+    /**
+     * The simulation's source of randomness for this world, seeded from [seed]. Every random
+     * choice the engine makes for an object this world owns goes through here, so a fixed
+     * [seed] plus a fixed input sequence gives a fixed result. Named `rng` rather than
+     * `random` so it does not shadow a caller's own `random` inside an `apply { }` block.
+     */
+    val rng: RandomSource = SeededRandom(seed)
+
+    /** How many times [tick] has been called on this world. `0` before the first tick. */
+    var tickCount: Long = 0L
+        private set
 
     /** Every object this world owns, visible or not, in insertion order. */
     val gameObjects: ArrayList<GameObject> = ArrayList()
@@ -135,14 +174,10 @@ class World {
     }
 
     /**
-     * Advances the world by one frame: rebuilds [quadtree] and [byId] from [gameObjects],
-     * [GameObject.tick]s every owned object, then drops everything queued in [removeList].
-     *
-     * Objects are ticked over a snapshot of [gameObjects], so an object may add to [gameObjects]
-     * or [removeList] during its own tick without disturbing the current pass. An object added
-     * mid-pass is numbered and indexed by the *next* tick's rebuild, not this one.
+     * Advances the world by one frame. See the class doc for the exact order of operations.
      */
     fun tick() {
+        tickCount++
         rebuildQuadtree()
         reindexEntities()
 

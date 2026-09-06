@@ -8,6 +8,8 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.Square
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
+import com.spartanlabs.gaming.simulation.RandomSource
+import com.spartanlabs.gaming.simulation.SeededRandom
 //endregion
 
 //region 2. Intended Function
@@ -168,8 +170,19 @@ open class Alive(
     /** Hook run on the target at the start of each swing against it. Does nothing by default. */
     protected open infix fun onAttacked(attacker: Alive) {}
 
-    /** Rolls [target]'s [evasion]; on a miss the swing is dropped, otherwise it proceeds to [hit]. */
-    private infix fun attemptHit(target: Alive) = if (Math.random() > target.evasion) hit(target) else Unit
+    /**
+     * Rolls [target]'s [evasion] against this world's seeded [World.rng] (a per-instance
+     * fallback when this actor is not in a world); on a miss the swing is dropped, otherwise it
+     * proceeds to [hit].
+     */
+    private infix fun attemptHit(target: Alive) =
+        if (evasionRng().nextDouble() > target.evasion) hit(target) else Unit
+
+    /** The [World.rng] of the world this actor is in, or a per-instance seeded fallback for a worldless actor. */
+    private fun evasionRng(): RandomSource = world?.rng ?: fallbackRng
+
+    /** Seeded on [entityId] so a worldless actor's rolls are still reproducible run to run. */
+    private val fallbackRng: RandomSource by lazy { SeededRandom(entityId.raw) }
 
     /** A landed swing: [onHitting] / [onHitBy] hooks, then [dealDamage], then [GameEvent.AttackLanded]. */
     private infix fun hit(target: Alive) {

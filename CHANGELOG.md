@@ -24,6 +24,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   `AttackLanded`, `DamageDealt`, `EntityDied` (with the killer, when known) from combat.
   Delivery is synchronous, single-threaded, in subscription order, and a listener that throws
   is caught and logged without disrupting the tick.
+- **Deterministic tick.** `RandomSource` / `SeededRandom` and a new `World(seed: Long = …)`
+  constructor: `World.rng` is the single source of engine randomness, so a fixed seed plus a
+  fixed sequence of calls reproduces a run exactly. `Alive`'s evasion roll now goes through
+  it instead of `Math.random()`. `World.tickCount` counts frames, and `World.tick()` now
+  documents its exact order of operations. The seed is logged on construction.
 
 ## [3.0.0] — 2026-09-04
 
