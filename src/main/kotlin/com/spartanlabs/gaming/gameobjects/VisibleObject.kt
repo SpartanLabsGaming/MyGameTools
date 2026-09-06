@@ -145,10 +145,20 @@ data class ColorSnapshot(val r: Int, val g: Int, val b: Int, val a: Int) {
 @Serializable
 sealed interface DrawableSnapshot {
 
+    /**
+     * The stable [EntityId.raw] of the object this snapshots, so a client can track an object
+     * across frames by id rather than by list position. [UNIDENTIFIED] (`0`) when the object
+     * was not owned by a [World] at snapshot time, or when the payload predates stable ids.
+     */
+    val id: Long
+
     /** Snapshots of this object's visible [VisibleObject.subObjects], in order. */
     val subObjects: List<DrawableSnapshot>
 
     companion object {
+        /** The [id] of a snapshot whose object had no [World]-assigned [EntityId]. Matches [EntityId.UNASSIGNED]. */
+        const val UNIDENTIFIED: Long = 0L
+
         /** Snapshots [visibleObject] as the most specific kind that fits it. */
         infix fun from(visibleObject: VisibleObject): DrawableSnapshot = when (visibleObject) {
             is Alive -> AliveSnapshot.from(visibleObject)
@@ -162,6 +172,7 @@ sealed interface DrawableSnapshot {
  * An immutable, serializable copy of a [VisibleObject]'s drawable state, including its
  * [subObjects] snapshotted recursively.
  *
+ * @property id the object's stable [EntityId.raw] ([DrawableSnapshot.UNIDENTIFIED] if unowned)
  * @property gameObject the underlying [GameObjectSnapshot] (position)
  * @property dimensions the object's size at snapshot time
  * @property color the object's tint at snapshot time
@@ -174,6 +185,7 @@ sealed interface DrawableSnapshot {
 @Serializable
 @SerialName("visibleObject")
 data class VisibleObjectSnapshot(
+    override val id: Long = DrawableSnapshot.UNIDENTIFIED,
     val gameObject: GameObjectSnapshot,
     val dimensions: DimensionsSnapshot,
     val color: ColorSnapshot,
@@ -184,10 +196,11 @@ data class VisibleObjectSnapshot(
     companion object {
         /** Takes a snapshot of [visibleObject] and, recursively, its visible sub-objects. */
         infix fun from(visibleObject: VisibleObject): VisibleObjectSnapshot = VisibleObjectSnapshot(
-            GameObjectSnapshot.from(visibleObject),
-            DimensionsSnapshot.from(visibleObject.dimensions),
-            ColorSnapshot.from(visibleObject.color),
-            visibleObject.texture,
+            id = visibleObject.entityId.raw,
+            gameObject = GameObjectSnapshot.from(visibleObject),
+            dimensions = DimensionsSnapshot.from(visibleObject.dimensions),
+            color = ColorSnapshot.from(visibleObject.color),
+            texture = visibleObject.texture,
             angle = visibleObject.angle,
             turns = visibleObject.turns,
             subObjects = visibleObject.subObjects.filter { it.visible }.map { DrawableSnapshot from it }

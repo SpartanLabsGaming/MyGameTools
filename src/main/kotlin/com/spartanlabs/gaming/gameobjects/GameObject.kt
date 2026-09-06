@@ -46,6 +46,17 @@ abstract class GameObject(val location: Point = Point()) {
     constructor(x: Double, y: Double) : this(Point(x = x, y = y))
 
     /**
+     * This object's stable identity within the [World] that owns it, or [EntityId.UNASSIGNED]
+     * until a world takes ownership of it - through [World.add], or by finding it in
+     * [World.gameObjects] at the top of a [World.tick].
+     *
+     * Assigned exactly once and never changed afterwards: re-adding the same instance, even to
+     * a different world, keeps the id it was first given. Only a [World] assigns it.
+     */
+    var entityId: EntityId = EntityId.UNASSIGNED
+        internal set
+
+    /**
      * Whether this object participates in the simulation. `true` by default; while `false`,
      * [tick] is a no-op, so the object neither updates nor moves until it is reactivated.
      *

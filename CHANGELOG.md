@@ -10,7 +10,15 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Stable entity identity.** Every `GameObject` a `World` owns is assigned an `EntityId`
+  (in acquisition order, from `1`, never reused), reachable via `GameObject.entityId`.
+  `World.byId(id)` resolves an owned object and returns `null` once it has left the world.
+  Ids are allocated per `World` and also cover an object's `subObjects` tree.
+- **Stable id on world-state snapshots.** Every `DrawableSnapshot` variant now carries an
+  `id: Long` (the object's `EntityId`, or `0` when unowned / for a pre-3.1 payload), so
+  clients can address objects by id instead of by list position (closes #3). The field is
+  decode-defaulted, so an older payload without it still deserializes.
 
 ## [3.0.0] — 2026-09-04
 

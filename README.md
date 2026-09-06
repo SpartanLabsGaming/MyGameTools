@@ -111,7 +111,7 @@ classDiagram
 | `Alive` | open | Adds combat: health, damage, attack timing/range/speed, evasion, faction, and `Player` ownership |
 | `Projectile` / `HomingProjectile` / `DirectionalProjectile` | open/final | Travel-and-hit entities: home in on one target, or pierce in a straight line |
 | `Player` | final | Owns a roster of `Alive` actors and tracks which are still living |
-| `World` | final | Owns every `GameObject`, rebuilds the `Quadtree` each frame, and drives the tick loop |
+| `World` | final | Owns every `GameObject`, rebuilds the `Quadtree` and the `EntityId` index each frame, and drives the tick loop |
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
 | `GameServer` | final | UDP transport: handshakes, a single shared multiplexed socket, input decoding, JSON broadcast |
 
@@ -124,7 +124,8 @@ classDiagram
 - **Pluggable movement strategies** via the `Movement` sealed class: chase-and-stop (`Targeting`), chase-and-keep-chasing (`Persistent`), fixed-heading travel, or homing on another object.
 - **Projectiles** that either chase a single target (`HomingProjectile`) or pierce everything along a straight line for a limited lifetime (`DirectionalProjectile`).
 - **Ownership model** — `Player` and `Alive.owner` are kept in sync automatically; an actor lives on at most one roster at a time.
-- **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, ready to JSON-encode and ship to clients.
+- **Stable entity identity** — every object a `World` owns gets an `EntityId`, assigned in acquisition order and never reused. `World.byId(id)` resolves it (and returns `null` once it is gone — exactly the signal a command handler wants), and every `DrawableSnapshot` carries that `id` so clients track objects across frames instead of by list position.
+- **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, each tagged with its `EntityId`, ready to JSON-encode and ship to clients.
 
 ### 📊 Stat System
 - `ModularStat` — a `Double` reshaped by any number of named `StatMod`s (additive or multiplicative, with configurable stacking rules), so it drops in anywhere a plain number is expected.

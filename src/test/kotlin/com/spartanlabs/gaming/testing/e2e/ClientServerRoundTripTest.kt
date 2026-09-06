@@ -34,6 +34,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 //endregion
 
@@ -158,6 +159,26 @@ class ClientServerRoundTripTest {
         val snapshot = assertIs<ActorSnapshot>(finalState.single())
         assertEquals(35.0, snapshot.visibleObject.gameObject.location.x, absoluteTolerance = 1e-9)
         assertEquals(35.0, hero.location.x, absoluteTolerance = 1e-9)
+    }
+
+    @Test
+    fun `every broadcast object carries a stable id that survives objects spawning around it`() {
+        connect("hero")
+
+        val firstState = run { simulateAndBroadcastFrame(); harness.receiveWorldState() }
+        val heroId = assertIs<ActorSnapshot>(firstState.single()).id
+        assertTrue(heroId != 0L, "the broadcast hero should carry a world-assigned id")
+        assertEquals(hero.entityId.raw, heroId, "the wire id should match the simulation's EntityId")
+
+        // A reinforcement spawns before the next frame - the hero's list position shifts, its id must not.
+        world.add(Actor(location = Point(500.0, 500.0)))
+        simulateAndBroadcastFrame()
+        val secondState = harness.receiveWorldState()
+
+        assertEquals(2, secondState.size)
+        val heroAfter = secondState.map { it.id }.single { it == heroId }
+        assertEquals(heroId, heroAfter, "the hero keeps its id after another object joins the world")
+        assertSame(hero, world.byId(hero.entityId), "the server can still resolve the hero by that id")
     }
 
     @Test
