@@ -2,18 +2,21 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.event.EventBus
+import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.spatial.Quadtree
 //endregion
 
 /**
  * A container for everything the game is simulating: a flat list of [gameObjects], a
- * [quadtree] spatial index over the [VisibleObject]s among them, and an [EntityId] index
- * ([byId]) over every object it owns.
+ * [quadtree] spatial index over the [VisibleObject]s among them, an [EntityId] index ([byId])
+ * over every object it owns, and an [events] bus that reports what happens each tick.
  *
  * [World] does not run itself - an external game loop calls [tick] once per frame. Each tick
- * rebuilds [quadtree] from the current positions of the owned objects, re-indexes [byId], and
- * then advances every owned object by one step. The indexes are rebuilt first so that an
- * object's [GameObject.tick] can query indexes that stay consistent for the whole frame.
+ * rebuilds [quadtree] from the current positions of the owned objects, re-indexes [byId],
+ * announces newly joined objects, then advances every owned object by one step and finally
+ * drops the ones queued for removal. The indexes are rebuilt first so that an object's
+ * [GameObject.tick] can query indexes that stay consistent for the whole frame.
  */
 class World {
 
@@ -34,6 +37,14 @@ class World {
      */
     val quadtree: Quadtree<Double, VisibleObject> = Quadtree()
 
+    /**
+     * The bus this world publishes [GameEvent]s on: [GameEvent.EntitySpawned] /
+     * [GameEvent.EntityRemoved] as objects join and leave, plus the combat and death events an
+     * owned [Alive] raises. Subscribe to it to react to what the simulation does without
+     * wiring into the code that does it.
+     */
+    val events: EventBus = EventBus()
+
     //region ENTITY IDENTITY
     /** The last [EntityId.raw] handed out; the next object this world numbers gets `nextRawId + 1`. */
     private var nextRawId: Long = 0L
@@ -45,6 +56,13 @@ class World {
      * a direct `gameObjects += ...` addition is only resolvable from the next tick on.
      */
     private val byId: HashMap<EntityId, GameObject> = HashMap()
+
+    /**
+     * The ids a [GameEvent.EntitySpawned] has already been fired for. An id is dropped when its
+     * object leaves the world, so an instance that is removed and later re-added is announced
+     * again.
+     */
+    private val announced: HashSet<EntityId> = HashSet()
 
     /**
      * The object this world owns whose [GameObject.entityId] is [id], or `null` if no such
@@ -74,10 +92,30 @@ class World {
         if (gameObject is VisibleObject) gameObject.subObjects.forEach(::enrol)
     }
 
-    /** Clears [byId] and re-enrols every object in [gameObjects] (and its sub-object tree), in list order. */
+    /**
+     * Clears [byId], re-enrols every object in [gameObjects] (and its sub-object tree) in list
+     * order, then fires [GameEvent.EntitySpawned] for any top-level object not announced yet
+     * and forgets announcements for objects no longer owned.
+     */
     private fun reindexEntities() {
         byId.clear()
         gameObjects.forEach(::enrol)
+        gameObjects.forEach(::announce)
+        announced.retainAll(gameObjects.mapTo(HashSet()) { it.entityId })
+    }
+
+    /**
+     * Fires [GameEvent.EntitySpawned] for [gameObject] the first time this world sees it as a
+     * top-level object. Sub-objects are indexed (see [enrol]) but not announced - they are part
+     * of their parent, not independent arrivals.
+     *
+     * @param gameObject a freshly enrolled top-level object (its id is already assigned)
+     */
+    private fun announce(gameObject: GameObject) {
+        if (announced.add(gameObject.entityId)) {
+            log.debug("World announcing a new {} ({})", gameObject::class.simpleName, gameObject.entityId)
+            events.publish(GameEvent.EntitySpawned(gameObject))
+        }
     }
     //endregion
 
@@ -93,6 +131,7 @@ class World {
         gameObjects.add(gameObject)
         enrol(gameObject)
         if (gameObject is Alive) gameObject.world = this
+        announce(gameObject)
     }
 
     /**
@@ -113,9 +152,13 @@ class World {
 
         if (removeList.isNotEmpty()) {
             log.debug("World removing {} game object(s)", removeList.size)
-            val removed = removeList.toSet()
-            gameObjects.removeAll(removed)
-            removed.forEach { byId.remove(it.entityId) }
+            val removed = removeList.toList().distinct()
+            gameObjects.removeAll(removed.toSet())
+            removed.forEach { gone ->
+                byId.remove(gone.entityId)
+                announced.remove(gone.entityId)
+                events.publish(GameEvent.EntityRemoved(gone))
+            }
             removeList.clear()
         }
     }
