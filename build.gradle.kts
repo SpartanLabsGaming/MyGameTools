@@ -6,7 +6,7 @@ plugins {
     // gradleApi(), whose bundled slf4j provider outranks logback and silently discards
     // every INFO/DEBUG record the library logs.
     `java-library`
-    kotlin("jvm") version "2.2.0"
+    kotlin("jvm") version "2.4.10"
     kotlin("plugin.serialization") version "2.2.0"
     id("com.vanniktech.maven.publish") version "0.36.0"
     id("org.jetbrains.dokka") version "2.0.0"
