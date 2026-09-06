@@ -5,7 +5,7 @@
 **A batteries-included Kotlin engine layer for 2D multiplayer games — game objects, stats, spatial indexing, and UDP networking, out of the box.**
 
 [![CI](https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml/badge.svg)](https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/GameTools?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/GameTools)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/gametools?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 [![Docs](https://img.shields.io/badge/docs-Dokka-orange)](https://github.com/SpartanLabsGaming/MyGameTools)
@@ -16,7 +16,7 @@
 
 ## 📖 Overview
 
-**GameTools** (module `io.github.spartanlabsgaming:GameTools`) is a Kotlin/JVM library that supplies the reusable plumbing every simple 2D game engine needs so you can spend your time on gameplay instead of infrastructure:
+**GameTools** is a Kotlin/JVM library that supplies the reusable plumbing every simple 2D game engine needs so you can spend your time on gameplay instead of infrastructure. It is published to Maven Central as three coordinates — the **`gametools`** umbrella (everything, one dependency line), **`gametools-core`** (the object model, stats, spatial index, event bus and deterministic simulation — no networking), and **`gametools-net`** (the UDP `GameServer`, which depends on `gametools-core`):
 
 - A **game-object hierarchy** — position, rendering, movement, combat, and ownership — built as small, composable layers rather than one giant class.
 - A **stat system** (`ModularStat` / `CombinedStat` / `StatMod`) for buffs, debuffs, and resource bars (health, mana, stamina...) with proper additive/multiplicative stacking.
@@ -117,6 +117,17 @@ classDiagram
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
 | `GameServer` | final | UDP transport: handshakes, a single shared multiplexed socket, input decoding, JSON broadcast |
 
+### Modules
+
+The library is split across three published Maven coordinates. Depend on the umbrella for
+everything, or on `gametools-core` alone when you don't need the server.
+
+| Module | Coordinate | Contains | Depends on |
+|---|---|---|---|
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `Quadtree`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+| **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer` and the `MouseAction` wire type | `gametools-core` |
+| **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports both modules via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net` |
+
 ---
 
 ## ✨ Features
@@ -151,19 +162,25 @@ classDiagram
 
 ## 📦 Installation
 
-GameTools is published to **Maven Central**.
+GameTools is published to **Maven Central** as three coordinates. Most projects want the
+**`gametools`** umbrella — one line, the whole framework. Take **`gametools-core`** instead
+if you only need the simulation side and not the UDP server; add **`gametools-net`** on top
+if you later do.
 
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.spartanlabsgaming:GameTools:3.1.0")
+    implementation("io.github.spartanlabsgaming:gametools:4.0.0")          // everything
+    // — or, à la carte —
+    // implementation("io.github.spartanlabsgaming:gametools-core:4.0.0")  // no networking
+    // implementation("io.github.spartanlabsgaming:gametools-net:4.0.0")   // GameServer (pulls in -core)
 }
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
 dependencies {
-    implementation 'io.github.spartanlabsgaming:GameTools:3.1.0'
+    implementation 'io.github.spartanlabsgaming:gametools:4.0.0'
 }
 ```
 
@@ -171,11 +188,16 @@ dependencies {
 ```xml
 <dependency>
     <groupId>io.github.spartanlabsgaming</groupId>
-    <artifactId>GameTools</artifactId>
-    <version>3.1.0</version>
+    <artifactId>gametools</artifactId>
+    <version>4.0.0</version>
 </dependency>
 ```
 
+> **Upgrading from `3.x`?** The single `io.github.spartanlabsgaming:GameTools` artifact is
+> replaced by `io.github.spartanlabsgaming:gametools` (note the lowercase id) as of `4.0.0`.
+> Swap the one dependency line; the umbrella's transitive contents are unchanged, so no
+> imports move. See [CHANGELOG.md](CHANGELOG.md).
+>
 > GameTools transitively brings in Spartan Laboratories' [`WebTools`](https://github.com/SpartanLaboratories) (networking) and [`GeneralTools`](https://github.com/SpartanLaboratories) (shared utilities like `Color`), plus `kotlinx-serialization-json` and the `slf4j-api` logging facade — bring your own slf4j implementation (Logback, etc.) to see log output.
 
 ---
@@ -233,7 +255,7 @@ val server = GameServer(
 
 ## 🧪 Testing
 
-Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gaming.testing.<level>`, each independently runnable so CI can gate them separately:
+Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gaming.testing.<level>`, each independently runnable so CI can gate them separately. Every module carries its own five-level test tree; each Gradle task below fans out across all modules:
 
 | Gradle task | Level | Scope |
 |---|---|---|
@@ -273,7 +295,8 @@ API documentation is generated with [Dokka](https://kotlinlang.org/docs/dokka-in
 | **Logging** | slf4j API (bring your own binding) |
 | **Testing** | JUnit 5 |
 | **Docs** | Dokka |
-| **Publishing** | Vanniktech Maven Publish → Maven Central |
+| **Build** | Gradle multi-module — `gametools-core`, `gametools-net`, `gametools` umbrella; shared config in `build-logic/` convention plugins |
+| **Publishing** | Vanniktech Maven Publish → Maven Central (three coordinates) |
 | **Dependencies** | [WebTools](https://github.com/SpartanLaboratories) · [GeneralTools](https://github.com/SpartanLaboratories) |
 
 ---

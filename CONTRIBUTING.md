@@ -5,6 +5,7 @@ a team even while the team is one person — the point is that the process is al
 when the second contributor arrives.
 
 - [Coding rules](#coding-rules)
+- [Module layout](#module-layout)
 - [Branching model](#branching-model)
 - [Commit messages](#commit-messages)
 - [Pull requests](#pull-requests)
@@ -21,6 +22,27 @@ Kotlin idioms blended OO/FP, `Result` instead of thrown exceptions for expected 
 structured slf4j logging, KDoc on every public declaration, region-grouped imports, one test
 class per file. Tests are organised by the five-level hierarchy into
 `com.spartanlabs.gaming.testing.<level>` packages.
+
+## Module layout
+
+Since `4.0.0` the library is a Gradle multi-module build, published as three Maven
+coordinates:
+
+| Module | Coordinate | Contents | Depends on |
+| --- | --- | --- | --- |
+| `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
+| `gametools-net` | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` (`GameServer`, `MouseAction`) | `api(project(":gametools-core"))` |
+| `gametools` (umbrella) | `io.github.spartanlabsgaming:gametools` | no source — `api` re-export of both modules above | both |
+
+Shared build configuration lives in the `build-logic/` included build as the
+`gametools.kotlin-library` / `gametools.published-library` convention plugins; a module build
+file is a `plugins {}` block plus its `coordinates(...)` and `pom {}`. New modules on the
+roadmap (`gametools-world`, `gametools-combat`, …) are added the same way.
+
+Every module has its own five-level test tree under `src/test/kotlin/com/spartanlabs/gaming/testing/<level>/`.
+The per-level Gradle tasks (`componentTest`, `integrationTest`, `deterministicTest`,
+`e2eTest`, `nonfunctionalTest`) and `./gradlew build` span every module; the four CI check
+names are unchanged by the split.
 
 ## Branching model
 
@@ -110,7 +132,9 @@ Requires JDK 23. The Gradle wrapper pins Gradle 9.7.1.
 ## Versioning
 
 `Major.Feature.MinorChange`, optionally a trailing letter for a bug fix (e.g. `1.5.2a`). The
-version lives only in `coordinates(...)` in `build.gradle.kts`.
+version lives only in the `coordinates(...)` call in each module's `build.gradle.kts`
+(`gametools-core`, `gametools-net`, `gametools`) — all three modules release together on one
+version, so the release branch bumps all three.
 
 | Change | Bump | Example |
 | --- | --- | --- |
@@ -122,15 +146,15 @@ version lives only in `coordinates(...)` in `build.gradle.kts`.
 ## Releasing
 
 1. All target changes are merged to `master` and CI is green.
-2. `git switch -c release/1.10.0` — bump the version in `build.gradle.kts`, move the
-   `CHANGELOG.md` `[Unreleased]` entries under a new `[1.10.0]` heading with today's date, and
-   update the link references.
+2. `git switch -c release/1.10.0` — bump the version in every module's `coordinates(...)`
+   (`gametools-core`, `gametools-net`, `gametools`), move the `CHANGELOG.md` `[Unreleased]`
+   entries under a new `[1.10.0]` heading with today's date, and update the link references.
 3. PR → merge. The merge commit is `chore(release): 1.10.0`.
 4. `git tag -a v1.10.0 -m "Release 1.10.0"` on `master`, then `git push origin master --follow-tags`.
 5. `release.yml` creates the GitHub Release from the tag.
-6. **Publish manually:** `./gradlew publishAndReleaseToMavenCentral`. This step is
-   irreversible and stays a deliberate human action — no Maven Central credentials live in
-   CI.
+6. **Publish manually:** `./gradlew publishAndReleaseToMavenCentral` stages and releases all
+   three coordinates. This step is irreversible and stays a deliberate human action — no
+   Maven Central credentials live in CI.
 
 Credentials for step 6 are in `~/.gradle/gradle.properties`
 (`mavenCentralUsername` / `mavenCentralPassword`, `signing.*`).

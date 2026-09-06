@@ -6,11 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow the project's `Major.Feature.MinorChange` scheme (see
 [`.aiassistant/rules/CLAUDE.md`](.aiassistant/rules/CLAUDE.md) §6); a trailing letter marks a
 bug-fix release. Releases are tagged `vX.Y.Z` and published to
-[Maven Central](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/GameTools).
+[Maven Central](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
+(as of `4.0.0` the library ships as three coordinates — `gametools`, `gametools-core`,
+`gametools-net`; earlier releases were the single `GameTools` artifact).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- **BREAKING — the library is now a multi-module build, published as three Maven
+  coordinates.** The single `io.github.spartanlabsgaming:GameTools` artifact is replaced by:
+  - `io.github.spartanlabsgaming:gametools` — the **umbrella** (note the lowercase id). No
+    source of its own; `api`-re-exports every module, so its transitive contents are
+    identical to the pre-split artifact.
+  - `io.github.spartanlabsgaming:gametools-core` — the object model, stats & buffs, the
+    `Quadtree` spatial index, `EntityId`, `World`, the typed event bus, the seeded
+    deterministic tick and the opt-in `SimulationLoop`, plus the `@Serializable` geometry
+    DTOs. No networking dependency.
+  - `io.github.spartanlabsgaming:gametools-net` — the UDP `GameServer` and the `MouseAction`
+    wire type; depends on `gametools-core`.
+
+  **Migration:** replace the one dependency line
+  (`io.github.spartanlabsgaming:GameTools:<old>` → `io.github.spartanlabsgaming:gametools:4.0.0`),
+  or depend on `gametools-core` alone if you don't use `GameServer`. No package or import
+  changes — every type keeps its `com.spartanlabs.*` name. The old `GameTools` coordinate
+  receives no further releases.
+
+### Added
+- `gametools-core` and `gametools-net` as independently consumable artifacts, for projects
+  that want the simulation layer without pulling in the networking stack (or vice-versa).
+
+### Build
+- Multi-module Gradle build; shared configuration extracted to `build-logic/` convention
+  plugins (`gametools.kotlin-library`, `gametools.published-library`). Root project reduced
+  to the Dokka aggregator. CI check names and the release flow are unchanged.
 
 ## [3.1.0] — 2026-09-06
 
