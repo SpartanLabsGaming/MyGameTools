@@ -12,7 +12,15 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- Applying a movement command (`MoveTo`, `MoveDir`, `Follow`, `Stop`) through
+  `ClientCommand.applyTo` now calls off the actor's pending attack when the actor is an
+  `Alive` — a manual movement order is treated as a deliberate override of an in-progress
+  auto-attack, the standard RTS expectation. Previously the attack cycle kept running and the
+  unit resumed closing on its target. `Attack` / `StopAttack` are unchanged, and the cancel
+  runs only on the success path (a `Follow` whose target does not resolve leaves the attack
+  untouched). Consumers that wrapped every move command with a manual `Alive.cancelAttack()`
+  can drop that wrapper. (#39)
 
 ## [5.0.0] — 2026-09-07
 

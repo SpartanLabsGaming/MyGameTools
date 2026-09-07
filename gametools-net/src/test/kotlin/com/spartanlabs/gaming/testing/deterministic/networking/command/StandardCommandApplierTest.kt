@@ -34,8 +34,9 @@ import kotlin.test.assertTrue
 //endregion
 
 /**
- * Covers [applyTo]: each standard command drives the mechanism it names, and an operand that
- * is missing, the wrong kind, or a consumer command is reported rather than thrown.
+ * Covers [applyTo]: each standard command drives the mechanism it names, a movement command
+ * additionally calls off a pending attack on an [Alive], and an operand that is missing, the
+ * wrong kind, or a consumer command is reported rather than thrown.
  */
 class StandardCommandApplierTest {
 
@@ -84,7 +85,7 @@ class StandardCommandApplierTest {
     }
 
     @Test
-    fun `Stop halts movement without touching the attack cycle`() {
+    fun `Stop halts movement and calls off a pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
         aggressor.issueAttack(victim)
@@ -95,7 +96,73 @@ class StandardCommandApplierTest {
 
         assertEquals(Movement.Targeting, aggressor.movement)
         assertTrue(aggressor.isAtDestination, "the actor's destination should be pinned to where it is")
-        assertFalse(events.any { it is GameEvent.AttackCancelled }, "Stop is a movement order, not an attack order")
+        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a movement order overrides an in-progress attack")
+    }
+
+    @Test
+    fun `MoveTo calls off the actor's pending attack`() {
+        val aggressor = alive()
+        val victim = alive(x = 10.0)
+        aggressor.issueAttack(victim)
+        events.clear()
+
+        assertEquals(ApplyResult.Applied, MoveTo(aggressor.entityId, x = 40.0, y = 50.0).applyTo(world))
+
+        assertEquals(40.0, aggressor.destination.x, "the move still applies")
+        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
+    }
+
+    @Test
+    fun `MoveDir calls off the actor's pending attack`() {
+        val aggressor = alive()
+        val victim = alive(x = 10.0)
+        aggressor.issueAttack(victim)
+        events.clear()
+
+        assertEquals(ApplyResult.Applied, MoveDir(aggressor.entityId, angleDegrees = 90).applyTo(world))
+
+        assertEquals(Movement.Directional, aggressor.movement, "the move still applies")
+        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
+    }
+
+    @Test
+    fun `Follow calls off the actor's pending attack`() {
+        val aggressor = alive()
+        val victim = alive(x = 10.0)
+        aggressor.issueAttack(victim)
+        events.clear()
+
+        assertEquals(ApplyResult.Applied, Follow(aggressor.entityId, target = victim.entityId).applyTo(world))
+
+        assertIs<Movement.Homing>(aggressor.movement)
+        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
+    }
+
+    @Test
+    fun `a movement command on a plain Actor applies without incident`() {
+        val mover = actor()
+
+        assertEquals(ApplyResult.Applied, MoveTo(mover.entityId, x = 5.0, y = 6.0).applyTo(world))
+
+        assertEquals(5.0, mover.destination.x)
+    }
+
+    @Test
+    fun `a Follow whose target is gone leaves a pending attack running`() {
+        val aggressor = alive()
+        val victim = alive(x = 10.0)
+        aggressor.issueAttack(victim)
+        events.clear()
+
+        assertEquals(
+            ApplyResult.TargetMissing(EntityId(999)),
+            Follow(aggressor.entityId, target = EntityId(999)).applyTo(world)
+        )
+
+        assertFalse(
+            events.any { it is GameEvent.AttackCancelled },
+            "a command that could not be carried out has no side effect"
+        )
     }
 
     @Test
