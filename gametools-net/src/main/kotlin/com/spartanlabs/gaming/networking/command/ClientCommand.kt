@@ -53,6 +53,8 @@ interface ClientCommand
  * Send [actor] to the point `(`[x]`, `[y]`)` and stop there: assigns [Actor.destination],
  * which the default [Movement.Targeting] strategy walks the actor to and settles on.
  *
+ * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive].
+ *
  * @property actor the actor to move
  * @property x the destination's world x coordinate
  * @property y the destination's world y coordinate
@@ -66,6 +68,8 @@ data class MoveTo(val actor: EntityId, val x: Double, val y: Double) : ClientCom
  * facing and switches it to [Movement.Directional]. [Actor.destination] is ignored while this
  * strategy is active.
  *
+ * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive].
+ *
  * @property actor the actor to move
  * @property angleDegrees the heading in whole degrees counter-clockwise from the positive
  *   x-axis, matching [com.spartanlabs.gaming.gameobjects.VisibleObject.angle]
@@ -78,6 +82,10 @@ data class MoveDir(val actor: EntityId, val angleDegrees: Int) : ClientCommand
  * Have [actor] chase [target]: switches the actor to [Movement.Homing] on the object [target]
  * resolves to, so it re-points at the target's current position every tick.
  *
+ * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive]
+ * and [target] resolves. To pursue while still attacking, send [Attack] - it closes on the
+ * target on its own.
+ *
  * @property actor the actor that gives chase
  * @property target the object to home in on
  */
@@ -89,8 +97,9 @@ data class Follow(val actor: EntityId, val target: EntityId) : ClientCommand
  * Halt [actor]'s movement: clears any [Movement.Directional] / [Movement.Homing] strategy
  * back to [Movement.Targeting] and pins [Actor.destination] to the actor's current location.
  *
- * This is a movement order only - it does not touch an [Alive]'s attack cycle. To call off an
- * attack, send [StopAttack].
+ * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive] -
+ * a manual movement order overrides an in-progress auto-attack. [StopAttack] is the inverse:
+ * it calls off an attack without moving the actor.
  *
  * @property actor the actor to halt
  */

@@ -66,6 +66,15 @@ sealed interface ApplyResult {
  * | [Attack] | [Alive.issueAttack] on the resolved target |
  * | [StopAttack] | [Alive.cancelAttack] |
  *
+ * ### A movement order calls off a pending attack
+ *
+ * Once a [MoveTo], [MoveDir], [Follow] or [Stop] has applied, this additionally calls
+ * [Alive.cancelAttack] on the resolved actor when it is an [Alive] - a manual movement order
+ * is a deliberate override of an in-progress auto-attack, the standard RTS expectation. It is
+ * a no-op when the actor is not an [Alive] or is not attacking, and it runs only on the
+ * success path (a [Follow] whose target does not resolve leaves the attack untouched).
+ * [Attack] and [StopAttack] never touch movement.
+ *
  * ### It does not authorize
  *
  * There is **no** ownership, faction, range or capability-suppression check here - by design.
@@ -108,14 +117,17 @@ fun ClientCommand.applyTo(world: World): ApplyResult = when (this) {
 }
 
 /**
- * Resolves [id] to an [Actor] and runs [action] on it, or returns the failure that stopped
- * that. Inline so [action] can `return` an [ApplyResult] straight out of [applyTo] when a
- * secondary operand (a [Follow] target) cannot be resolved.
+ * Resolves [id] to an [Actor], runs the movement [action] on it, then calls off any attack it
+ * has pending (see [applyTo]) - or returns the failure that stopped that. Inline so [action]
+ * can `return` an [ApplyResult] straight out of [applyTo] when a secondary operand (a [Follow]
+ * target) cannot be resolved; the attack is called off only once [action] has applied, so a
+ * command that bailed out has no side effect.
  */
 private inline fun onActor(world: World, id: EntityId, action: (Actor) -> Unit): ApplyResult {
     val resolved = world.byId(id) ?: return ApplyResult.TargetMissing(id)
     val actor = resolved as? Actor ?: return ApplyResult.WrongType(id, Actor::class)
     action(actor)
+    (actor as? Alive)?.cancelAttack()
     return ApplyResult.Applied
 }
 
