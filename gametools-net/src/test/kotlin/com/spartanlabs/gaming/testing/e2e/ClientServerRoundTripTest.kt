@@ -19,6 +19,7 @@ import com.spartanlabs.gaming.networking.command.ClientCommandCodec
 import com.spartanlabs.gaming.networking.command.MoveTo
 import com.spartanlabs.gaming.networking.command.applyTo
 import com.spartanlabs.gaming.testing.integration.networking.FakeClientHarness
+import com.spartanlabs.gaming.testing.integration.networking.awaitCommonPortFree
 //endregion
 
 //region 2. Intended Function
@@ -87,6 +88,9 @@ class ClientServerRoundTripTest {
     fun tearDown() {
         harness.close()
         server.shutDown()
+        // WebTools frees the shared port off-thread; wait for it so the next test method's
+        // GameServer can bind it. See awaitCommonPortFree.
+        awaitCommonPortFree()
     }
 
     /** Handshakes a player and waits for the server to admit it. */

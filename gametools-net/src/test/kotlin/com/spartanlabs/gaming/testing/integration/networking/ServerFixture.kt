@@ -108,11 +108,15 @@ internal class ServerFixture : AutoCloseable {
     fun awaitCommand(timeoutMillis: Long = MESSAGE_TIMEOUT_MILLIS): Pair<String, ClientCommand>? =
         playerCommands.poll(timeoutMillis, TimeUnit.MILLISECONDS)
 
-    /** Closes every harness, then shuts the server down and frees the common port. */
+    /**
+     * Closes every harness, shuts the server down, and does not return until the shared UDP
+     * port is bindable again (see [awaitCommonPortFree]) so the next test starts clean.
+     */
     override fun close() {
         harnesses.forEach(FakeClientHarness::close)
         server?.shutDown()
         server = null
+        awaitCommonPortFree()
     }
 
     companion object {
