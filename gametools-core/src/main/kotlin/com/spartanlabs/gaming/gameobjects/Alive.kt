@@ -445,7 +445,7 @@ open class Alive(
  * Each combat stat is captured as its effective [ModularStat.value] at snapshot time, with
  * every applied [StatMod] already folded in.
  *
- * @property id the actor's stable [EntityId.raw] ([DrawableSnapshot.UNIDENTIFIED] if unowned)
+ * @property id the actor's stable [EntityId] ([EntityId.UNASSIGNED] if unowned)
  * @property actor the underlying [ActorSnapshot] - movement, drawable state, sub-objects
  * @property health the actor's health at snapshot time
  * @property faction the side the actor belongs to at snapshot time
@@ -459,7 +459,7 @@ open class Alive(
 @Serializable
 @SerialName("alive")
 data class AliveSnapshot(
-    override val id: Long = DrawableSnapshot.UNIDENTIFIED,
+    override val id: EntityId = EntityId.UNASSIGNED,
     val actor: ActorSnapshot,
     val health: CombinedStatSnapshot,
     val faction: String,
@@ -476,7 +476,7 @@ data class AliveSnapshot(
     companion object {
         /** Takes a snapshot of [alive]'s stats along with its movement, drawable state, and sub-objects. */
         infix fun from(alive: Alive): AliveSnapshot = AliveSnapshot(
-            id = alive.entityId.raw,
+            id = alive.entityId,
             actor = ActorSnapshot.from(alive),
             health = CombinedStatSnapshot.from(alive.health),
             faction = alive.faction,

@@ -197,7 +197,7 @@ open class Actor(
  * how fast it moves and where it is headed. Sent in place of a plain [VisibleObjectSnapshot]
  * whenever a broadcast object is an [Actor] (see [DrawableSnapshot]).
  *
- * @property id the actor's stable [EntityId.raw] ([DrawableSnapshot.UNIDENTIFIED] if unowned)
+ * @property id the actor's stable [EntityId] ([EntityId.UNASSIGNED] if unowned)
  * @property visibleObject the underlying [VisibleObjectSnapshot] - position, size, drawable state, sub-objects
  * @property speed the actor's effective movement rate ([Actor.speed]'s [ModularStat.value]) in
  *   units per tick at snapshot time
@@ -206,7 +206,7 @@ open class Actor(
 @Serializable
 @SerialName("actor")
 data class ActorSnapshot(
-    override val id: Long = DrawableSnapshot.UNIDENTIFIED,
+    override val id: EntityId = EntityId.UNASSIGNED,
     val visibleObject: VisibleObjectSnapshot,
     val speed: Double,
     val destination: PointSnapshot) : DrawableSnapshot {
@@ -217,7 +217,7 @@ data class ActorSnapshot(
     companion object {
         /** Takes a snapshot of [actor]'s movement state along with its drawable state and sub-objects. */
         infix fun from(actor: Actor): ActorSnapshot = ActorSnapshot(
-            id = actor.entityId.raw,
+            id = actor.entityId,
             visibleObject = VisibleObjectSnapshot.from(actor),
             speed = actor.speed.value,
             destination = PointSnapshot.from(actor.destination)
