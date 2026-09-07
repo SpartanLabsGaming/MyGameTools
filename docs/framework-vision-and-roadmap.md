@@ -284,3 +284,11 @@ Stable `EntityId`, baseline+delta diffing, the game snapshot schema, the `Snapsh
 tick number and input sequence number *semantics* (they identify simulation state, distinct
 from a transport datagram sequence in #6), the `AuthProvider` SPI, `SessionRegistry` session
 semantics, and zone save/load.
+
+The **command direction is now library-owned too** (issue #31, shipped `5.0.0`): a
+`@Serializable` `ClientCommand` hierarchy, a `COMMAND <json>` codec, and a `GameServer`
+callback that hands the app a decoded command, mirroring what `DrawableSnapshot` already
+does for STATE. `EntityId` is first-class on both wire directions. Phase 3 item 3
+("action-map input") builds on this rather than re-inventing it — the command schema stays
+here; only its binary encoding and input-sequence-number plumbing move onto the Phase 3
+transport primitives.

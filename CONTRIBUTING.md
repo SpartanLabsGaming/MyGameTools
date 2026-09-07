@@ -77,7 +77,6 @@ is no `develop` branch and there are no per-environment branches.
 - **Scopes:** `gameobjects`, `networking`, `spatial`, `serialization`, `build`, …
 - **Breaking changes:** `feat(x)!:` in the subject **and** a `BREAKING CHANGE:` footer
 - Reference issues in the body (`Refs #2`); the PR closes them (`Closes #2`)
-- Keep the `Co-Authored-By:` / `Claude-Session:` trailers on assisted commits
 
 Commits on your own branch may be rough — tidy them with `git rebase -i` before the PR is
 ready for review.

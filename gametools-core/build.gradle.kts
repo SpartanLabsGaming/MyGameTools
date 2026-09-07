@@ -3,7 +3,7 @@ plugins {
 }
 
 mavenPublishing {
-    coordinates("io.github.spartanlabsgaming", "gametools-core", "4.0.0")
+    coordinates("io.github.spartanlabsgaming", "gametools-core", "5.0.0")
     pom {
         name.set("GameTools Core")
         description.set("GameTools object model, stats, buffs, the typed event bus, the seeded deterministic tick, and the opt-in simulation loop.")
