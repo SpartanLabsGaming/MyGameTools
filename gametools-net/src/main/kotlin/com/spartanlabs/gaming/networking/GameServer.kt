@@ -7,6 +7,8 @@ import com.spartanlabs.webtools.Connection
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.DrawableSnapshot
 import com.spartanlabs.gaming.gameobjects.VisibleObject
+import com.spartanlabs.gaming.networking.command.ClientCommand
+import com.spartanlabs.gaming.networking.command.ClientCommandCodec
 //endregion
 
 //region 2. Intended Function
@@ -42,7 +44,9 @@ private val log: Logger = LoggerFactory.getLogger("GameServer")
  * - it accepts at most [maxConnections] players and refuses the rest,
  * - it starts listening on every accepted player's connection and routes their
  *   messages by verb: an `INPUT <json>` datagram is decoded into a [MouseAction] and handed
- *   to [onPlayerInput], and everything else is passed verbatim to [onPlayerMessage], each
+ *   to [onPlayerInput]; a `COMMAND <json>` datagram is decoded into a [ClientCommand] and
+ *   handed to [onCommand] (only when a [commandCodec] was supplied - otherwise `COMMAND`
+ *   falls through untouched); everything else is passed verbatim to [onPlayerMessage], each
  *   tagged with the player it came from,
  * - it serializes world state to JSON and broadcasts it with [broadcast].
  *
@@ -59,11 +63,22 @@ private val log: Logger = LoggerFactory.getLogger("GameServer")
  * @param onPlayerInput invoked with the sending player's name and the decoded [MouseAction]
  * for every well-formed `INPUT <json>` datagram. A malformed `INPUT` payload is logged and
  * dropped rather than reaching either callback. Shares [onPlayerMessage]'s threading contract.
+ * @param commandCodec the codec that decodes `COMMAND <json>` datagrams into [ClientCommand]s.
+ * When `null` (the default) the server has no command protocol and a `COMMAND` datagram is
+ * treated as any other unrecognised message - it reaches [onPlayerMessage] verbatim. Supply
+ * the **same** codec the clients encode with (see [ClientCommandCodec]).
+ * @param onCommand invoked with the sending player's name and the decoded [ClientCommand] for
+ * every well-formed `COMMAND <json>` datagram, when a [commandCodec] is set. A malformed
+ * `COMMAND` payload is logged and dropped. Shares [onPlayerMessage]'s threading contract, and
+ * like the others carries no authorization - decide whether the player may issue the command
+ * before acting on it (see [com.spartanlabs.gaming.networking.command.applyTo]).
  */
-class GameServer(
+class GameServer @JvmOverloads constructor(
     val maxConnections: Int,
     private val onPlayerMessage: (playerName: String, message: String) -> Unit = { _, _ -> },
-    private val onPlayerInput: (playerName: String, input: MouseAction) -> Unit = { _, _ -> }
+    private val onPlayerInput: (playerName: String, input: MouseAction) -> Unit = { _, _ -> },
+    private val commandCodec: ClientCommandCodec? = null,
+    private val onCommand: (playerName: String, command: ClientCommand) -> Unit = { _, _ -> },
 ) : MultiConnectionUDPServer() {
 
     /**
@@ -146,8 +161,11 @@ class GameServer(
      * Routes one datagram from [playerName] to the right callback.
      *
      * A message whose first token is [INPUT_VERB] has its remainder decoded as a [MouseAction]
-     * and handed to [onPlayerInput]; a payload that will not parse is logged and dropped.
-     * Every other message is passed verbatim (trimmed) to [onPlayerMessage].
+     * and handed to [onPlayerInput]; one whose first token is [ClientCommandCodec.COMMAND_VERB]
+     * is decoded by [commandCodec] into a [ClientCommand] and handed to [onCommand]. In both
+     * cases a payload that will not parse is logged and dropped. Every other message - and a
+     * `COMMAND` when no [commandCodec] was supplied - is passed verbatim (trimmed) to
+     * [onPlayerMessage].
      *
      * @param playerName the name the datagram's sender handshook with
      * @param message the raw datagram text
@@ -163,6 +181,16 @@ class GameServer(
                 .onFailure { cause ->
                     log.warn("Ignoring malformed {} from '{}': {}", INPUT_VERB, playerName, cause.message)
                 }
+
+            ClientCommandCodec.COMMAND_VERB ->
+                // With no codec there is no command protocol: fall through to the raw callback,
+                // exactly as any unrecognised verb does, so wiring a codec in is a pure addition.
+                if (commandCodec == null) onPlayerMessage(playerName, trimmed)
+                else commandCodec.decode(payload)
+                    .onSuccess { command -> onCommand(playerName, command) }
+                    .onFailure { cause ->
+                        log.warn("Ignoring malformed {} from '{}': {}", ClientCommandCodec.COMMAND_VERB, playerName, cause.message)
+                    }
 
             else -> onPlayerMessage(playerName, trimmed)
         }
