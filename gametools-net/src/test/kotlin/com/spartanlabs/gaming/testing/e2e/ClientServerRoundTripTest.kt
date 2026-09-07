@@ -7,13 +7,19 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.ActorSnapshot
 import com.spartanlabs.gaming.gameobjects.DrawableSnapshot
+import com.spartanlabs.gaming.gameobjects.EntityId
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.VisibleObjectSnapshot
 import com.spartanlabs.gaming.gameobjects.World
 import com.spartanlabs.gaming.networking.GameServer
 import com.spartanlabs.gaming.networking.MouseAction
 import com.spartanlabs.gaming.networking.MouseActionType
+import com.spartanlabs.gaming.networking.command.ApplyResult
+import com.spartanlabs.gaming.networking.command.ClientCommandCodec
+import com.spartanlabs.gaming.networking.command.MoveTo
+import com.spartanlabs.gaming.networking.command.applyTo
 import com.spartanlabs.gaming.testing.integration.networking.FakeClientHarness
+import com.spartanlabs.gaming.testing.integration.networking.awaitCommonPortFree
 //endregion
 
 //region 2. Intended Function
@@ -61,6 +67,9 @@ class ClientServerRoundTripTest {
     // Written on the server's per-player listener thread, read on the test thread.
     @Volatile private var lastInput: MouseAction? = null
     @Volatile private var lastMessage: String? = null
+    @Volatile private var lastApply: ApplyResult? = null
+
+    private val commandCodec = ClientCommandCodec()
 
     private val server = GameServer(
         maxConnections = 4,
@@ -68,7 +77,9 @@ class ClientServerRoundTripTest {
         onPlayerInput = { _, action ->
             lastInput = action
             hero.destination = Point(action.x, action.y)
-        }
+        },
+        commandCodec = commandCodec,
+        onCommand = { _, command -> lastApply = command.applyTo(world) }
     )
 
     private val harness = FakeClientHarness()
@@ -77,6 +88,9 @@ class ClientServerRoundTripTest {
     fun tearDown() {
         harness.close()
         server.shutDown()
+        // WebTools frees the shared port off-thread; wait for it so the next test method's
+        // GameServer can bind it. See awaitCommonPortFree.
+        awaitCommonPortFree()
     }
 
     /** Handshakes a player and waits for the server to admit it. */
@@ -167,8 +181,8 @@ class ClientServerRoundTripTest {
 
         val firstState = run { simulateAndBroadcastFrame(); harness.receiveWorldState() }
         val heroId = assertIs<ActorSnapshot>(firstState.single()).id
-        assertTrue(heroId != 0L, "the broadcast hero should carry a world-assigned id")
-        assertEquals(hero.entityId.raw, heroId, "the wire id should match the simulation's EntityId")
+        assertTrue(heroId != EntityId.UNASSIGNED, "the broadcast hero should carry a world-assigned id")
+        assertEquals(hero.entityId, heroId, "the wire id should match the simulation's EntityId")
 
         // A reinforcement spawns before the next frame - the hero's list position shifts, its id must not.
         world.add(Actor(location = Point(500.0, 500.0)))
@@ -195,5 +209,29 @@ class ClientServerRoundTripTest {
         harness.send(GameServer.inputMessage(MouseAction(MouseActionType.MOVE, button = -1, x = 5.0, y = 6.0)))
             .getOrThrow()
         assertTrue(await { lastInput != null }, "a valid INPUT after a malformed one was not processed")
+    }
+
+    @Test
+    fun `a typed command travels the full stack and moves the hero the client addressed by its wire id`() {
+        connect("hero")
+
+        // The client learns the hero's id from a STATE broadcast, then names it back in a command.
+        val firstState = run { simulateAndBroadcastFrame(); harness.receiveWorldState() }
+        val heroId = assertIs<ActorSnapshot>(firstState.single()).id
+
+        harness.send(commandCodec.encode(MoveTo(heroId, x = 60.0, y = 0.0))).getOrThrow()
+
+        assertTrue(await { lastApply == ApplyResult.Applied }, "the command never reached the applier")
+        assertEquals(60.0, hero.destination.x, "the command should re-aim the hero the client addressed by id")
+
+        lateinit var finalState: List<DrawableSnapshot>
+        repeat(6) {
+            simulateAndBroadcastFrame()
+            finalState = harness.receiveWorldState()
+        }
+
+        val snapshot = assertIs<ActorSnapshot>(finalState.single())
+        assertEquals(heroId, snapshot.id, "the id the client sent back is the one it keeps receiving")
+        assertEquals(60.0, snapshot.visibleObject.gameObject.location.x, absoluteTolerance = 1e-9)
     }
 }

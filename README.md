@@ -125,7 +125,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 | Module | Coordinate | Contains | Depends on |
 |---|---|---|---|
 | **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `Quadtree`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
-| **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer` and the `MouseAction` wire type | `gametools-core` |
+| **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
 | **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports both modules via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net` |
 
 ---
@@ -152,7 +152,8 @@ everything, or on `gametools-core` alone when you don't need the server.
 - A generic **point-region `Quadtree<N, E>`** used as the broad phase for collision and homing lookups — rebuilt once per frame by `World.tick()` so every object's own tick sees a consistent index.
 
 ### 🌐 Networking
-- `GameServer`, built on Spartan Laboratories' `WebTools` `MultiConnectionUDPServer`: handles the `Iam <name>` handshake, replies with the bare token `REGISTERED`, and multiplexes every player's traffic - application data, broadcasts, and keepalives - over one shared socket (NAT-traversable end to end as of WebTools 2.0.0c), decodes `INPUT` datagrams into structured `MouseAction` events, routes everything else to your own callback, and enforces a configurable max player count. Callers are responsible for sending a bare `KA` token on that same socket roughly every 20s to keep their NAT mapping warm.
+- `GameServer`, built on Spartan Laboratories' `WebTools` `MultiConnectionUDPServer`: handles the `Iam <name>` handshake, replies with the bare token `REGISTERED`, and multiplexes every player's traffic - application data, broadcasts, and keepalives - over one shared socket (NAT-traversable end to end as of WebTools 2.0.0c), decodes `INPUT` datagrams into structured `MouseAction` events and `COMMAND` datagrams into typed `ClientCommand`s, routes everything else to your own callback, and enforces a configurable max player count. Callers are responsible for sending a bare `KA` token on that same socket roughly every 20s to keep their NAT mapping warm.
+- **Typed command protocol** (`com.spartanlabs.gaming.networking.command`) — the client→server direction is library-owned, the way `DrawableSnapshot` owns server→client. `ClientCommand` is an open, `@Serializable` marker interface; GameTools ships six standard commands wired to mechanisms that already exist on `Actor` / `Alive` — `MoveTo`, `MoveDir`, `Follow`, `Stop`, `Attack`, `StopAttack` — all addressing objects by `EntityId`. `ClientCommandCodec` carries them over a `COMMAND <json>` envelope; `ClientCommand.applyTo(World)` resolves the ids and runs the mechanism (leaving authorization to you). A game registers its own commands in a `SerializersModule` handed to the codec.
 - `MouseAction` — a serializable, typed representation of mouse `MOVE` / `PRESS` / `RELEASE` events in window pixel coordinates.
 
 ### 🧮 Geometry Serialization
@@ -170,17 +171,17 @@ if you later do.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.spartanlabsgaming:gametools:4.0.0")          // everything
+    implementation("io.github.spartanlabsgaming:gametools:5.0.0")          // everything
     // — or, à la carte —
-    // implementation("io.github.spartanlabsgaming:gametools-core:4.0.0")  // no networking
-    // implementation("io.github.spartanlabsgaming:gametools-net:4.0.0")   // GameServer (pulls in -core)
+    // implementation("io.github.spartanlabsgaming:gametools-core:5.0.0")  // no networking
+    // implementation("io.github.spartanlabsgaming:gametools-net:5.0.0")   // GameServer (pulls in -core)
 }
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
 dependencies {
-    implementation 'io.github.spartanlabsgaming:gametools:4.0.0'
+    implementation 'io.github.spartanlabsgaming:gametools:5.0.0'
 }
 ```
 
@@ -189,7 +190,7 @@ dependencies {
 <dependency>
     <groupId>io.github.spartanlabsgaming</groupId>
     <artifactId>gametools</artifactId>
-    <version>4.0.0</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
@@ -236,6 +237,10 @@ world.tick()
 
 ```kotlin
 import com.spartanlabs.gaming.networking.GameServer
+import com.spartanlabs.gaming.networking.command.ClientCommandCodec
+import com.spartanlabs.gaming.networking.command.applyTo
+
+val commands = ClientCommandCodec()   // + a SerializersModule for your own ClientCommand types
 
 val server = GameServer(
     maxConnections = 8,
@@ -244,6 +249,11 @@ val server = GameServer(
     },
     onPlayerMessage = { playerName, message ->
         println("$playerName says: $message")
+    },
+    commandCodec = commands,
+    onCommand = { playerName, command ->
+        // authorize first — applyTo() does not — then run the mechanism the command names
+        if (playerOwns(playerName, command)) command.applyTo(world)
     }
 )
 

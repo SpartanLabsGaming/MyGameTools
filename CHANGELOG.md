@@ -12,7 +12,41 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- **BREAKING — a world-state snapshot's `id` is now an `EntityId`, not a `Long`.**
+  `DrawableSnapshot.id` and the `id` of every variant (`VisibleObjectSnapshot`,
+  `ActorSnapshot`, `AliveSnapshot`) change type `Long` → `EntityId`. The **wire form is
+  unchanged** — an `EntityId` serializes as its bare `raw` `Long` — so a `5.0.0` server and
+  an older client still exchange STATE payloads; only source that reads `snapshot.id` needs
+  updating.
+
+  **Migration:**
+  - `val id: Long = snapshot.id` → `val id: EntityId = snapshot.id`, then `id.raw` wherever a
+    `Long` is still required.
+  - `snapshot.id == DrawableSnapshot.UNIDENTIFIED` → `snapshot.id == EntityId.UNASSIGNED`.
+    The `DrawableSnapshot.UNIDENTIFIED` constant is **removed** — `EntityId.UNASSIGNED` is the
+    single "not addressable" sentinel.
+
+### Added
+- **Typed, library-owned client→server command protocol** (`gametools-net`, package
+  `com.spartanlabs.gaming.networking.command`), giving the command direction the same
+  treatment `DrawableSnapshot` already gives STATE:
+  - `ClientCommand` — a non-`sealed` marker interface. A game adds its own commands by
+    implementing it with an `@Serializable` type and registering it in a `SerializersModule`
+    passed to `ClientCommandCodec`.
+  - Six standard commands, each naming a mechanism that already exists on `Actor` / `Alive`:
+    `MoveTo`, `MoveDir`, `Follow`, `Stop` (movement only) — and `Attack`, `StopAttack`. All
+    entity operands are `EntityId`.
+  - `ClientCommandCodec` — encodes/decodes commands over a `COMMAND <json>` envelope,
+    alongside the existing `STATE <json>` / `INPUT <json>`.
+  - `ClientCommand.applyTo(World)` — resolves a standard command's `EntityId`s via
+    `World.byId` and calls the mechanism, returning an `ApplyResult` (`Applied` /
+    `TargetMissing` / `WrongType` / `Unhandled`). Performs **no** authorization — gate
+    ownership in the app before calling it.
+  - `GameServer` gains two (defaulted, `@JvmOverloads`) constructor parameters —
+    `commandCodec` and `onCommand`. With no codec, a `COMMAND` datagram falls through to
+    `onPlayerMessage` exactly as before, so wiring the protocol in is additive.
+- `EntityId` is now `@Serializable` (as its bare `raw` `Long`).
 
 ## [4.0.0] — 2026-09-06
 
