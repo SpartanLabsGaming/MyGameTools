@@ -4,6 +4,8 @@ package com.spartanlabs.gaming.testing.integration.networking
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.networking.GameServer
 import com.spartanlabs.gaming.networking.MouseAction
+import com.spartanlabs.gaming.networking.command.ClientCommand
+import com.spartanlabs.gaming.networking.command.ClientCommandCodec
 //endregion
 
 //region 2. Intended Function
@@ -33,18 +35,26 @@ internal class ServerFixture : AutoCloseable {
     /** Every `(player, MouseAction)` pair the server decoded from an `INPUT` message. */
     private val playerInputs = LinkedBlockingQueue<Pair<String, MouseAction>>()
 
+    /** Every `(player, ClientCommand)` pair the server decoded from a `COMMAND` message. */
+    private val playerCommands = LinkedBlockingQueue<Pair<String, ClientCommand>>()
+
     /**
      * Starts the server under test, recording everything its players say so that tests can
-     * await it with [awaitPlayerMessage] or [awaitPlayerInput].
+     * await it with [awaitPlayerMessage], [awaitPlayerInput] or [awaitCommand].
      *
      * @param maxConnections the cap to give the server
+     * @param commandCodec the codec to route `COMMAND` datagrams through; `null` (the default)
+     *   leaves the server with no command protocol, so `COMMAND` falls through to
+     *   [awaitPlayerMessage]
      * @return the started server
      */
-    fun startServer(maxConnections: Int): GameServer =
+    fun startServer(maxConnections: Int, commandCodec: ClientCommandCodec? = null): GameServer =
         GameServer(
             maxConnections,
             onPlayerMessage = { name, message -> playerMessages.put(name to message) },
-            onPlayerInput = { name, input -> playerInputs.put(name to input) }
+            onPlayerInput = { name, input -> playerInputs.put(name to input) },
+            commandCodec = commandCodec,
+            onCommand = { name, command -> playerCommands.put(name to command) }
         ).also { started -> server = started }
 
     /** @return a fake client harness that will be closed with this fixture */
@@ -89,6 +99,14 @@ internal class ServerFixture : AutoCloseable {
      */
     fun awaitPlayerInput(timeoutMillis: Long = MESSAGE_TIMEOUT_MILLIS): Pair<String, MouseAction>? =
         playerInputs.poll(timeoutMillis, TimeUnit.MILLISECONDS)
+
+    /**
+     * Takes the next [ClientCommand] the server decoded from a player's `COMMAND` message.
+     * @param timeoutMillis how long to wait for one to arrive
+     * @return the `(player, ClientCommand)` pair, or `null` if none arrived in time
+     */
+    fun awaitCommand(timeoutMillis: Long = MESSAGE_TIMEOUT_MILLIS): Pair<String, ClientCommand>? =
+        playerCommands.poll(timeoutMillis, TimeUnit.MILLISECONDS)
 
     /** Closes every harness, then shuts the server down and frees the common port. */
     override fun close() {
