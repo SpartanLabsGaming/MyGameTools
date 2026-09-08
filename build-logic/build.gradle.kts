@@ -12,5 +12,5 @@ dependencies {
     implementation("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.2.0")
     implementation("org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:2.2.0")
     implementation("com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.36.0")
-    implementation("org.jetbrains.dokka:org.jetbrains.dokka.gradle.plugin:2.0.0")
+    implementation("org.jetbrains.dokka:org.jetbrains.dokka.gradle.plugin:2.2.0")
 }
