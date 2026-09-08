@@ -171,17 +171,17 @@ if you later do.
 **Gradle (Kotlin DSL)**
 ```kotlin
 dependencies {
-    implementation("io.github.spartanlabsgaming:gametools:5.0.0")          // everything
+    implementation("io.github.spartanlabsgaming:gametools:5.1.0")          // everything
     // — or, à la carte —
-    // implementation("io.github.spartanlabsgaming:gametools-core:5.0.0")  // no networking
-    // implementation("io.github.spartanlabsgaming:gametools-net:5.0.0")   // GameServer (pulls in -core)
+    // implementation("io.github.spartanlabsgaming:gametools-core:5.1.0")  // no networking
+    // implementation("io.github.spartanlabsgaming:gametools-net:5.1.0")   // GameServer (pulls in -core)
 }
 ```
 
 **Gradle (Groovy DSL)**
 ```groovy
 dependencies {
-    implementation 'io.github.spartanlabsgaming:gametools:5.0.0'
+    implementation 'io.github.spartanlabsgaming:gametools:5.1.0'
 }
 ```
 
@@ -190,7 +190,7 @@ dependencies {
 <dependency>
     <groupId>io.github.spartanlabsgaming</groupId>
     <artifactId>gametools</artifactId>
-    <version>5.0.0</version>
+    <version>5.1.0</version>
 </dependency>
 ```
 
