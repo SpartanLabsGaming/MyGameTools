@@ -289,6 +289,13 @@ Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gamin
 
 Because a `GameServer` binds a fixed common UDP port, any test task that starts one acquires a shared, single-permit Gradle build service so port-binding tasks never run concurrently.
 
+The `build-logic` convention plugins carry their own Level-3 (integration) check that drives
+the real Gradle build through Gradle TestKit, verifying the `gametools` umbrella's
+`-sources.jar` / `-javadoc.jar` aggregate both modules. It is an included build, so the
+`:build-logic:` prefix is required and it is not part of `./gradlew build`:
+
+    ./gradlew :build-logic:integrationTest
+
 ---
 
 ## 🛠️ Building & Documentation

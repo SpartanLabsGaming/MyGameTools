@@ -76,3 +76,23 @@ jobs:
       # The verifyUmbrella* guards (issue #40) gate the umbrella -sources.jar / -javadoc.jar
       # against regressing to empty; `assemble` already builds the jars they inspect.
       - run: ./gradlew assemble :gametools:verifyUmbrellaSourcesJar :gametools:verifyUmbrellaJavadocJar --stacktrace
+
+  # Runs the included `build-logic` build's Level-3 TestKit tests, which drive nested Gradle
+  # builds and are deliberately excluded from `./gradlew build` / the module test jobs.
+  build-logic-tests:
+    name: build-logic (TestKit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "23"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :build-logic:integrationTest --stacktrace
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logic-test-reports
+          path: build-logic/build/reports/tests/
