@@ -199,7 +199,11 @@ verify.
   `dependencies { api(project(":gametools-core")); api(project(":gametools-net")) }`;
   `coordinates(..., "gametools", "3.1.0")`; `pom` name `"GameTools"`, description
   `"Umbrella artifact re-exporting every GameTools module."`. No `src/` (vanniktech still
-  emits an empty sources/javadoc jar — Central accepts it).
+  emits an empty sources/javadoc jar — Central accepts it). *(Both the `-sources.jar` and
+  `-javadoc.jar` are populated since #40 — the umbrella folds in each module's
+  `sourcesElements` and aggregates both modules' Dokka; the repo-wide Dokka `KotlinBasePlugin`
+  blocker was fixed in the same PR. See `docs/issue-40-umbrella-empty-sources-jar.md`. The
+  `.jar` (classes) stays deliberately empty.)*
 - Version stays `3.1.0` in every `coordinates(...)` on the feature branches; the bump to
   `4.0.0` happens only on `release/4.0.0` (per `CONTRIBUTING.md` §Releasing). One place per
   module — no shared version constant this release (a `gradle.properties` `version` can come
@@ -444,7 +448,9 @@ so any post-split failure is attributable. JDK 23, Gradle wrapper 9.7.1 (`CONTRI
   the name `"gameServerPortsLock"` from the `gametools.kotlin-library` convention plugin is
   idempotent across modules.
 - **Empty umbrella jar.** Central accepts a jar with only a `MANIFEST`; some strict linters
-  warn. Acceptable; the umbrella's value is its POM `<dependencies>`.
+  warn. Acceptable; the umbrella's value is its POM `<dependencies>`. The `.jar` (classes)
+  stays deliberately empty, but the `-sources.jar` and `-javadoc.jar` are both populated since
+  #40 (they aggregate both modules' sources and Dokka output).
 - **Downstream build breakage on release day.** `MyGameServer` / `GameGraphics` keep
   resolving `GameTools:3.1.0` until they choose to move — publishing `4.0.0` does not break
   them. They migrate on their own schedule off the CHANGELOG note.

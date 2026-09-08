@@ -29,6 +29,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   classloader split ("could not load KotlinBasePlugin"). The Kotlin and Dokka plugins are now
   applied consistently from the root build, so every module's Dokka publication renders real
   HTML. (#40)
+- **The `io.github.spartanlabsgaming:gametools` umbrella published empty `-sources.jar` and
+  `-javadoc.jar`.** They now bundle the Kotlin source and the combined Dokka API documentation
+  of both `gametools-core` and `gametools-net`. IDE "Go to declaration" and quick-doc on a
+  GameTools type reached through the umbrella coordinate now resolve. Binary, POM and wire
+  protocol are unchanged. (#40)
 
 ## [5.0.0] — 2026-09-07
 

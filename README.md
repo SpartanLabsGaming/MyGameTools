@@ -194,6 +194,12 @@ dependencies {
 </dependency>
 ```
 
+> **Sources & docs.** The `gametools` umbrella's `-sources.jar` and `-javadoc.jar` bundle the
+> Kotlin sources and combined Dokka API docs of *both* `gametools-core` and `gametools-net`,
+> so IDE "Go to declaration" and quick-doc resolve through the single umbrella coordinate.
+> (Releases before this one shipped empty sources/javadoc jars — see
+> [#40](https://github.com/SpartanLabsGaming/MyGameTools/issues/40).)
+
 > **Upgrading from `3.x`?** The single `io.github.spartanlabsgaming:GameTools` artifact is
 > replaced by `io.github.spartanlabsgaming:gametools` (note the lowercase id) as of `4.0.0`.
 > Swap the one dependency line; the umbrella's transitive contents are unchanged, so no

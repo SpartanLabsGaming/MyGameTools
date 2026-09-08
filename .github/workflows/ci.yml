@@ -73,4 +73,6 @@ jobs:
           distribution: temurin
           java-version: "23"
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew assemble --stacktrace
+      # The verifyUmbrella* guards (issue #40) gate the umbrella -sources.jar / -javadoc.jar
+      # against regressing to empty; `assemble` already builds the jars they inspect.
+      - run: ./gradlew assemble :gametools:verifyUmbrellaSourcesJar :gametools:verifyUmbrellaJavadocJar --stacktrace
