@@ -12,6 +12,8 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
+## [5.1.0] — 2026-09-07
+
 ### Changed
 - Applying a movement command (`MoveTo`, `MoveDir`, `Follow`, `Stop`) through
   `ClientCommand.applyTo` now calls off the actor's pending attack when the actor is an
@@ -233,7 +235,8 @@ Pre-changelog release. First tagged release. See the [`v1.4.0`](https://github.c
 Pre-changelog release (untagged). Actor angle/`Result` rework, `MouseAction` input routing,
 `GameServer` implementation and networking tests.
 
-[Unreleased]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v5.1.0...HEAD
+[5.1.0]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v4.0.0...v5.0.0
 [4.0.0]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v3.1.0...v4.0.0
 [3.1.0]: https://github.com/SpartanLabsGaming/MyGameTools/compare/v3.0.0...v3.1.0

@@ -105,7 +105,7 @@ tasks.named("check") { dependsOn(verifyUmbrellaSourcesJar, verifyUmbrellaJavadoc
 //endregion
 
 mavenPublishing {
-    coordinates("io.github.spartanlabsgaming", "gametools", "5.0.0")
+    coordinates("io.github.spartanlabsgaming", "gametools", "5.1.0")
     pom {
         name.set("GameTools")
         description.set("Umbrella artifact re-exporting every GameTools module (gametools-core, gametools-net).")

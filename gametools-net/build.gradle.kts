@@ -7,7 +7,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.github.spartanlabsgaming", "gametools-net", "5.0.0")
+    coordinates("io.github.spartanlabsgaming", "gametools-net", "5.1.0")
     pom {
         name.set("GameTools Net")
         description.set("The UDP GameServer, built on WebTools, plus the MouseAction wire type.")
