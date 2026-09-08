@@ -22,6 +22,19 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   untouched). Consumers that wrapped every move command with a manual `Alive.cancelAttack()`
   can drop that wrapper. (#39)
 
+### Fixed
+- **Every module's published `-javadoc.jar` was empty.** `gametools-core-5.0.0-javadoc.jar`,
+  `gametools-net-5.0.0-javadoc.jar` and the `gametools` umbrella javadoc jar all shipped with
+  no API pages — Dokka could not see the Kotlin plugin through the convention-plugin
+  classloader split ("could not load KotlinBasePlugin"). The Kotlin and Dokka plugins are now
+  applied consistently from the root build, so every module's Dokka publication renders real
+  HTML. (#40)
+- **The `io.github.spartanlabsgaming:gametools` umbrella published empty `-sources.jar` and
+  `-javadoc.jar`.** They now bundle the Kotlin source and the combined Dokka API documentation
+  of both `gametools-core` and `gametools-net`. IDE "Go to declaration" and quick-doc on a
+  GameTools type reached through the umbrella coordinate now resolve. Binary, POM and wire
+  protocol are unchanged. (#40)
+
 ## [5.0.0] — 2026-09-07
 
 ### Changed

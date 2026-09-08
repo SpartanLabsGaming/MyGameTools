@@ -194,6 +194,12 @@ dependencies {
 </dependency>
 ```
 
+> **Sources & docs.** The `gametools` umbrella's `-sources.jar` and `-javadoc.jar` bundle the
+> Kotlin sources and combined Dokka API docs of *both* `gametools-core` and `gametools-net`,
+> so IDE "Go to declaration" and quick-doc resolve through the single umbrella coordinate.
+> (Releases before this one shipped empty sources/javadoc jars — see
+> [#40](https://github.com/SpartanLabsGaming/MyGameTools/issues/40).)
+
 > **Upgrading from `3.x`?** The single `io.github.spartanlabsgaming:GameTools` artifact is
 > replaced by `io.github.spartanlabsgaming:gametools` (note the lowercase id) as of `4.0.0`.
 > Swap the one dependency line; the umbrella's transitive contents are unchanged, so no
@@ -282,6 +288,13 @@ Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gamin
 ```
 
 Because a `GameServer` binds a fixed common UDP port, any test task that starts one acquires a shared, single-permit Gradle build service so port-binding tasks never run concurrently.
+
+The `build-logic` convention plugins carry their own Level-3 (integration) check that drives
+the real Gradle build through Gradle TestKit, verifying the `gametools` umbrella's
+`-sources.jar` / `-javadoc.jar` aggregate both modules. It is an included build, so the
+`:build-logic:` prefix is required and it is not part of `./gradlew build`:
+
+    ./gradlew :build-logic:integrationTest
 
 ---
 
