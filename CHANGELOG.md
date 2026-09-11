@@ -12,6 +12,13 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
+### Changed
+- Bumped the `GeneralTools` dependency from `2.0.1` to `2.2.0`. Additive only (new
+  `com.spartanlabs.geometry` primitives — `Segment`, `Ray`, `AxisAlignedBox`, `CenteredBox`,
+  `Point` vector algebra, segment/box/ray intersection tests — plus a fix for
+  `TwoDoubles.hashCode()` being inconsistent with `equals`, which affected `Point` /
+  `Dimensions` / `Square` used as hash-based-collection keys). No breaking changes.
+
 ## [5.1.0] — 2026-09-07
 
 ### Changed

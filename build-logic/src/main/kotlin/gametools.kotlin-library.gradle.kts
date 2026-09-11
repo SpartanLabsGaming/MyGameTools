@@ -15,8 +15,8 @@ kotlin {
 dependencies {
     // Spartan Laboratories Tools
     api("io.github.spartanlaboratories:WebTools:2.0.0c")
-    // Direct dependency for the Color class; WebTools already brings the same 2.0.1.
-    api("io.github.spartanlaboratories:GeneralTools:2.0.1")
+    // Direct dependency for the Color class; WebTools already brings the same version.
+    api("io.github.spartanlaboratories:GeneralTools:2.2.0")
 
     // Serialization
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
