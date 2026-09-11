@@ -6,8 +6,10 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
 import com.spartanlabs.gaming.gameobjects.GameObject
+import com.spartanlabs.gaming.gameobjects.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
@@ -55,25 +57,27 @@ sealed interface ApplyResult {
 
 /**
  * Carries out a GameTools-standard [ClientCommand] against [world] by resolving its [EntityId]
- * operands through [World.byId] and calling the mechanism the command names:
+ * operands through [World.byId] and issuing the [com.spartanlabs.gaming.gameobjects.Intent] the
+ * command names:
  *
- * | Command | Mechanism |
+ * | Command | Intent issued |
  * |---|---|
- * | [MoveTo] | sets [Actor.destination] |
- * | [MoveDir] | sets [com.spartanlabs.gaming.gameobjects.VisibleObject.angle] and [Actor.movement] to [Movement.Directional] |
- * | [Follow] | sets [Actor.movement] to [Movement.Homing] on the resolved target |
- * | [Stop] | [Actor.movement] to [Movement.Targeting], destination pinned to current location |
- * | [Attack] | [Alive.issueAttack] on the resolved target |
- * | [StopAttack] | [Alive.cancelAttack] |
+ * | [MoveTo] | [Move] with [Movement.Targeting] and the given destination |
+ * | [MoveDir] | sets [com.spartanlabs.gaming.gameobjects.VisibleObject.angle], then [Move] with [Movement.Directional] |
+ * | [Follow] | [Move] with [Movement.Homing] on the resolved target |
+ * | [Stop] | [com.spartanlabs.gaming.gameobjects.Actor.clearIntent] |
+ * | [Attack] | [AttackIntent] naming the resolved target |
+ * | [StopAttack] | [com.spartanlabs.gaming.gameobjects.Actor.clearIntent] |
  *
- * ### A movement order calls off a pending attack
+ * ### Issuing a new intent clears the previous one
  *
- * Once a [MoveTo], [MoveDir], [Follow] or [Stop] has applied, this additionally calls
- * [Alive.cancelAttack] on the resolved actor when it is an [Alive] - a manual movement order
- * is a deliberate override of an in-progress auto-attack, the standard RTS expectation. It is
- * a no-op when the actor is not an [Alive] or is not attacking, and it runs only on the
- * success path (a [Follow] whose target does not resolve leaves the attack untouched).
- * [Attack] and [StopAttack] never touch movement.
+ * [com.spartanlabs.gaming.gameobjects.Actor.issue] always tears down whatever intent was
+ * previously active before installing the next one (see [com.spartanlabs.gaming.gameobjects.Intent.clear]).
+ * So a [MoveTo], [MoveDir] or [Follow] issued on an [Alive] that was attacking calls off that
+ * attack as a consequence of [AttackIntent.clear] - not a special case here - and a [Stop]
+ * issued on an [Alive] that was only attacking (no active [Move]) cancels the attack the same
+ * way, without additionally pinning a fresh destination. This runs only on the success path
+ * (a [Follow] whose target does not resolve leaves the previous intent untouched).
  *
  * ### It does not authorize
  *
@@ -88,46 +92,40 @@ sealed interface ApplyResult {
  * @return what happened - see [ApplyResult]
  */
 fun ClientCommand.applyTo(world: World): ApplyResult = when (this) {
-    is MoveTo -> onActor(world, actor) { it.destination = Point(x, y) }
+    is MoveTo -> onActor(world, actor) { it.issue(Move(Movement.Targeting, destination = Point(x, y))) }
 
     is MoveDir -> onActor(world, actor) { mover ->
         mover.angle = angleDegrees
-        mover.movement = Movement.Directional
+        mover.issue(Move(Movement.Directional))
     }
 
     is Follow -> onActor(world, actor) { mover ->
         val chased = world.byId(target) ?: return ApplyResult.TargetMissing(target)
-        mover.movement = Movement.Homing(chased)
+        mover.issue(Move(Movement.Homing(chased)))
     }
 
-    is Stop -> onActor(world, actor) { mover ->
-        mover.movement = Movement.Targeting
-        mover.destination = Point(mover.location)
-    }
+    is Stop -> onActor(world, actor) { it.clearIntent() }
 
     is Attack -> onAlive(world, attacker) { aggressor ->
         val victim = world.byId(target) ?: return ApplyResult.TargetMissing(target)
         val victimAlive = victim as? Alive ?: return ApplyResult.WrongType(target, Alive::class)
-        aggressor.issueAttack(victimAlive)
+        aggressor.issue(AttackIntent(victimAlive))
     }
 
-    is StopAttack -> onAlive(world, alive) { it.cancelAttack() }
+    is StopAttack -> onAlive(world, alive) { it.clearIntent() }
 
     else -> ApplyResult.Unhandled
 }
 
 /**
- * Resolves [id] to an [Actor], runs the movement [action] on it, then calls off any attack it
- * has pending (see [applyTo]) - or returns the failure that stopped that. Inline so [action]
- * can `return` an [ApplyResult] straight out of [applyTo] when a secondary operand (a [Follow]
- * target) cannot be resolved; the attack is called off only once [action] has applied, so a
- * command that bailed out has no side effect.
+ * Resolves [id] to an [Actor] and runs [action] on it - or returns the failure that stopped
+ * that. Inline so [action] can `return` an [ApplyResult] straight out of [applyTo] when a
+ * secondary operand (a [Follow] target) cannot be resolved.
  */
 private inline fun onActor(world: World, id: EntityId, action: (Actor) -> Unit): ApplyResult {
     val resolved = world.byId(id) ?: return ApplyResult.TargetMissing(id)
     val actor = resolved as? Actor ?: return ApplyResult.WrongType(id, Actor::class)
     action(actor)
-    (actor as? Alive)?.cancelAttack()
     return ApplyResult.Applied
 }
 
