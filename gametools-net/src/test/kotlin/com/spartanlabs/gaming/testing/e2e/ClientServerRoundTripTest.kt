@@ -17,6 +17,7 @@ import com.spartanlabs.gaming.networking.MouseActionType
 import com.spartanlabs.gaming.networking.command.ApplyResult
 import com.spartanlabs.gaming.networking.command.ClientCommandCodec
 import com.spartanlabs.gaming.networking.command.MoveTo
+import com.spartanlabs.gaming.networking.command.Stop
 import com.spartanlabs.gaming.networking.command.applyTo
 import com.spartanlabs.gaming.testing.integration.networking.FakeClientHarness
 import com.spartanlabs.gaming.testing.integration.networking.awaitCommonPortFree
@@ -233,5 +234,27 @@ class ClientServerRoundTripTest {
         val snapshot = assertIs<ActorSnapshot>(finalState.single())
         assertEquals(heroId, snapshot.id, "the id the client sent back is the one it keeps receiving")
         assertEquals(60.0, snapshot.visibleObject.gameObject.location.x, absoluteTolerance = 1e-9)
+    }
+
+    @Test
+    fun `the broadcast intent tag reflects the hero's standing order after MoveTo and Stop`() {
+        connect("hero")
+        val firstState = run { simulateAndBroadcastFrame(); harness.receiveWorldState() }
+        val heroId = assertIs<ActorSnapshot>(firstState.single()).id
+
+        harness.send(commandCodec.encode(MoveTo(heroId, x = 60.0, y = 0.0))).getOrThrow()
+        assertTrue(await { lastApply == ApplyResult.Applied }, "the MoveTo command never reached the applier")
+        simulateAndBroadcastFrame()
+
+        val afterMove = assertIs<ActorSnapshot>(harness.receiveWorldState().single())
+        assertEquals("move", afterMove.intent, "the hero should be reporting its Move standing order")
+
+        lastApply = null
+        harness.send(commandCodec.encode(Stop(heroId))).getOrThrow()
+        assertTrue(await { lastApply == ApplyResult.Applied }, "the Stop command never reached the applier")
+        simulateAndBroadcastFrame()
+
+        val afterStop = assertIs<ActorSnapshot>(harness.receiveWorldState().single())
+        assertEquals("idle", afterStop.intent, "Stop should have cleared the hero's standing order")
     }
 }
