@@ -12,12 +12,38 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 
 ## [Unreleased]
 
+### Added
+- `Actor.intent` — a unit's current standing order (`Idle` by default), with `Actor.issue(Intent)`
+  and `Actor.clearIntent()`. Issuing a new intent always tears down the previous one first, so
+  orders are mutually exclusive by construction. GameTools ships `Idle`, `Move`, and (on
+  `Alive`) `AttackIntent`; a consumer adds its own the same way it adds a `ClientCommand`.
+  `GameEvent.IntentIssued` / `IntentCleared` report every change on the world bus.
+  `ActorSnapshot` gains a read-only `intent` string tag (`"idle"` / `"move"` / `"attack"`).
+  (#42)
+
 ### Changed
 - Bumped the `GeneralTools` dependency from `2.0.1` to `2.2.0`. Additive only (new
   `com.spartanlabs.geometry` primitives — `Segment`, `Ray`, `AxisAlignedBox`, `CenteredBox`,
   `Point` vector algebra, segment/box/ray intersection tests — plus a fix for
   `TwoDoubles.hashCode()` being inconsistent with `equals`, which affected `Point` /
   `Dimensions` / `Square` used as hash-based-collection keys). No breaking changes.
+- The six standard commands now apply by issuing the corresponding `Intent` rather than
+  poking `Actor`/`Alive` mechanisms directly. Observable behavior is the same for `MoveDir`,
+  `Follow`, `Attack`, and `StopAttack`. Two small, deliberate differences:
+  - `MoveTo` now always switches the actor to `Movement.Targeting`; previously it only
+    assigned `destination`, which was silently ignored on an actor in `Directional` or
+    `Homing` movement.
+  - `Stop` on a unit that is currently attacking now only cancels the attack (same as
+    `StopAttack`) and no longer additionally pins the actor to a freshly-snapped destination;
+    `Stop` on a unit that is moving is unchanged (still halts in place). A future `HoldPosition`
+    intent will offer the stronger "stay here and defend" stance this does not replace. (#42)
+- `Alive.world` is now declared on `Actor` (inherited by `Alive`, source-compatible) so any
+  `Actor` can publish through the world event bus, not only an `Alive`. (#42)
+
+### Fixed
+- Applying a movement command through `ClientCommand.applyTo` no longer needs a hard-coded
+  `cancelAttack()` call (the interim fix from #39) — it now falls out generally from issuing
+  any intent clearing the previous one. (#42)
 
 ## [5.1.0] — 2026-09-07
 
