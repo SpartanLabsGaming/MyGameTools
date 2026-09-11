@@ -159,17 +159,18 @@ class World(val seed: Long = Random.nextLong()) {
     //endregion
 
     /**
-     * Adds [gameObject] to [gameObjects] and numbers it (see [byId]); for an [Alive] it also
-     * sets [Alive.world] so a [Alive.DeathResponse.REMOVAL] death can reach [removeList].
-     * Adding straight to [gameObjects] still works, but then an [Alive] needs its [Alive.world]
-     * set by hand and the object is not resolvable through [byId] until the next [tick].
+     * Adds [gameObject] to [gameObjects] and numbers it (see [byId]); for an [Actor] it also
+     * sets [Actor.world] so a [Alive.DeathResponse.REMOVAL] death can reach [removeList] and an
+     * [Actor.issue] can publish on [events]. Adding straight to [gameObjects] still works, but
+     * then an [Actor] needs its [Actor.world] set by hand and the object is not resolvable
+     * through [byId] until the next [tick].
      *
      * @param gameObject the object to bring into the world
      */
     fun add(gameObject: GameObject) {
         gameObjects.add(gameObject)
         enrol(gameObject)
-        if (gameObject is Alive) gameObject.world = this
+        if (gameObject is Actor) gameObject.world = this
         announce(gameObject)
     }
 
