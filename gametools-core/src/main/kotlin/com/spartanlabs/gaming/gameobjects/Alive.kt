@@ -7,6 +7,7 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.Square
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.event.EventBus
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.simulation.RandomSource
 import com.spartanlabs.gaming.simulation.SeededRandom
@@ -70,12 +71,6 @@ open class Alive(
     )
     //endregion
     //region OWNERSHIP
-    /**
-     * The [World] this actor belongs to, or `null` when it is not in one. [World.add] sets it;
-     * a [DeathResponse.REMOVAL] death needs it so the actor can reach [World.removeList].
-     */
-    var world: World? = null
-
     /**
      * The side this actor belongs to, used to tell friend from foe. Defaults to
      * [DEFAULT_FACTION]; callers compare factions however their game needs.
@@ -436,6 +431,41 @@ open class Alive(
         const val DEFAULT_FACTION = "neutral"
     }
 }
+//region INTENT
+/**
+ * Standing order: attack [target] - closes to range, then swings until cleared.
+ *
+ * Self-clears through the event bus (Decision C), not a direct callback from [Alive]: [issue]
+ * subscribes to the actor's world bus and calls [Actor.clearIntent] the moment
+ * [GameEvent.AttackEnded] reports this attacker's target died or left the world.
+ * [Alive.endAttackIfTargetLost] needs no change for this - it already publishes that event with
+ * no knowledge of [Intent] at all.
+ *
+ * @property target the [Alive] to attack
+ */
+class AttackIntent(val target: Alive) : Intent() {
+    override val label = "attack"
+
+    /** The self-clear listener [issue] installs; cancelled by [clear] so it never outlives this order. */
+    private var subscription: EventBus.Subscription? = null
+
+    /** Starts the attack cycle via [Alive.issueAttack] and subscribes to self-clear on [GameEvent.AttackEnded]. */
+    override fun issue(actor: Actor) {
+        val alive = actor as? Alive ?: return
+        alive.issueAttack(target)
+        subscription = alive.world?.events?.subscribe { event ->
+            if (event is GameEvent.AttackEnded && event.attacker === alive) alive.clearIntent()
+        }
+    }
+
+    /** Cancels the self-clear subscription (if any) and calls off the attack via [Alive.cancelAttack]. */
+    override fun clear(actor: Actor) {
+        subscription?.cancel()
+        subscription = null
+        (actor as? Alive)?.cancelAttack()
+    }
+}
+//endregion
 //region SERIALIZATION
 /**
  * An immutable, serializable copy of an [Alive]'s state, layered on its [ActorSnapshot]: its
