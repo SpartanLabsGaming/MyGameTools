@@ -54,8 +54,10 @@ gametools-core         GameObject → VisibleObject → Actor, stats, buffs, cap
                        entity registry + EntityId, typed event bus, seeded RandomSource,
                        deterministic tick order, fixed-timestep SimulationLoop.
 gametools-world        Tiled map + terrain layers, static collision geometry, walkable
-                       regions, spawn points, zones/chunks, spatial index, physics
-                       (motion integration + collision detection & response), vision / LOS.
+                       regions, spawn points, zones/chunks, physics (motion integration +
+                       collision detection & response), vision / LOS. The spatial index
+                       (`SpatialIndex`, `Quadtree`, `UniformGrid`) stays in `gametools-core` -
+                       `World` needs it at compile time (docs/phase-1-map-and-space-plan.md §1.2).
 gametools-combat       Alive, projectiles, damage types + resistances, crit, threat table,
                        death → respawn lifecycle, kill-credit + XP/leveling hooks.
 gametools-ai           NavProvider (grid A* + flow fields), path following, aggro / target

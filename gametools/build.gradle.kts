@@ -27,15 +27,18 @@ val reexportedModuleSources: Configuration = configurations.create("reexportedMo
 dependencies {
     api(project(":gametools-core"))
     api(project(":gametools-net"))
+    api(project(":gametools-world"))
 
     //region issue #40 - documentation-artifact aggregation (see the region above / below)
     reexportedModuleSources(project(path = ":gametools-core", configuration = "sourcesElements"))
     reexportedModuleSources(project(path = ":gametools-net", configuration = "sourcesElements"))
+    reexportedModuleSources(project(path = ":gametools-world", configuration = "sourcesElements"))
 
     // Dokka v2 folds every module named here into this project's dokkaGeneratePublicationHtml
     // output - the same wiring the root aggregator uses.
     dokka(project(":gametools-core"))
     dokka(project(":gametools-net"))
+    dokka(project(":gametools-world"))
     //endregion
 }
 

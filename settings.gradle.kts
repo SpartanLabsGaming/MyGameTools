@@ -31,4 +31,4 @@ rootProject.name = "MyGameTools"
 
 includeBuild("build-logic")
 
-include("gametools-core", "gametools-net", "gametools")
+include("gametools-core", "gametools-net", "gametools-world", "gametools")

@@ -25,19 +25,20 @@ class per file. Tests are organised by the five-level hierarchy into
 
 ## Module layout
 
-Since `4.0.0` the library is a Gradle multi-module build, published as three Maven
-coordinates:
+Since `4.0.0` the library is a Gradle multi-module build. As of the `gametools-world`
+bootstrap (issue #48) it is published as four Maven coordinates:
 
 | Module | Coordinate | Contents | Depends on |
 | --- | --- | --- | --- |
 | `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
 | `gametools-net` | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` (`GameServer`, `MouseAction`) | `api(project(":gametools-core"))` |
-| `gametools` (umbrella) | `io.github.spartanlabsgaming:gametools` | no source — `api` re-export of both modules above | both |
+| `gametools-world` | `io.github.spartanlabsgaming:gametools-world` | Phase 1 map/zone/physics/vision systems (issues #46–#50); no public types yet | `api(project(":gametools-core"))` |
+| `gametools` (umbrella) | `io.github.spartanlabsgaming:gametools` | no source — `api` re-export of every module above | all three |
 
 Shared build configuration lives in the `build-logic/` included build as the
 `gametools.kotlin-library` / `gametools.published-library` convention plugins; a module build
 file is a `plugins {}` block plus its `coordinates(...)` and `pom {}`. New modules on the
-roadmap (`gametools-world`, `gametools-combat`, …) are added the same way.
+roadmap (`gametools-combat`, …) are added the same way.
 
 Every module has its own five-level test tree under `src/test/kotlin/com/spartanlabs/gaming/testing/<level>/`.
 The per-level Gradle tasks (`componentTest`, `integrationTest`, `deterministicTest`,

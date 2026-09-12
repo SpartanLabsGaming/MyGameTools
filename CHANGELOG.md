@@ -13,6 +13,12 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 ## [Unreleased]
 
 ### Added
+- `gametools-world` — a new module, bootstrapped empty as the home for the Phase 1 map, zone,
+  physics and vision systems (issues #46–#50); depends on `gametools-core`, re-exported by the
+  umbrella. `gametools-core` gains the two ports it implements against: `SpatialIndex<E>` (an
+  incrementally-maintainable alternative to rebuilding `Quadtree` every tick) and `Space` (the
+  bounded-playfield contract `World` will accept once the map model lands). Neither is wired
+  into `World` yet. (#48)
 - `Actor.intent` — a unit's current standing order (`Idle` by default), with `Actor.issue(Intent)`
   and `Actor.clearIntent()`. Issuing a new intent always tears down the previous one first, so
   orders are mutually exclusive by construction. GameTools ships `Idle`, `Move`, and (on
@@ -22,6 +28,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   (#42)
 
 ### Changed
+- `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
+  so other modules (starting with `gametools-world`) can declare and publish their own events
+  on a `World`'s bus. Source-compatible for any `when (event)` that is a statement or already
+  has an `else`; an exhaustive expression `when` with no `else` over `GameEvent` now needs one.
+  (#48)
 - Bumped the `GeneralTools` dependency from `2.0.1` to `2.2.0`. Additive only (new
   `com.spartanlabs.geometry` primitives — `Segment`, `Ray`, `AxisAlignedBox`, `CenteredBox`,
   `Point` vector algebra, segment/box/ray intersection tests — plus a fix for

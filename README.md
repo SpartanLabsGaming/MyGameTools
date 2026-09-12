@@ -119,14 +119,15 @@ classDiagram
 
 ### Modules
 
-The library is split across three published Maven coordinates. Depend on the umbrella for
+The library is split across published Maven coordinates. Depend on the umbrella for
 everything, or on `gametools-core` alone when you don't need the server.
 
 | Module | Coordinate | Contains | Depends on |
 |---|---|---|---|
-| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `Quadtree`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `Quadtree`, `SpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 | **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
-| **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports both modules via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net` |
+| **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — the map model, zones, physics and vision systems that implement `gametools-core`'s `Space` port; no public types yet | `gametools-core` |
+| **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports every module via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net`, `gametools-world` |
 
 ---
 

@@ -17,9 +17,13 @@ import com.spartanlabs.gaming.gameobjects.World
  * Events are delivered synchronously, on the thread that called [EventBus.publish] (which for
  * the built-in events is the thread running [World.tick]), in the order they were published.
  *
- * This is the Phase 0 set; combat, ability, and item events are added by later phases.
+ * This is the `gametools-core` set. `GameEvent` is deliberately **not** `sealed` - other
+ * modules publish their own events on the same bus the same way `ClientCommand` (in
+ * `gametools-net`) lets a game declare its own commands: implement this interface on an event
+ * type and [EventBus.publish] it. `gametools-world`'s zone and vision systems are the first
+ * such module.
  */
-sealed interface GameEvent {
+interface GameEvent {
 
     /**
      * A [GameObject] was taken into a [World] - either through [World.add], or found in
