@@ -18,6 +18,7 @@ plugins {
 dependencies {
     dokka(project(":gametools-core"))
     dokka(project(":gametools-net"))
+    dokka(project(":gametools-world"))
 }
 
 dokka {
