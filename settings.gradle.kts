@@ -12,7 +12,7 @@ pluginManagement {
         // subproject and Dokka can resolve `KotlinBasePlugin` (issue #40, Gradle #25616). All
         // three ids stay on one version, matching the `build-logic` marker deps.
         id("org.jetbrains.kotlin.jvm") version "2.2.0"
-        id("org.jetbrains.kotlin.plugin.serialization") version "2.2.0"
+        id("org.jetbrains.kotlin.plugin.serialization") version "2.4.20"
         id("org.jetbrains.dokka") version "2.2.0"
     }
 }
