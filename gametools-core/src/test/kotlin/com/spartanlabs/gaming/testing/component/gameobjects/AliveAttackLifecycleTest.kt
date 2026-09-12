@@ -7,7 +7,11 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.AttackIntent
+import com.spartanlabs.gaming.gameobjects.Idle
 import com.spartanlabs.gaming.gameobjects.ModularStat
+import com.spartanlabs.gaming.gameobjects.Move
+import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 
@@ -132,5 +136,36 @@ class AliveAttackLifecycleTest {
         loner.cancelAttack() // must not throw
 
         assertNull((loner.world))
+    }
+
+    @Test
+    fun `an AttackIntent self-clears back to Idle once its target's death fires AttackEnded`() {
+        val attacker = trackingAlive(0.0).apply { attackSpeed = ModularStat(100_000.0) }
+        val target = alive(20.0, maxHealth = 25.0) // within attackRange
+
+        attacker.issue(AttackIntent(target))
+        repeat(20) { world.tick() } // enough ticks to close, swing, and kill the target
+
+        assertFalse(target.isAlive)
+        assertSame(Idle, attacker.intent, "AttackIntent should self-clear once AttackEnded is delivered")
+        assertEquals(1, events<GameEvent.IntentCleared>().size, "exactly one IntentCleared, not one per tick")
+    }
+
+    @Test
+    fun `AttackIntent's clear cancels its self-clear subscription so a replaced order is unaffected`() {
+        val attacker = trackingAlive(0.0)
+        val target = alive(20.0, maxHealth = 25.0)
+        attacker.issue(AttackIntent(target))
+
+        // Replace the attack with a Move before the target dies - AttackIntent.clear should
+        // cancel the subscription it made in issue(), so the target's later death does nothing.
+        attacker.issue(Move(Movement.Targeting, destination = Point(5_000.0, 0.0)))
+        assertEquals(1, attacker.cancelledHookCalls, "clear() should have called off the attack")
+
+        target.health.current = 0.0
+        repeat(5) { world.tick() } // drives the target's death and any (stale) self-clear listener
+
+        assertEquals(1, attacker.cancelledHookCalls, "no double-clear from a stale listener")
+        assertTrue(attacker.intent is Move, "the Move order should be untouched by the former target's death")
     }
 }

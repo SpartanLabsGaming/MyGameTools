@@ -5,6 +5,7 @@ package com.spartanlabs.gaming.testing.nonfunctional
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
+import com.spartanlabs.gaming.gameobjects.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.World
@@ -63,6 +64,31 @@ class WorldTickThroughputTest {
             assertEquals(startXs[index] + 105 * 10.0, actor.location.x, absoluteTolerance = 1e-6)
         }
         assertTrue(elapsedMillis < 8_000, "100 ticks of a 5000-object world took ${elapsedMillis}ms")
+    }
+
+    @Test
+    fun `reissuing a Move intent on 10k drifting actors every tick stays within budget`() {
+        // The medium-scale target (docs/framework-vision-and-roadmap.md §1, decision 12):
+        // <=200 players, <=10k entities, 10-20Hz. Re-issuing a Move each tick exercises
+        // Intent.clear (on the previous order) and Intent.issue (on the new one) for every
+        // actor, on top of the plain per-tick movement cost the test above already budgets.
+        val world = driftingWorld(10_000)
+        val actors = world.gameObjects.filterIsInstance<Actor>()
+
+        fun reissueMoveOnEveryActor() = actors.forEach { it.issue(Move(Movement.Directional)) }
+
+        repeat(5) { reissueMoveOnEveryActor(); world.tick() } // warm up
+        val elapsedMillis = measureNanoTime {
+            repeat(100) {
+                reissueMoveOnEveryActor()
+                world.tick()
+            }
+        } / 1_000_000
+
+        assertTrue(
+            elapsedMillis < 20_000,
+            "100 ticks of a 10000-object world reissuing a Move intent every tick took ${elapsedMillis}ms"
+        )
     }
 
     @Test

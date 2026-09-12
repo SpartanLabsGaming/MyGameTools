@@ -54,6 +54,16 @@ class WorldEntityRegistryTest {
     }
 
     @Test
+    fun `add sets the world back-reference on any Actor, not only an Alive`() {
+        val world = World()
+        val a = actor()
+
+        world.add(a)
+
+        assertSame(world, a.world, "Actor.world is set for every Actor so Actor.issue can publish intent events")
+    }
+
+    @Test
     fun `ids are assigned from one in acquisition order`() {
         val world = World()
         val first = actor()

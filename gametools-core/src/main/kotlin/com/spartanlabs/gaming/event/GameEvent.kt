@@ -2,8 +2,10 @@ package com.spartanlabs.gaming.event
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.Alive
 import com.spartanlabs.gaming.gameobjects.GameObject
+import com.spartanlabs.gaming.gameobjects.Intent
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 
@@ -94,4 +96,21 @@ sealed interface GameEvent {
         val formerTarget: Alive?,
         val reason: Alive.AttackEndReason,
     ) : GameEvent
+
+    /**
+     * An [Actor] was given a new standing order via [Actor.issue].
+     *
+     * @property actor the actor the order was issued to
+     * @property intent the standing order it was given
+     */
+    data class IntentIssued(val actor: Actor, val intent: Intent) : GameEvent
+
+    /**
+     * An [Actor]'s standing order was cleared back to [com.spartanlabs.gaming.gameobjects.Idle]
+     * via [Actor.issue] / [Actor.clearIntent].
+     *
+     * @property actor the actor whose order was cleared
+     * @property previous the standing order that was active before it was cleared
+     */
+    data class IntentCleared(val actor: Actor, val previous: Intent) : GameEvent
 }

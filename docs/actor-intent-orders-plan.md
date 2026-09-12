@@ -12,6 +12,9 @@
   modified by this document. It exists to capture the concept, correct the Kotlin shape, and
   enumerate the decisions that must be closed before it can be planned for real (per the
   roadmap rule that a change of this size gets its own approved plan doc).
+- **Superseded by:** [`docs/issue-42-actor-intent-plan.md`](issue-42-actor-intent-plan.md) —
+  all ten open decisions below (A–J) are closed there; that document is the schedulable
+  implementation plan. This document is kept as the historical design-exploration record.
 - **Baseline:** GameTools `5.0.0` (heading to `5.1.0` with the #39 fix in PR #41), three
   modules (`gametools-core`, `gametools-net`, `gametools`). `Actor` and `Alive` both live in
   `gametools-core` today; the roadmap moves `Alive` to a new `gametools-combat` in Phase 2.
@@ -271,11 +274,11 @@ semi-linear merge, per `CONTRIBUTING.md`.
 | C | **Self-clearing transport.** Direct `Alive → intent` callback vs event-bus subscription for "attack ended, return to Idle". | Lean event bus (roadmap §2.2). Needs intents to optionally hold a bus handle. |
 | D | **Serialize `intent`?** Read-only tag on `ActorSnapshot`/`AliveSnapshot` now, full open `@Serializable` hierarchy in Phase 3, or not at all. | Lean: minimal read-only string tag now if cheap; full treatment in Phase 3. |
 | E | **Event bus.** `GameEvent.IntentIssued` / `IntentCleared`? | Lean yes — parity with the rest of the framework. |
-| F | **Name.** `Intent` vs `Order` vs `Directive`. | `Order` is the RTS term and avoids the "Intended Function" region-comment overload; `Intent` reads fine in code. Undecided. |
+| F | **Name.** `Intent` vs `Order` vs `Directive`. | **Decided: `Intent`.** |
 | G | **Order queue.** Single slot v1, `Deque<Intent>` later — confirm v1 is single-slot. | Lean single slot; queue is a source-compatible follow-on. |
 | H | **Capability suppression.** A suppressed intent (e.g. attack capability off via `Buff`) — held or cleared? | Lean held + frozen, matching today's attack behavior. |
 | I | **Roadmap slot.** Phase 2 (combat reshape), Phase 4 (AI/orders), or a dedicated mini-slice between them. | Lean: core `Intent` + `AttackIntent` into Phase 2; `AttackMove` / `Patrol` / `HoldPosition` into Phase 4. |
-| J | **`Stop` semantics.** Does `Stop` map to `Idle`, or to a distinct `Halt` intent that pins `destination`? | Lean `Halt` — `Idle` should mean "no order", `Stop` means "stop *here*". |
+| J | **`Stop` semantics.** Does `Stop` map to `Idle`, or to a distinct `Halt` intent that pins `destination`? | **Decided: `Stop` → `Idle`** (no order at all). The pin-destination behavior is **not** grafted onto `Stop` — it belongs to the already-anticipated `Hold` (`HoldPosition`) consumer intent in §1.2/§3, which `Halt`-like semantics describe. `Stop`/`Idle` and `Hold`/`Halt` are two distinct intents on two distinct commands; `Hold` ships with `AttackMove`/`Patrol` in Phase 4 (Decision I), not with the v1 six standard commands. |
 
 ---
 

@@ -4,7 +4,9 @@ package com.spartanlabs.gaming.networking.command
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
+import com.spartanlabs.gaming.gameobjects.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 //endregion
 
@@ -50,10 +52,12 @@ interface ClientCommand
 // --- Actor-capability commands: the operand must resolve to an Actor ---------------------
 
 /**
- * Send [actor] to the point `(`[x]`, `[y]`)` and stop there: assigns [Actor.destination],
- * which the default [Movement.Targeting] strategy walks the actor to and settles on.
+ * Send [actor] to the point `(`[x]`, `[y]`)` and stop there: applied through [applyTo], this
+ * issues a [Move] with [Movement.Targeting] and that destination, which the actor walks to and
+ * settles on.
  *
- * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive].
+ * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * previously under - so it calls off a pending attack when [actor] is an [Alive].
  *
  * @property actor the actor to move
  * @property x the destination's world x coordinate
@@ -64,11 +68,12 @@ interface ClientCommand
 data class MoveTo(val actor: EntityId, val x: Double, val y: Double) : ClientCommand
 
 /**
- * Send [actor] travelling in a straight line along [angleDegrees] forever: sets the actor's
- * facing and switches it to [Movement.Directional]. [Actor.destination] is ignored while this
- * strategy is active.
+ * Send [actor] travelling in a straight line along [angleDegrees] forever: applied through
+ * [applyTo], this sets the actor's facing and issues a [Move] with [Movement.Directional].
+ * [Actor.destination] is ignored while this strategy is active.
  *
- * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive].
+ * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * previously under - so it calls off a pending attack when [actor] is an [Alive].
  *
  * @property actor the actor to move
  * @property angleDegrees the heading in whole degrees counter-clockwise from the positive
@@ -79,12 +84,13 @@ data class MoveTo(val actor: EntityId, val x: Double, val y: Double) : ClientCom
 data class MoveDir(val actor: EntityId, val angleDegrees: Int) : ClientCommand
 
 /**
- * Have [actor] chase [target]: switches the actor to [Movement.Homing] on the object [target]
- * resolves to, so it re-points at the target's current position every tick.
+ * Have [actor] chase [target]: applied through [applyTo], this issues a [Move] with
+ * [Movement.Homing] on the object [target] resolves to, so it re-points at the target's
+ * current position every tick.
  *
- * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive]
- * and [target] resolves. To pursue while still attacking, send [Attack] - it closes on the
- * target on its own.
+ * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * previously under - so it calls off a pending attack when [actor] is an [Alive] and [target]
+ * resolves. To pursue while still attacking, send [Attack] - it closes on the target on its own.
  *
  * @property actor the actor that gives chase
  * @property target the object to home in on
@@ -94,12 +100,15 @@ data class MoveDir(val actor: EntityId, val angleDegrees: Int) : ClientCommand
 data class Follow(val actor: EntityId, val target: EntityId) : ClientCommand
 
 /**
- * Halt [actor]'s movement: clears any [Movement.Directional] / [Movement.Homing] strategy
- * back to [Movement.Targeting] and pins [Actor.destination] to the actor's current location.
+ * Cancel [actor]'s standing order: applied through [applyTo], this calls
+ * [com.spartanlabs.gaming.gameobjects.Actor.clearIntent].
  *
- * Applied through [applyTo] this also calls off a pending attack when [actor] is an [Alive] -
- * a manual movement order overrides an in-progress auto-attack. [StopAttack] is the inverse:
- * it calls off an attack without moving the actor.
+ * If [actor] was under a [Move], this halts it exactly as before: any
+ * [Movement.Directional] / [Movement.Homing] strategy is cleared back to [Movement.Targeting]
+ * and [Actor.destination] is pinned to the actor's current location ([Move]'s own `clear`). If
+ * [actor] was instead only attacking (an [Alive] under an [AttackIntent] with no active
+ * [Move]), this only calls off the attack - same as [StopAttack] - and does **not**
+ * additionally pin a destination.
  *
  * @property actor the actor to halt
  */
@@ -110,8 +119,8 @@ data class Stop(val actor: EntityId) : ClientCommand
 // --- Alive-capability commands: the operand must resolve to an Alive ---------------------
 
 /**
- * Order [attacker] to attack [target]: calls [Alive.issueAttack], which closes to attack
- * range and then swings on a loop until told otherwise.
+ * Order [attacker] to attack [target]: applied through [applyTo], this issues an [AttackIntent]
+ * naming [target], which closes to attack range and then swings on a loop until told otherwise.
  *
  * @property attacker the alive that attacks
  * @property target the alive to attack
@@ -121,8 +130,10 @@ data class Stop(val actor: EntityId) : ClientCommand
 data class Attack(val attacker: EntityId, val target: EntityId) : ClientCommand
 
 /**
- * Call off [alive]'s pending or in-progress attack: calls [Alive.cancelAttack]. The actor
- * keeps its current [Actor.destination] - send [Stop] as well to also halt it.
+ * Call off [alive]'s pending or in-progress attack: applied through [applyTo], this calls
+ * [com.spartanlabs.gaming.gameobjects.Actor.clearIntent], which - since the actor's only active
+ * order was the attack - cancels it via [AttackIntent.clear]. The actor keeps its current
+ * [Actor.destination] - send [Stop] as well to also halt it.
  *
  * @property alive the alive whose attack to cancel
  */

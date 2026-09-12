@@ -5,6 +5,7 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.serializations.PointSnapshot
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.spatial.Quadtree
 //endregion
 
@@ -31,6 +32,9 @@ import kotlin.math.sin
  * [angle], or home in on another [GameObject]. Whichever is chosen, the actor advances at
  * most [speed] units per tick. Assigning [destination] also re-aims [angle] at that point.
  *
+ * Alongside [movement] - the mechanism - [intent] tracks the standing order that mechanism is
+ * currently in service of: [Idle] by default, or whatever [issue] last installed.
+ *
  * @param location the actor's starting position; also its initial [destination].
  * @param dimensions the actor's size.
  */
@@ -38,6 +42,40 @@ open class Actor(
     location : Point = Point(),
     dimensions: Dimensions = Dimensions(),
 ):VisibleObject(location = location, dimensions = dimensions) {
+
+    /**
+     * The [World] this actor belongs to, or `null` when it is not in one. Promoted here from
+     * `Alive` so any [Actor] - not only an [Alive] - can publish [GameEvent.IntentIssued] /
+     * [GameEvent.IntentCleared] through [issue]. [World.add] sets it.
+     */
+    var world: World? = null
+
+    /** The actor's current standing order. [Idle] until [issue] is called. */
+    var intent: Intent = Idle
+        private set
+
+    /**
+     * Replaces [intent] with [next]: runs the outgoing intent's [Intent.clear], installs
+     * [next], then runs its [Intent.issue] - so orders are mutually exclusive by construction.
+     * Publishes [GameEvent.IntentCleared] when [next] is [Idle], otherwise
+     * [GameEvent.IntentIssued].
+     *
+     * @param next the standing order to install
+     */
+    fun issue(next: Intent) {
+        val previous = intent
+        previous.clear(this)
+        intent = next
+        next.issue(this)
+        log.debug("Actor intent changed from {} to {}", previous.label, next.label)
+        world?.events?.publish(
+            if (next === Idle) GameEvent.IntentCleared(this, previous)
+            else GameEvent.IntentIssued(this, next)
+        )
+    }
+
+    /** Returns this actor to [Idle] - the general form of "cancel whatever order is active." */
+    fun clearIntent() = issue(Idle)
 
     //region CAPABILITIES
     /** An actor adds [CoreCapability.MOVE] to whatever its supertypes provide. */
@@ -202,6 +240,8 @@ open class Actor(
  * @property speed the actor's effective movement rate ([Actor.speed]'s [ModularStat.value]) in
  *   units per tick at snapshot time
  * @property destination the point the actor was moving towards at snapshot time
+ * @property intent the [Actor.intent]'s [Intent.label] at snapshot time (`"idle"`, `"move"`, …) -
+ *   a minimal read-only tag; a fuller wire representation of [Intent] is deferred
  */
 @Serializable
 @SerialName("actor")
@@ -209,7 +249,8 @@ data class ActorSnapshot(
     override val id: EntityId = EntityId.UNASSIGNED,
     val visibleObject: VisibleObjectSnapshot,
     val speed: Double,
-    val destination: PointSnapshot) : DrawableSnapshot {
+    val destination: PointSnapshot,
+    val intent: String = Idle.label) : DrawableSnapshot {
 
     /** The actor's sub-object snapshots - the same list as [visibleObject]'s. */
     override val subObjects: List<DrawableSnapshot> get() = visibleObject.subObjects
@@ -220,7 +261,8 @@ data class ActorSnapshot(
             id = actor.entityId,
             visibleObject = VisibleObjectSnapshot.from(actor),
             speed = actor.speed.value,
-            destination = PointSnapshot.from(actor.destination)
+            destination = PointSnapshot.from(actor.destination),
+            intent = actor.intent.label
         )
     }
 }

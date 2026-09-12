@@ -8,7 +8,10 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
+import com.spartanlabs.gaming.gameobjects.Idle
+import com.spartanlabs.gaming.gameobjects.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.World
@@ -34,9 +37,10 @@ import kotlin.test.assertTrue
 //endregion
 
 /**
- * Covers [applyTo]: each standard command drives the mechanism it names, a movement command
- * additionally calls off a pending attack on an [Alive], and an operand that is missing, the
- * wrong kind, or a consumer command is reported rather than thrown.
+ * Covers [applyTo]: each standard command issues the [com.spartanlabs.gaming.gameobjects.Intent]
+ * it names, issuing a movement intent on an [Alive] that was attacking calls off that attack as
+ * a consequence (not a special case), and an operand that is missing, the wrong kind, or a
+ * consumer command is reported rather than thrown.
  */
 class StandardCommandApplierTest {
 
@@ -85,55 +89,98 @@ class StandardCommandApplierTest {
     }
 
     @Test
-    fun `Stop halts movement and calls off a pending attack`() {
+    fun `Stop clears intent to Idle and calls off a pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
-        aggressor.movement = Movement.Directional
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(ApplyResult.Applied, Stop(aggressor.entityId).applyTo(world))
 
-        assertEquals(Movement.Targeting, aggressor.movement)
-        assertTrue(aggressor.isAtDestination, "the actor's destination should be pinned to where it is")
-        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a movement order overrides an in-progress attack")
+        assertSame(Idle, aggressor.intent)
+        assertTrue(events.any { it is GameEvent.AttackCancelled }, "a standing order clears the previous one")
     }
 
     @Test
-    fun `MoveTo calls off the actor's pending attack`() {
+    fun `Stop on an actor whose intent is Move halts it in place`() {
+        val mover = actor()
+        mover.issue(Move(Movement.Directional))
+
+        assertEquals(ApplyResult.Applied, Stop(mover.entityId).applyTo(world))
+
+        assertSame(Idle, mover.intent)
+        assertEquals(Movement.Targeting, mover.movement)
+        assertTrue(mover.isAtDestination, "the actor's destination should be pinned to where it is")
+    }
+
+    @Test
+    fun `Stop on an Alive whose intent is AttackIntent only cancels the attack, leaving movement and destination alone`() {
+        val aggressor = alive().apply {
+            movement = Movement.Directional
+            destination = Point(999.0, 999.0)
+        }
+        val victim = alive(x = 10.0)
+        aggressor.issue(AttackIntent(victim))
+        events.clear()
+
+        assertEquals(ApplyResult.Applied, Stop(aggressor.entityId).applyTo(world))
+
+        assertSame(Idle, aggressor.intent)
+        assertEquals(Movement.Directional, aggressor.movement, "Stop while only attacking must not touch movement")
+        assertEquals(999.0, aggressor.destination.x, "Stop while only attacking must not pin a fresh destination")
+        assertTrue(events.any { it is GameEvent.AttackCancelled })
+    }
+
+    @Test
+    fun `MoveTo issues a Move intent and calls off the actor's pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(ApplyResult.Applied, MoveTo(aggressor.entityId, x = 40.0, y = 50.0).applyTo(world))
 
+        assertIs<Move>(aggressor.intent)
         assertEquals(40.0, aggressor.destination.x, "the move still applies")
         assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
     }
 
     @Test
-    fun `MoveDir calls off the actor's pending attack`() {
+    fun `MoveTo forces Movement Targeting even when the actor was previously Directional`() {
+        val mover = actor()
+        mover.issue(Move(Movement.Directional))
+
+        assertEquals(ApplyResult.Applied, MoveTo(mover.entityId, x = 40.0, y = 0.0).applyTo(world))
+
+        assertEquals(Movement.Targeting, mover.movement)
+        world.tick()
+        assertEquals(10.0, mover.location.x, absoluteTolerance = 1e-9, message = "MoveTo should now actually move it")
+    }
+
+    @Test
+    fun `MoveDir issues a Move intent and calls off the actor's pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(ApplyResult.Applied, MoveDir(aggressor.entityId, angleDegrees = 90).applyTo(world))
 
+        assertIs<Move>(aggressor.intent)
         assertEquals(Movement.Directional, aggressor.movement, "the move still applies")
         assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
     }
 
     @Test
-    fun `Follow calls off the actor's pending attack`() {
+    fun `Follow issues a Move intent and calls off the actor's pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(ApplyResult.Applied, Follow(aggressor.entityId, target = victim.entityId).applyTo(world))
 
+        assertIs<Move>(aggressor.intent)
         assertIs<Movement.Homing>(aggressor.movement)
         assertTrue(events.any { it is GameEvent.AttackCancelled }, "a manual move order overrides an auto-attack")
     }
@@ -151,7 +198,7 @@ class StandardCommandApplierTest {
     fun `a Follow whose target is gone leaves a pending attack running`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(
@@ -163,29 +210,33 @@ class StandardCommandApplierTest {
             events.any { it is GameEvent.AttackCancelled },
             "a command that could not be carried out has no side effect"
         )
+        assertIs<AttackIntent>(aggressor.intent, "the pending attack intent should be untouched")
     }
 
     @Test
-    fun `Attack issues an attack on the resolved target`() {
+    fun `Attack issues an AttackIntent naming the resolved target`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
 
         assertEquals(ApplyResult.Applied, Attack(aggressor.entityId, target = victim.entityId).applyTo(world))
 
+        val intent = assertIs<AttackIntent>(aggressor.intent)
+        assertSame(victim, intent.target)
         val issued = assertIs<GameEvent.AttackIssued>(events.single { it is GameEvent.AttackIssued })
         assertSame(aggressor, issued.attacker)
         assertSame(victim, issued.target)
     }
 
     @Test
-    fun `StopAttack cancels a pending attack`() {
+    fun `StopAttack clears intent to Idle and cancels a pending attack`() {
         val aggressor = alive()
         val victim = alive(x = 10.0)
-        aggressor.issueAttack(victim)
+        aggressor.issue(AttackIntent(victim))
         events.clear()
 
         assertEquals(ApplyResult.Applied, StopAttack(aggressor.entityId).applyTo(world))
 
+        assertSame(Idle, aggressor.intent)
         assertTrue(events.any { it is GameEvent.AttackCancelled })
     }
 
