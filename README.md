@@ -77,6 +77,13 @@ classDiagram
         +SpatialIndex spatialIndex
         +tick()
     }
+    class Space {
+        <<interface>>
+        +Square bounds
+        +contains(point) Boolean
+        +isWalkable(point) Boolean
+    }
+    class TiledMap
     class SpatialIndex~E~ {
         +insert(x, y, element)
         +move(fromX, fromY, toX, toY, element)
@@ -104,6 +111,8 @@ classDiagram
     Projectile <|-- DirectionalProjectile
     World "1" o-- "*" GameObject
     World "1" *-- "1" SpatialIndex
+    World "1" o-- "0..1" Space
+    TiledMap ..|> Space
     Quadtree ..|> SpatialIndex : (via QuadtreeSpatialIndex)
     Player "1" o-- "*" Alive
     GameServer ..> VisibleObject : broadcasts snapshots of
@@ -137,7 +146,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 |---|---|---|---|
 | **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 | **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
-| **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — the map model, zones, physics and vision systems that implement `gametools-core`'s `Space` port; no public types yet | `gametools-core` |
+| **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — `com.spartanlabs.gaming.world.map.*`: `TiledMap` (the `Space` implementation), `TerrainLayer`/`TerrainType`, `StaticGeometry`, `SpawnPoint`, and the `MapDefinition`/`MapLoader` JSON file format (#46); zones, physics and vision are still to come | `gametools-core` |
 | **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports every module via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net`, `gametools-world` |
 
 ---
@@ -163,6 +172,11 @@ everything, or on `gametools-core` alone when you don't need the server.
 
 ### 🗺️ Spatial Indexing
 - A generic **point-region `Quadtree<N, E>`** used as the broad phase for collision and homing lookups — rebuilt once per frame by `World.tick()` so every object's own tick sees a consistent index.
+
+### 🗺️ Map & Space
+- `com.spartanlabs.gaming.gameobjects.Space` — the bounded-playfield port a `World` optionally accepts (`World.space`, `null` by default): `bounds`, `contains(point)`, `isWalkable(point)`. Purely descriptive - `World.tick()` never consults it; a system that wants to enforce it (movement, physics, pathfinding) queries `space` itself.
+- `gametools-world`'s `TiledMap` is the standard `Space` implementation: a `terrain` grid (`TerrainLayer`/`TerrainType`, walkability + a movement cost and height/vision hook for later phases), `staticGeometry` AABB obstacles (`StaticGeometry`, over GeneralTools' `CenteredBox`), and named `SpawnPoint`s (`tileAt`, `terrainAt`, `spawnPoint(name)`, `addSpawnPoint`). The engine's world space is **y-down** throughout: the origin `(0, 0)` is a map's top-left corner and `y` grows downward.
+- `MapDefinition` is a pure, `@Serializable` JSON payload (flat, row-major tiles - the same shape as Tiled's own TMX layer format); `MapLoader.fromJson` / `fromDefinition` build a `TiledMap` from it, returning `Result` for malformed or structurally invalid input. `MapLoader` does no file IO - a caller reads the file/asset and hands the text (or a decoded `MapDefinition`) to it.
 
 ### 🌐 Networking
 - `GameServer`, built on Spartan Laboratories' `WebTools` `MultiConnectionUDPServer`: handles the `Iam <name>` handshake, replies with the bare token `REGISTERED`, and multiplexes every player's traffic - application data, broadcasts, and keepalives - over one shared socket (NAT-traversable end to end as of WebTools 2.0.0c), decodes `INPUT` datagrams into structured `MouseAction` events and `COMMAND` datagrams into typed `ClientCommand`s, routes everything else to your own callback, and enforces a configurable max player count. Callers are responsible for sending a bare `KA` token on that same socket roughly every 20s to keep their NAT mapping warm.

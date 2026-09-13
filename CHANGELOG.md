@@ -39,6 +39,16 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   original `Quadtree`-typed constructor kept as a source-compatible overload that wraps it in a
   `QuadtreeSpatialIndex`. Previously these three call sites only worked against a bare
   `Quadtree`, so a `World` using `UniformGrid` got no benefit through them. (#63)
+- `gametools-world` gains its first public types, `com.spartanlabs.gaming.world.map`'s bounded
+  tiled map model: `TiledMap` (the `Space` implementation - `bounds`, `contains`, `isWalkable`,
+  `tileAt`, `terrainAt`, `spawnPoint`, `addSpawnPoint`), `TerrainLayer` / `TerrainType` (a flat,
+  row-major terrain grid over a shared palette), `StaticGeometry` (AABB obstacles, over
+  GeneralTools' `CenteredBox`), and `SpawnPoint`. `MapDefinition` is a pure, `@Serializable` JSON
+  payload (flat, row-major tiles, mirroring Tiled's own TMX layer shape); `MapLoader.fromJson` /
+  `fromDefinition` build a `TiledMap` from it, returning `Result` for malformed or structurally
+  invalid input, with no file IO in the library. `gametools-core`'s `World` gains `space: Space?`
+  (`null` by default) so a `World` can be assigned a `TiledMap` - purely additive: `World.tick()`
+  does not consult it, so every existing `World` behaves exactly as before. (#46)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
