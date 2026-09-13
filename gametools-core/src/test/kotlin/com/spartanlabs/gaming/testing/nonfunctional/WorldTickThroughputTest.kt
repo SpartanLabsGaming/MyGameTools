@@ -111,6 +111,7 @@ class WorldTickThroughputTest {
     }
 
     @Test
+    @Suppress("DEPRECATION") // deliberately exercises the deprecated World.quadtree accessor
     fun `a heavy heterogeneous world ticks without error and keeps its quadtree consistent`() {
         val world = World().apply {
             repeat(3_000) { add(Actor(location = Point(random.nextDouble(-5e3, 5e3), random.nextDouble(-5e3, 5e3)))) }
