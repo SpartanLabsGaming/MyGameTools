@@ -26,6 +26,12 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   `GameEvent.IntentIssued` / `IntentCleared` report every change on the world bus.
   `ActorSnapshot` gains a read-only `intent` string tag (`"idle"` / `"move"` / `"attack"`).
   (#42)
+- `UniformGrid<E>` and `QuadtreeSpatialIndex<E>` — the two `SpatialIndex<E>` implementations
+  (#48). `World.spatialIndex` is now pluggable (defaults to `QuadtreeSpatialIndex`, matching
+  `5.1.0`'s exact query behaviour); `World.tick()` reconciles it incrementally instead of
+  rebuilding it from scratch every frame, and `World.reindexSpatial()` is available for a
+  caller that bulk-mutates positions outside of `tick()` or that just replaced `spatialIndex`.
+  `World.quadtree` is deprecated in favour of `spatialIndex` but keeps working. (#48)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
@@ -50,11 +56,26 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
     intent will offer the stronger "stay here and defend" stance this does not replace. (#42)
 - `Alive.world` is now declared on `Actor` (inherited by `Alive`, source-compatible) so any
   `Actor` can publish through the world event bus, not only an `Alive`. (#42)
+- `Quadtree`'s KDoc now describes its `+y`-as-north field naming as an internal labelling
+  convention, not a claim about the engine's own coordinate system (the engine is y-down).
+  No behavioural change. (#48)
+
+### Deprecated
+- `World.quadtree` — use `World.spatialIndex` instead; see the `Added` entry above. (#48)
 
 ### Fixed
 - Applying a movement command through `ClientCommand.applyTo` no longer needs a hard-coded
   `cancelAttack()` call (the interim fix from #39) — it now falls out generally from issuing
   any intent clearing the previous one. (#42)
+- **`Quadtree.insert` no longer silently mis-positions an element reinserted after a
+  `remove`.** Reusing a removed node's dead slot for a different element without updating
+  the slot's stored coordinates meant `retrieveBox` could keep returning that element at its
+  *old* position — most visibly, a `QuadtreeSpatialIndex.move` (`World`'s incremental
+  spatial-index reconcile, added above) would very often leave the moved object indexed
+  where it used to be, not where it moved to. `insert` now always creates a fresh node at
+  the position given; a removed node persists only as a routing waypoint until the tree is
+  next `clear()`ed. Behavioral fix, not a signature change; no caller could correctly have
+  depended on the old, buggy positioning. (#48)
 
 ## [5.1.0] — 2026-09-07
 
