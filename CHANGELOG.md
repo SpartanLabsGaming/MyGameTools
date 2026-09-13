@@ -32,6 +32,13 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   rebuilding it from scratch every frame, and `World.reindexSpatial()` is available for a
   caller that bulk-mutates positions outside of `tick()` or that just replaced `spatialIndex`.
   `World.quadtree` is deprecated in favour of `spatialIndex` but keeps working. (#48)
+- `Actor.nearby(SpatialIndex<VisibleObject>, Double)` — a pluggable-index overload alongside
+  the existing `Quadtree`-typed one, so a broad-phase query benefits from whichever
+  `SpatialIndex` a `World` is actually using. `DirectionalProjectile` and `HomingProjectile`
+  gain a matching primary constructor typed to `SpatialIndex<VisibleObject>`, with their
+  original `Quadtree`-typed constructor kept as a source-compatible overload that wraps it in a
+  `QuadtreeSpatialIndex`. Previously these three call sites only worked against a bare
+  `Quadtree`, so a `World` using `UniformGrid` got no benefit through them. (#63)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,

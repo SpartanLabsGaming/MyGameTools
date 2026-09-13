@@ -11,6 +11,7 @@ import com.spartanlabs.gaming.gameobjects.DirectionalProjectile
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.spatial.Quadtree
+import com.spartanlabs.gaming.spatial.UniformGrid
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -99,6 +100,29 @@ class DirectionalProjectileTest {
         repeat(5) { index(a); shot.tick() }
 
         assertEquals(100.0, a.health.current)
+    }
+
+    @Test
+    fun `it damages an alive when constructed against a SpatialIndex instead of a bare Quadtree`() {
+        val grid = UniformGrid<VisibleObject>(cellSize = 10.0)
+        val a = alive(25.0, 0.0, size = 20.0, maxHealth = 100.0)
+        val shot = DirectionalProjectile(
+            location = Point(0.0, 0.0),
+            dimensions = Dimensions(width = 4.0, height = 4.0),
+            damage = 30.0,
+            directionAngle = 0,
+            maxDuration = 5,
+            index = grid,
+            searchRadius = 15.0
+        )
+
+        repeat(5) {
+            grid.clear()
+            grid.insert(a.location.x, a.location.y, a)
+            shot.tick()
+        }
+
+        assertEquals(70.0, a.health.current, absoluteTolerance = 1e-9)
     }
 
     @Test
