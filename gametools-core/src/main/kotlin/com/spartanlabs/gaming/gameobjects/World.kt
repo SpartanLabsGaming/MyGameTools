@@ -20,8 +20,9 @@ import kotlin.random.Random
 /**
  * A container for everything the game is simulating: a flat list of [gameObjects], a
  * [spatialIndex] over the [VisibleObject]s among them, an [EntityId] index ([byId])
- * over every object it owns, an [events] bus that reports what happens each tick, and a
- * seeded [rng] source that makes those ticks reproducible.
+ * over every object it owns, an [events] bus that reports what happens each tick, a
+ * seeded [rng] source that makes those ticks reproducible, and an optional [space]
+ * describing the bounded playfield it simulates in.
  *
  * [World] does not run itself - an external game loop calls [tick] once per frame.
  *
@@ -109,6 +110,17 @@ class World(val seed: Long = Random.nextLong()) {
      * wiring into the code that does it.
      */
     val events: EventBus = EventBus()
+
+    /**
+     * The bounded playfield this world simulates in, or `null` for the pre-Phase-1 unbounded
+     * plane (every coordinate in bounds and walkable). Purely descriptive here: [tick] does not
+     * consult [space] - no existing [add]/[tick] behaviour changes when this is set. A
+     * `gametools-world` `TiledMap` is the standard implementation; a system that wants to
+     * enforce bounds or walkability (movement, physics, pathfinding) queries [space] itself.
+     * `null` by default, so an existing [World] behaves exactly as it did before this property
+     * existed.
+     */
+    var space: Space? = null
 
     //region ENTITY IDENTITY
     /** The last [EntityId.raw] handed out; the next object this world numbers gets `nextRawId + 1`. */
