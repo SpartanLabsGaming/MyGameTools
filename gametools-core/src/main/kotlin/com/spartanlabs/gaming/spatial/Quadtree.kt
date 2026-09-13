@@ -4,10 +4,21 @@ package com.spartanlabs.gaming.spatial
  * A point-region quadtree that indexes elements by a 2D key for fast rectangular-range
  * queries.
  *
- * Each node stores one ([x], [y]) point with its element and splits the rest of the plane
- * into four quadrants about that point - north being the `+y` direction, matching the rest
- * of the engine. The tree is unbalanced: insertion order determines its shape. It is not
- * thread-safe; a typical game rebuilds it once per frame with [clear] followed by [insert].
+ * Each node stores one ([x], [y]) point with its element and splits the rest of the plane into
+ * four quadrants about that point, named as if `+y` were north - a labelling convention
+ * internal to the tree's own logic, independent of the caller's coordinate convention (the
+ * engine's own world space is y-down: `-y` is up). The tree only ever compares magnitudes, so
+ * the two conventions never need to agree. The tree is unbalanced: insertion order determines
+ * its shape. It is not thread-safe; a typical game rebuilds it once per frame with [clear]
+ * followed by [insert].
+ *
+ * A node whose element is [remove]d is never reclaimed - it persists as a permanent
+ * routing waypoint until the whole tree is discarded by [clear], so a tree that lives across
+ * many [remove]/[insert] cycles (e.g. one backing an incrementally-reconciled index) can
+ * accumulate dead nodes and grow in node count - and potentially depth - over its lifetime.
+ * A caller that needs to bound this should periodically discard and rebuild the tree
+ * (`clear()` followed by re-`insert()`-ing every live element) rather than rely on any
+ * automatic compaction, which this class does not perform.
  *
  * Ported from the original `com.DotA3.main.Quadtree`.
  *
@@ -26,8 +37,11 @@ class Quadtree<N : Comparable<N>, E> {
     }
 
     /**
-     * Inserts [element] at ([x], [y]). If a node already on the path to that point has had
-     * its element removed, that empty slot is reused instead of a new node being created.
+     * Inserts [element] at ([x], [y]), always creating a fresh node at that position. A node
+     * on the path whose element has been [remove]d is never reused for this new element -
+     * it survives purely as a routing waypoint, since its own ([x], [y]) is fixed at
+     * construction and reusing it for an unrelated point would desynchronize it from the
+     * tree-structural invariant [retrieveBox]'s descent depends on.
      */
     fun insert(x: N, y: N, element: E) {
         root = insert(root, x, y, element)
@@ -35,11 +49,6 @@ class Quadtree<N : Comparable<N>, E> {
 
     private fun insert(node: Node?, x: N, y: N, element: E): Node {
         if (node == null) return Node(x, y, element)
-
-        if (node.element == null) {
-            node.element = element
-            return node
-        }
 
         val lessX = x < node.x
         val lessY = y < node.y
@@ -76,7 +85,9 @@ class Quadtree<N : Comparable<N>, E> {
 
     /**
      * Clears the first node holding [element] (by identity) on the path to ([x], [y]),
-     * leaving the node in place as an empty slot for reuse.
+     * leaving the node in place as a permanent routing waypoint - it is never reused for a
+     * different element ([insert]'s contract), only reclaimed as part of the whole tree when
+     * [clear] is called.
      */
     fun remove(x: N, y: N, element: E) {
         remove(root, x, y, element)

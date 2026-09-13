@@ -53,13 +53,17 @@ class QuadtreeTest {
     }
 
     @Test
-    fun `a removed slot is reused by the next insert at that node`() {
+    fun `insert after remove indexes the new element at its own position, not the dead slot's`() {
         val tree = populated()
-        tree.remove(0, 0, "origin")
+        tree.remove(0, 0, "origin") // the root node's element is cleared, but its (x, y) stays (0, 0)
 
-        tree.insert(5, 5, "reused") // root node is empty, so this lands there
+        tree.insert(5, 5, "reused") // must create a fresh node at (5, 5), not reuse the dead root node
 
-        assertTrue("reused" in tree.retrieveBox(-11, -11, 11, 11))
+        // found via a box that only matches its actual (5, 5) position
+        assertTrue("reused" in tree.retrieveBox(4, 4, 6, 6))
+        // not found via a box that only matches the dead slot's old (0, 0) position - the bug this
+        // regression test locks in would have stored "reused" there instead
+        assertTrue("reused" !in tree.retrieveBox(-1, -1, 0, 0))
     }
 
     @Test

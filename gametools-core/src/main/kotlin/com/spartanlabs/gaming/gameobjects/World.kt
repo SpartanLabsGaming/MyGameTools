@@ -7,6 +7,8 @@ import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.simulation.RandomSource
 import com.spartanlabs.gaming.simulation.SeededRandom
 import com.spartanlabs.gaming.spatial.Quadtree
+import com.spartanlabs.gaming.spatial.QuadtreeSpatialIndex
+import com.spartanlabs.gaming.spatial.SpatialIndex
 //endregion
 
 //region 3. Utility / Catch-all
@@ -17,7 +19,7 @@ import kotlin.random.Random
 
 /**
  * A container for everything the game is simulating: a flat list of [gameObjects], a
- * [quadtree] spatial index over the [VisibleObject]s among them, an [EntityId] index ([byId])
+ * [spatialIndex] over the [VisibleObject]s among them, an [EntityId] index ([byId])
  * over every object it owns, an [events] bus that reports what happens each tick, and a
  * seeded [rng] source that makes those ticks reproducible.
  *
@@ -25,7 +27,8 @@ import kotlin.random.Random
  *
  * ### What one [tick] does, in order
  * 1. [tickCount] is incremented.
- * 2. [quadtree] is rebuilt from the current positions of the owned [VisibleObject]s.
+ * 2. [spatialIndex] is reconciled against the current positions of the owned [VisibleObject]s -
+ *    moved objects are relocated, new ones inserted, unchanged ones untouched.
  * 3. [byId] is rebuilt from [gameObjects]; [GameEvent.EntitySpawned] fires for any object seen
  *    for the first time, in [gameObjects] order.
  * 4. every owned object is [GameObject.tick]ed, in [gameObjects] insertion order, over a
@@ -70,11 +73,34 @@ class World(val seed: Long = Random.nextLong()) {
     val removeList: ArrayList<GameObject> = ArrayList()
 
     /**
-     * Spatial index of the [VisibleObject]s in [gameObjects], keyed by world position and
-     * rebuilt from scratch at the start of every [tick]. Between ticks it reflects the
-     * positions the objects held when the last tick began.
+     * The broad-phase index over this world's [VisibleObject]s, reconciled incrementally at the
+     * start of every [tick] (see [reconcileSpatialIndex]) rather than rebuilt from scratch.
+     * Defaults to a [QuadtreeSpatialIndex], matching `5.1.0`'s query semantics exactly; assign a
+     * [UniformGrid][com.spartanlabs.gaming.spatial.UniformGrid] for a roughly uniform-density
+     * field instead. After replacing this mid-game, call [reindexSpatial] once so the new
+     * (empty) index is populated and every object's incremental-reconcile marker is reset
+     * against it.
      */
-    val quadtree: Quadtree<Double, VisibleObject> = Quadtree()
+    var spatialIndex: SpatialIndex<VisibleObject> = QuadtreeSpatialIndex()
+
+    /**
+     * The pre-`5.2.0` [Quadtree] view of [spatialIndex]: the live tree itself when
+     * [spatialIndex] is a [QuadtreeSpatialIndex] (the default - no copying), or a freshly built
+     * snapshot from [gameObjects] otherwise (an `O(n)` rebuild on every access - a
+     * [UniformGrid][com.spartanlabs.gaming.spatial.UniformGrid]-backed world still using this
+     * accessor, [Actor.nearby], or a [Quadtree]-typed [DirectionalProjectile] /
+     * [HomingProjectile] pays that cost; migrate to [spatialIndex] directly to avoid it).
+     */
+    @Deprecated(
+        "Use spatialIndex; Quadtree is one SpatialIndex implementation among several now.",
+        ReplaceWith("spatialIndex")
+    )
+    val quadtree: Quadtree<Double, VisibleObject>
+        get() = (spatialIndex as? QuadtreeSpatialIndex<VisibleObject>)?.tree
+            ?: Quadtree<Double, VisibleObject>().apply {
+                gameObjects.filterIsInstance<VisibleObject>()
+                    .forEach { insert(it.location.x, it.location.y, it) }
+            }
 
     /**
      * The bus this world publishes [GameEvent]s on: [GameEvent.EntitySpawned] /
@@ -179,7 +205,7 @@ class World(val seed: Long = Random.nextLong()) {
      */
     fun tick() {
         tickCount++
-        rebuildQuadtree()
+        reconcileSpatialIndex()
         reindexEntities()
 
         val ticking = gameObjects.toList()
@@ -191,6 +217,13 @@ class World(val seed: Long = Random.nextLong()) {
             val removed = removeList.toList().distinct()
             gameObjects.removeAll(removed.toSet())
             removed.forEach { gone ->
+                // gone may have moved during its own tick (step 4) after already being
+                // reconciled this tick (step 2), so the index still holds it at the
+                // step-2 position, not its current location.
+                if (gone is VisibleObject) {
+                    gone.lastIndexedLocation?.let { spatialIndex.remove(it.x, it.y, gone) }
+                    gone.lastIndexedLocation = null
+                }
                 byId.remove(gone.entityId)
                 announced.remove(gone.entityId)
                 events.publish(GameEvent.EntityRemoved(gone))
@@ -199,11 +232,42 @@ class World(val seed: Long = Random.nextLong()) {
         }
     }
 
-    /** Clears [quadtree] and re-inserts every [VisibleObject] in [gameObjects] at its current position. */
-    private fun rebuildQuadtree() {
-        quadtree.clear()
-        val visible = gameObjects.filterIsInstance<VisibleObject>()
-        visible.forEach { quadtree.insert(it.location.x, it.location.y, it) }
-        log.debug("World rebuilt its quadtree from {} visible object(s)", visible.size)
+    /**
+     * Reconciles [spatialIndex] against the positions the owned [VisibleObject]s hold right now
+     * - a first-seen object is [SpatialIndex.insert]ed, a moved one is [SpatialIndex.move]d, and
+     * an unchanged one costs nothing. Replaces the pre-`5.2.0` clear-and-reinsert-everything
+     * `rebuildQuadtree` this method used to be.
+     *
+     * `internal` rather than `private` solely so a same-module nonfunctional benchmark
+     * (`SpatialIndexScalabilityTest`) can call it directly, isolated from the rest of [tick]'s
+     * work, for a true reconcile-vs-rebuild comparison against [reindexSpatial]. Not part of the
+     * public API.
+     */
+    internal fun reconcileSpatialIndex() {
+        gameObjects.forEach { obj ->
+            if (obj !is VisibleObject) return@forEach
+            val last = obj.lastIndexedLocation
+            val x = obj.location.x
+            val y = obj.location.y
+            when {
+                last == null -> spatialIndex.insert(x, y, obj)
+                last.x != x || last.y != y -> spatialIndex.move(last.x, last.y, x, y, obj)
+            }
+            obj.lastIndexedLocation = IndexedPosition(x, y)
+        }
+    }
+
+    /**
+     * Clears [spatialIndex] and re-inserts every [VisibleObject] in [gameObjects] at its current
+     * position, resetting each one's incremental-reconcile marker to match. [tick] no longer
+     * does this every frame; call it after bulk-mutating positions outside of [tick], or right
+     * after assigning a new [spatialIndex].
+     */
+    fun reindexSpatial() {
+        spatialIndex.clear()
+        gameObjects.filterIsInstance<VisibleObject>().forEach { obj ->
+            spatialIndex.insert(obj.location.x, obj.location.y, obj)
+            obj.lastIndexedLocation = IndexedPosition(obj.location.x, obj.location.y)
+        }
     }
 }

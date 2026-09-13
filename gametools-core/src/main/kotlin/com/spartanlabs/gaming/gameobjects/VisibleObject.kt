@@ -103,6 +103,14 @@ open class VisibleObject(
     val subObjects: MutableList<VisibleObject> = mutableListOf()
 
     /**
+     * Where [World]'s spatial index last indexed this object, or `null` if it has never been
+     * indexed - a value snapshot, not a reference to [location] (which is mutated in place;
+     * aliasing it here would make every object look permanently unmoved). Internal: a
+     * [World]-maintained bookkeeping field, not part of the public API.
+     */
+    internal var lastIndexedLocation: IndexedPosition? = null
+
+    /**
      * `true` when this object's axis-aligned bounds overlap [other]'s.
      *
      * Each box is taken to be centred on its [location] with its [dimensions], so the two
@@ -115,6 +123,13 @@ open class VisibleObject(
         abs(location.x - other.location.x) <= (dimensions.width + other.dimensions.width) / 2.0 &&
             abs(location.y - other.location.y) <= (dimensions.height + other.dimensions.height) / 2.0
 }
+
+/**
+ * A value snapshot of the world position [World]'s spatial index last indexed a [VisibleObject]
+ * at, compared by value rather than by [com.spartanlabs.geometry.Point] reference - see
+ * [VisibleObject.lastIndexedLocation]. Internal: not part of the public API.
+ */
+internal data class IndexedPosition(val x: Double, val y: Double)
 
 /**
  * An immutable, serializable copy of a [Color]'s channels.

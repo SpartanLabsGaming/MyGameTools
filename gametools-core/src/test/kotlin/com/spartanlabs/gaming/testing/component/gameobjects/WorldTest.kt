@@ -18,7 +18,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 //endregion
 
-/** Covers [World] rebuilding its quadtree from, and then ticking, its owned [GameObject]s. */
+/** Covers [World] reconciling its spatial index from, and then ticking, its owned [GameObject]s. */
+@Suppress("DEPRECATION") // deliberately exercises the deprecated World.quadtree accessor
 class WorldTest {
 
     /** A non-visible [GameObject] that records how many times it has been ticked. */
@@ -74,7 +75,7 @@ class WorldTest {
     }
 
     @Test
-    fun `the quadtree is rebuilt from the positions held at the start of the tick`() {
+    fun `a moved object is found at its post-tick position, not its pre-tick one`() {
         val world = World()
         val actor = directionalActor(0.0, 0.0)
         world.gameObjects += actor
