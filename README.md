@@ -74,8 +74,15 @@ classDiagram
     }
     class World {
         +List~GameObject~ gameObjects
-        +Quadtree quadtree
+        +SpatialIndex spatialIndex
         +tick()
+    }
+    class SpatialIndex~E~ {
+        +insert(x, y, element)
+        +move(fromX, fromY, toX, toY, element)
+        +queryBox(...)
+        +queryRadius(...)
+        +clear()
     }
     class Quadtree~N,E~ {
         +insert(x, y, element)
@@ -96,7 +103,8 @@ classDiagram
     Projectile <|-- HomingProjectile
     Projectile <|-- DirectionalProjectile
     World "1" o-- "*" GameObject
-    World "1" *-- "1" Quadtree
+    World "1" *-- "1" SpatialIndex
+    Quadtree ..|> SpatialIndex : (via QuadtreeSpatialIndex)
     Player "1" o-- "*" Alive
     GameServer ..> VisibleObject : broadcasts snapshots of
 ```
@@ -111,10 +119,13 @@ classDiagram
 | `Alive` | open | Adds combat: health, damage, attack timing/range/speed, evasion, faction, and `Player` ownership |
 | `Projectile` / `HomingProjectile` / `DirectionalProjectile` | open/final | Travel-and-hit entities: home in on one target, or pierce in a straight line |
 | `Player` | final | Owns a roster of `Alive` actors and tracks which are still living |
-| `World` | final | Owns every `GameObject`, rebuilds the `Quadtree` and the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
+| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
 | `EventBus` | final | Synchronous, single-threaded `GameEvent` publish/subscribe, delivered in order with per-listener fault isolation |
 | `SimulationLoop` | final | Opt-in fixed-timestep driver for a `World` — a daemon thread calling `tick()` at a live-tunable rate; nothing depends on it |
+| `SpatialIndex<E>` | interface | Broad-phase index over positioned elements, maintained incrementally as elements move, join, or leave |
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
+| `UniformGrid<E>` | generic | `SpatialIndex` backed by a uniform grid of fixed-size cells — `O(1)` amortised update, suited to a roughly uniform-density field |
+| `QuadtreeSpatialIndex<E>` | generic | `SpatialIndex` wrapping a `Quadtree` — `World`'s default, reproducing its exact query semantics |
 | `GameServer` | final | UDP transport: handshakes, a single shared multiplexed socket, input decoding, JSON broadcast |
 
 ### Modules
@@ -124,7 +135,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 
 | Module | Coordinate | Contains | Depends on |
 |---|---|---|---|
-| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `Quadtree`, `SpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 | **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
 | **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — the map model, zones, physics and vision systems that implement `gametools-core`'s `Space` port; no public types yet | `gametools-core` |
 | **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports every module via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net`, `gametools-world` |
