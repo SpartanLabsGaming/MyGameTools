@@ -32,7 +32,7 @@ bootstrap (issue #48) it is published as four Maven coordinates:
 | --- | --- | --- | --- |
 | `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
 | `gametools-net` | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` (`GameServer`, `MouseAction`) | `api(project(":gametools-core"))` |
-| `gametools-world` | `io.github.spartanlabsgaming:gametools-world` | Phase 1 map/zone/physics/vision systems (issues #46–#50); no public types yet | `api(project(":gametools-core"))` |
+| `gametools-world` | `io.github.spartanlabsgaming:gametools-world` | Phase 1 map/zone/physics/vision systems (issues #46–#50); `com.spartanlabs.gaming.world.map.*` — `TiledMap`, `TerrainLayer`, `TerrainType`, `StaticGeometry`, `SpawnPoint`, `MapDefinition`, `MapLoader` (#46) | `api(project(":gametools-core"))` |
 | `gametools` (umbrella) | `io.github.spartanlabsgaming:gametools` | no source — `api` re-export of every module above | all three |
 
 Shared build configuration lives in the `build-logic/` included build as the
