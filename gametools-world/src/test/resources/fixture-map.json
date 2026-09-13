@@ -1,0 +1,17 @@
+{
+  "widthTiles": 4,
+  "heightTiles": 3,
+  "tileSize": 10.0,
+  "tiles": [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  "terrainPalette": [
+    { "walkable": true, "movementCost": 1.0, "heightLevel": 0, "blocksVision": false },
+    { "walkable": false, "movementCost": 1.0, "heightLevel": 0, "blocksVision": true }
+  ],
+  "obstacles": [
+    { "center": { "x": 25.0, "y": 5.0 }, "halfExtents": { "width": 3.0, "height": 3.0 } }
+  ],
+  "spawnPoints": [
+    { "name": "red-spawn", "position": { "x": 5.0, "y": 5.0 }, "facing": 0, "team": "red" },
+    { "name": "blue-spawn", "position": { "x": 15.0, "y": 25.0 }, "facing": 180, "team": "blue" }
+  ]
+}
