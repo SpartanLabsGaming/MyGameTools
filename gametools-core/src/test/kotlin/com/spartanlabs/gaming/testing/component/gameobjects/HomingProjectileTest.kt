@@ -11,6 +11,7 @@ import com.spartanlabs.gaming.gameobjects.HomingProjectile
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.spatial.Quadtree
+import com.spartanlabs.gaming.spatial.UniformGrid
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -89,6 +90,28 @@ class HomingProjectileTest {
         repeat(10) { index(target); shot.tick() }
 
         assertEquals(60.0, target.health.current, absoluteTolerance = 1e-9)
+        assertFalse(shot.active)
+    }
+
+    @Test
+    fun `it hits its target when constructed against a SpatialIndex instead of a bare Quadtree`() {
+        val target = alive(30.0, 0.0, size = 20.0)
+        val grid = UniformGrid<VisibleObject>(cellSize = 10.0)
+        val shot = HomingProjectile(
+            location = Point(0.0, 0.0),
+            dimensions = Dimensions(width = 4.0, height = 4.0),
+            damage = 30.0,
+            target = target,
+            index = grid
+        )
+
+        repeat(2) {
+            grid.clear()
+            grid.insert(target.location.x, target.location.y, target)
+            shot.tick()
+        } // reach = (4+20)/2 = 12; collides at (20,0)
+
+        assertEquals(70.0, target.health.current, absoluteTolerance = 1e-9)
         assertFalse(shot.active)
     }
 }

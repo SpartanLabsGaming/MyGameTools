@@ -7,6 +7,7 @@ import com.spartanlabs.geometry.serializations.PointSnapshot
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.spatial.Quadtree
+import com.spartanlabs.gaming.spatial.SpatialIndex
 //endregion
 
 //region 2. Intended Function
@@ -225,6 +226,24 @@ open class Actor(
      */
     fun nearby(quadtree: Quadtree<Double, VisibleObject>, range: Double): List<VisibleObject> =
         quadtree.retrieveBox(
+            location.x - range, location.y - range,
+            location.x + range, location.y + range
+        )
+
+    /**
+     * The objects indexed in [index] whose position is within [range] of this actor's
+     * [location] on both axes - a square broad-phase window, this actor included when it is
+     * itself in the index. The pluggable-[SpatialIndex] counterpart of the [Quadtree]-typed
+     * overload above - use this one against [World.spatialIndex] so the query benefits from
+     * whichever [SpatialIndex] implementation the world is actually using (a [Quadtree]-backed
+     * [com.spartanlabs.gaming.spatial.QuadtreeSpatialIndex] or a
+     * [com.spartanlabs.gaming.spatial.UniformGrid]).
+     *
+     * @param index the spatial index to query; the caller is responsible for keeping it current
+     * @param range half the width and height of the window centred on [location]
+     */
+    fun nearby(index: SpatialIndex<VisibleObject>, range: Double): List<VisibleObject> =
+        index.queryBox(
             location.x - range, location.y - range,
             location.x + range, location.y + range
         )
