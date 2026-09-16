@@ -49,6 +49,14 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   invalid input, with no file IO in the library. `gametools-core`'s `World` gains `space: Space?`
   (`null` by default) so a `World` can be assigned a `TiledMap` - purely additive: `World.tick()`
   does not consult it, so every existing `World` behaves exactly as before. (#46)
+- `com.spartanlabs.gaming.world.zone` — a static, uniform-grid map partition: `Zone` (a named,
+  bounded cell), `ZoneGrid` (partitions any `Space`'s bounds into `columns × rows` zones,
+  `zoneAt(Point, clamped)`), and `ZoneIndex` (entity↔zone bookkeeping, `refresh(World)` once
+  per frame, `zoneOf`/`entitiesIn`). A zone transition — entering, crossing, or leaving —
+  publishes `EntityChangedZone` on `World.events`. Nothing in `World`/`core` changes;
+  `ZoneIndex` is an external consumer of `World`, called explicitly (a `SimulationLoop.onTick`
+  hook is a natural place). The seam Phase 3 interest filtering and Phase 5 zone save/load
+  build on — nothing consumes it yet. (#47)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
