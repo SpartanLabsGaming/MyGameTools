@@ -13,6 +13,12 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 ## [Unreleased]
 
 ### Added
+- `ExperienceReceiver` — an interface for anything that accrues experience toward leveling up,
+  with `DefaultExperienceReceiver` (`nextLevelXPRequired = 10 + level^2`; `receiveExperience`
+  accumulates and loops, so a level-up can be triggered by several small deposits or skip
+  several levels from one large deposit). Not yet wired to `Alive`/`Player` — a standalone
+  accrual mechanism a consumer opts into ahead of the `gametools-combat` module's own
+  kill-credit/XP hooks.
 - `Alive.get(statName)` — an index operator over its named stats, returning the matching
   `Moddable` or `null` for an unknown name. `Alive.AttackState` is now a public nested enum
   (was private), and a new `protected infix fun isWithinAttackRangeOf(potentialAttacker: Alive)`
