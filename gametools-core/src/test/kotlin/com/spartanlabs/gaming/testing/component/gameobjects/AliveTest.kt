@@ -111,4 +111,19 @@ class AliveTest {
         assertEquals(player, actor.owner)
         assertTrue(actor.hasOwner)
     }
+
+    @Test
+    fun `a known stat name resolves through the index operator`() {
+        val actor = alive()
+
+        assertEquals(actor.health, actor["health"])
+        assertEquals(actor.damage, actor["damage"])
+    }
+
+    @Test
+    fun `an unknown stat name resolves to null through the index operator`() {
+        val actor = alive()
+
+        assertNull(actor["notAStat"])
+    }
 }

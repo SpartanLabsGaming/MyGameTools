@@ -13,6 +13,10 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 ## [Unreleased]
 
 ### Added
+- `Alive.get(statName)` — an index operator over its named stats, returning the matching
+  `Moddable` or `null` for an unknown name. `Alive.AttackState` is now a public nested enum
+  (was private), and a new `protected infix fun isWithinAttackRangeOf(potentialAttacker: Alive)`
+  exposes the attack-range distance check to subclasses that want to reuse it.
 - `gametools-world` — a new module, bootstrapped empty as the home for the Phase 1 map, zone,
   physics and vision systems (issues #46–#50); depends on `gametools-core`, re-exported by the
   umbrella. `gametools-core` gains the two ports it implements against: `SpatialIndex<E>` (an

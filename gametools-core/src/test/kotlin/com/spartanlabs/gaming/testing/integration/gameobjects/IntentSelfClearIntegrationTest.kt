@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 //endregion
 
 /**
@@ -53,5 +54,23 @@ class IntentSelfClearIntegrationTest {
             events.count { it is GameEvent.IntentCleared },
             "IntentCleared should fire once, not once per tick it stays cleared"
         )
+    }
+
+    @Test
+    fun `an attacker's intent also clears when its target leaves the world alive`() {
+        val events = mutableListOf<GameEvent>().also { log -> world.events.subscribe { log += it } }
+        val attacker = alive(0.0)
+        val target = alive(5_000.0) // out of range, so no swing lands before it is removed
+
+        attacker.issue(AttackIntent(target))
+        world.tick()
+
+        world.removeList += target
+        world.tick() // target drops out of the world, still alive
+        world.tick() // attacker notices and self-clears
+
+        assertTrue(target.isAlive)
+        assertSame(Idle, attacker.intent, "leaving the world alive must self-clear the intent too, not just death")
+        assertEquals(1, events.count { it is GameEvent.IntentCleared })
     }
 }
