@@ -61,7 +61,8 @@ gametools-world        Tiled map + terrain layers, static collision geometry, wa
 gametools-combat       Alive, projectiles, damage types + resistances, crit, threat table,
                        death → respawn lifecycle, kill-credit + XP/leveling hooks.
 gametools-ai           NavProvider (grid A* + flow fields), path following, aggro / target
-                       selection helpers built on the threat table + vision.
+                       selection helpers built on the threat table + vision, and a
+                       wandering `Creep` archetype.
 gametools-net          Authoritative server, SnapshotCodec (JSON + binary), stable-ID delta
                        protocol, per-player vision/zone/distance interest filtering,
                        action-map input decoding, tick + input sequence numbers, GameServer.
@@ -183,6 +184,10 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
 2. Flow-field generator for large groups converging on a shared target.
 3. Path following integrated with `Actor` movement strategies.
 4. Aggro / target-selection helpers using the threat table + vision.
+5. **Wander / idle behavior.** A `WanderIntent` (same shape as `Move`/`AttackIntent` — picks
+   a random destination inside a bounded home area, re-issues on arrival) and a `Creep`
+   archetype (an `Alive` subclass defaulting to `WanderIntent` when idle) as the module's
+   first consumer-facing AI-driven unit.
 
 *Ships as a Feature release.*
 
