@@ -32,7 +32,7 @@ open class Alive(
     location: Point,
     dimensions: Dimensions,
     maxHealth: Double
-) : Actor(location = location, dimensions = dimensions) {
+) : Actor(location = location, dimensions = dimensions){
 
     //region STATS
     /** The actor's health, from `maxHealth` down to (and past) zero. */
@@ -69,6 +69,13 @@ open class Alive(
         "attackRange" to attackRange,
         "evasion" to evasion,
     )
+    /**
+     * Looks up one of this actor's [stats] by name.
+     *
+     * @param statName the stat key (see [stats] for the available names)
+     * @return the matching [Moddable], or `null` if [statName] isn't one of this actor's stats
+     */
+    operator fun get(statName: String): Moddable? = stats[statName]
     //endregion
     //region OWNERSHIP
     /**
@@ -98,8 +105,26 @@ open class Alive(
     //endregion
     //region COMBAT
     /** Stage of the attack cycle driven each tick by [considerAttack]. */
-    private enum class AttackState { NONE, ISSUED, INPROGRESS }
+    enum class AttackState {
+        /** No attack is issued; [considerAttack] does nothing. */
+        NONE,
+
+        /** An attack was issued via [issueAttack] but [attackTarget] is not yet in [attackRange]. */
+        ISSUED,
+
+        /** [attackTarget] is in [attackRange] and swing progress is accruing via [progressAttack]. */
+        INPROGRESS
+    }
     private var attackState: AttackState = AttackState.NONE
+        set(value) {
+            field = value
+            // A target that left the world in the same tick this change was requested must not
+            // leave the attacker stuck in ISSUED/INPROGRESS with no valid target to act on.
+            if(attackTargetLeftWorld()) field = AttackState.NONE
+            // When beginning an attack, stop moving
+            if(field == AttackState.INPROGRESS)
+                destination = location
+        }
     private var attackTarget: Alive? = null
     private var attackProgress: Double = 0.0
 
@@ -109,8 +134,8 @@ open class Alive(
      * [target], and publishes [GameEvent.AttackIssued] on the world bus.
      */
     fun issueAttack(target: Alive) {
-        attackState = AttackState.ISSUED
         attackTarget = target
+        attackState = AttackState.ISSUED
         onAttackIssued()
         target.onTargetedByAttack()
         world?.events?.publish(GameEvent.AttackIssued(this, target))
@@ -170,21 +195,37 @@ open class Alive(
      * check is logged and treated as in-range so the actor keeps engaging.
      */
     private fun considerAttack() {
-        if (attackState != AttackState.NONE && endAttackIfTargetLost()) return
-        when (attackState) {
-            AttackState.NONE -> {}
-            AttackState.ISSUED -> {
-                val distance = distanceFrom(attackTarget!!).getOrElse {
-                    log.warn("Failed to calculate distance between two Alives during attack stage")
-                    0.0
-                }
-                if (distance > attackRange)
-                    destination = attackTarget!!.location
-                else
+        if (attackTarget != null && !endAttackIfTargetLost()) when (attackState) {
+
+            AttackState.NONE        ->
+                return
+
+            AttackState.ISSUED      ->
+                if (attackTarget!! isWithinAttackRangeOf this)
                     attackState = AttackState.INPROGRESS
-            }
-            AttackState.INPROGRESS -> progressAttack()
+                else
+                    destination = attackTarget!!.location
+
+            AttackState.INPROGRESS  ->
+                progressAttack()
+
         }
+    }
+
+    /**
+     * `true` when this actor is close enough for [potentialAttacker] to swing at it - that is,
+     * when the distance between them is at most [potentialAttacker]'s [attackRange], not this
+     * actor's own.
+     *
+     * @param potentialAttacker the actor whose [attackRange] gates the check
+     * @return `true` if this actor is within [potentialAttacker]'s [attackRange]
+     */
+    protected infix fun isWithinAttackRangeOf(potentialAttacker: Alive): Boolean {
+        val distance = distanceFrom(potentialAttacker).getOrElse {
+            log.warn("Failed to calculate distance between two Alives during attack stage")
+            0.0
+        }
+        return distance <= potentialAttacker.attackRange
     }
 
     /**
@@ -193,7 +234,6 @@ open class Alive(
      */
     private fun endAttackIfTargetLost(): Boolean {
         val reason = when {
-            attackTarget == null -> return false
             !attackTarget!!.isAlive -> AttackEndReason.TARGET_DIED
             attackTargetLeftWorld() -> AttackEndReason.TARGET_REMOVED
             else -> return false
