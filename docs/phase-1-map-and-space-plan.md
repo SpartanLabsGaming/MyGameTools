@@ -42,7 +42,8 @@
   `docs/module-split-plan.md` (how a module is added; why `Quadtree` was left in `core`);
   `docs/phase-0-foundations-plan.md` (the `EntityId` index, event bus, seeded tick and
   `SimulationLoop` this phase builds on); `docs/webtools-2.0.0c-upgrade-plan.md` (plan-doc
-  format precedent).
+  format precedent); `docs/api-openness-decisions-6.0.0.md` (D1 unseals `Movement` in `6.0.0`
+  — batched with this plan's Open Decision 4; see §2.5).
 
 ---
 
@@ -324,6 +325,16 @@ that phase adds `net → world` then.
   is authoritative, exactly as today. **Open Decision 4**: this "desired position diff" glue
   vs a cleaner but breaking `Movement` refactor that returns a delta (defer the refactor to
   Phase 2's Major).
+- **Coordinate the adapter with the `6.0.0` `Movement` opening.**
+  `docs/api-openness-decisions-6.0.0.md` **D1** rules that `sealed class Movement` becomes an
+  `interface` in `6.0.0`, so consumers can supply their own strategies. That changes the *same*
+  `step` signature in the *same* release as Open Decision 4's delta refactor, so the two are
+  one coordinated change and `step`'s shape breaks exactly once. Consequence for Phase 1: ship
+  the adapter in `5.3.0` as planned, but design it so it can be swapped for the delta seam
+  without reworking `PhysicsSystem`'s internals. Note also that `Movement.step` and the helpers
+  a strategy needs (`Actor.stepTowardsDestination()`, `Actor.stepAlongAngle()`,
+  `Actor.hasSettled`) are all `internal` today — opening `Movement` is mostly a visibility
+  change, and no production `when` is exhaustive over it.
 - **Ordering** inside `WorldSystems.step()` relative to `World.tick()` — Open Decision 3.
   Lean: `World.tick()` first (movement, combat, spawn/despawn), then `zoneIndex`, then
   `physics`, then `vision`, all within one frame, order documented like `World.tick()`'s is.
@@ -574,7 +585,7 @@ Phase 0 precedent.
 | 1 | **Map data format.** Framework-native `@Serializable` `MapDefinition` only, or also a Tiled `.tmx` importer? | Lean: native JSON only in Phase 1; a `gametools-world-tmx` add-on later if a real content pipeline needs it. |
 | 2 | **Default `World.spatialIndex`.** Keep `QuadtreeSpatialIndex` (exact `5.1.0` semantics) or flip to `UniformGrid` (better medium-scale) now? | Lean: keep `Quadtree` default in 5.2.0; flip in the Phase 2 Major. |
 | 3 | **How per-frame world systems run.** A `WorldSystems.step()` a game calls next to `World.tick()`; a `SimulationLoop.onTick` hook; or `World` gaining an opt-in `systems` list it ticks itself. | Lean: explicit `WorldSystems.step()` — keeps `core` unaware of `world`, and matches "the loop is opt-in". Document the tick↔systems order like `World.tick()`'s order is documented. |
-| 4 | **Physics ↔ `Movement` glue.** "Desired position diff" adapter (additive, slightly indirect) vs refactor `Movement.step` to return a delta the system reconciles (cleaner, breaking). | Lean: adapter in Phase 1; the `Movement` delta refactor rides the Phase 2 Major. |
+| 4 | **Physics ↔ `Movement` glue.** "Desired position diff" adapter (additive, slightly indirect) vs refactor `Movement.step` to return a delta the system reconciles (cleaner, breaking). | Lean: adapter in Phase 1; the `Movement` delta refactor rides the Phase 2 Major — **now batched with `api-openness-decisions-6.0.0.md` D1**, which unseals `Movement` in the same release. Both hit `step`; break it once. §2.5. |
 | 5 | **`GameEvent` for cross-module events.** Open the `sealed interface` to a plain `interface` (like `ClientCommand`) so `world` declares its own events; or declare `EntityChangedZone` / `VisionEntered` / `VisionExited` in `core` as carriers `world` populates. | Lean: open the interface. Fallback is non-breaking if that proves too invasive for a consumer's exhaustive `when`. |
 | 6 | **Collision shape.** Circles, AABBs, or both for `PhysicsBody`? | Lean: both — circle for units (cheap, rotation-free), AABB for structures; `StaticGeometry` is AABB-only in v1. Polygons later. |
 | 7 | **y-axis convention (repo-wide).** y-up ("north = +y", per current `Quadtree`/`Movement` KDoc) vs y-down / screen coordinates (per the `vertical-placement-is-y-down` memory and the health-bar code). | Lean: **y-down**. It matches the health-bar math and the memory note; the fix is documentation + one `Quadtree` KDoc line, no coordinate math changes. Phase 1 aligns all docs and states it centrally (README Architecture + the new map docs). |
@@ -613,6 +624,16 @@ dependency, so an issue is appropriate).
 
 - Five-level test tree per module (`com.spartanlabs.gaming.testing.<level>`), one class per
   file, external calls mocked at L2 — `.aiassistant/rules/CLAUDE.md` + `~/.claude/CLAUDE.md`.
+- **Library design is open-ended by default** (`~/.claude/CLAUDE.md`, "Library Design"). Domain
+  / entity types extend by inheritance; **systems and infrastructure extend by interface +
+  supplied default implementation** — which is what `PhysicsSystem`, `VisionSystem` and
+  `WorldSystems` are. So weigh, for items 4–5: is collision *resolution* a substitutable
+  strategy (RTS soft push vs hard blocking) rather than fixed behaviour inside
+  `PhysicsSystem`? Is the narrow-phase shape set open to consumer-defined shapes or closed
+  (Open Decision 6)? Is `StaticGeometry` always map-sourced, or can a consumer supply a
+  provider? Where it is genuinely unclear whether a seam is warranted, that is a gap in intent —
+  raise it with Spartak rather than resolving it silently in either direction. Each plan also
+  states which stability tier its seams ship in.
 - KDoc on every public declaration (`@param` / `@return` / `@throws`), `Result` for expected
   failures, structured slf4j logging bound to the facade, region-grouped imports.
 - `README.md` and the module table in `CONTRIBUTING.md` updated with every phase that changes
