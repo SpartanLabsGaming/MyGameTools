@@ -1,4 +1,4 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 /**
  * A single named adjustment applied to a [ModularStat].

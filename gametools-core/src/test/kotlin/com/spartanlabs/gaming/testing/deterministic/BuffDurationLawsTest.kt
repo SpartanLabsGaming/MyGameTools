@@ -5,10 +5,10 @@ package com.spartanlabs.gaming.testing.deterministic
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
 import com.spartanlabs.gaming.gameobjects.Movement
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -37,7 +37,7 @@ class BuffDurationLawsTest {
     fun `a root of duration n stops movement for exactly n ticks`() {
         for (n in durations) {
             val actor = directionalActor()
-            actor.applyBuff(Buff("root", durationTicks = n, suppressedCapabilities = setOf(CoreCapability.MOVE)))
+            actor.apply(Buff("root", durationTicks = n, suppressedCapabilities = setOf(CoreCapability.MOVE)))
 
             repeat(n) { actor.tick() }
             assertEquals(0.0, actor.location.x, absoluteTolerance = 1e-9, "held for all $n ticks")
@@ -51,7 +51,7 @@ class BuffDurationLawsTest {
     fun `a stat mod from a buff of duration n is fully reverted after n ticks`() {
         for (n in durations) {
             val actor = directionalActor()
-            actor.applyBuff(Buff("haste", durationTicks = n, statMods = mapOf("speed" to StatMod("haste", 0.5))))
+            actor.apply(Buff("haste", durationTicks = n, statMods = mapOf("speed" to StatMod("haste", 0.5))))
 
             repeat(n) {
                 assertEquals(15.0, actor.speed.value, absoluteTolerance = 1e-9, "boosted during tick ${it + 1} of $n")
@@ -66,7 +66,7 @@ class BuffDurationLawsTest {
     fun `an indefinite buff survives an arbitrary number of ticks`() {
         for (n in durations) {
             val actor = directionalActor()
-            actor.applyBuff(Buff("aura", durationTicks = -1, suppressedCapabilities = setOf(CoreCapability.MOVE)))
+            actor.apply(Buff("aura", durationTicks = -1, suppressedCapabilities = setOf(CoreCapability.MOVE)))
 
             repeat(n) { actor.tick() }
 

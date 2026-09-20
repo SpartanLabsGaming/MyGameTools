@@ -7,11 +7,11 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AttackIntent
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
-import com.spartanlabs.gaming.gameobjects.Idle
-import com.spartanlabs.gaming.gameobjects.Move
+import com.spartanlabs.gaming.gameobjects.combat.Idle
+import com.spartanlabs.gaming.gameobjects.combat.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.World
@@ -37,7 +37,7 @@ import kotlin.test.assertTrue
 //endregion
 
 /**
- * Covers [applyTo]: each standard command issues the [com.spartanlabs.gaming.gameobjects.Intent]
+ * Covers [applyTo]: each standard command issues the [com.spartanlabs.gaming.gameobjects.combat.Intent]
  * it names, issuing a movement intent on an [Alive] that was attacking calls off that attack as
  * a consequence (not a special case), and an operand that is missing, the wrong kind, or a
  * consumer command is reported rather than thrown.

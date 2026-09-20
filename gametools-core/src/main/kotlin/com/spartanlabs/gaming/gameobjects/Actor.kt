@@ -6,6 +6,12 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.serializations.PointSnapshot
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
+import com.spartanlabs.gaming.gameobjects.combat.Capability
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.Idle
+import com.spartanlabs.gaming.gameobjects.combat.Intent
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.compareTo
 import com.spartanlabs.gaming.spatial.Quadtree
 import com.spartanlabs.gaming.spatial.SpatialIndex
 //endregion
@@ -34,7 +40,7 @@ import kotlin.math.sin
  * most [speed] units per tick. Assigning [destination] also re-aims [angle] at that point.
  *
  * Alongside [movement] - the mechanism - [intent] tracks the standing order that mechanism is
- * currently in service of: [Idle] by default, or whatever [issue] last installed.
+ * currently in service of: [com.spartanlabs.gaming.gameobjects.combat.Idle] by default, or whatever [issue] last installed.
  *
  * @param location the actor's starting position; also its initial [destination].
  * @param dimensions the actor's size.
@@ -46,12 +52,12 @@ open class Actor(
 
     /**
      * The [World] this actor belongs to, or `null` when it is not in one. Promoted here from
-     * `Alive` so any [Actor] - not only an [Alive] - can publish [GameEvent.IntentIssued] /
+     * `Alive` so any [Actor] - not only an [com.spartanlabs.gaming.gameobjects.combat.Alive] - can publish [GameEvent.IntentIssued] /
      * [GameEvent.IntentCleared] through [issue]. [World.add] sets it.
      */
     var world: World? = null
 
-    /** The actor's current standing order. [Idle] until [issue] is called. */
+    /** The actor's current standing order. [com.spartanlabs.gaming.gameobjects.combat.Idle] until [issue] is called. */
     var intent: Intent = Idle
         private set
 
@@ -79,7 +85,7 @@ open class Actor(
     fun clearIntent() = issue(Idle)
 
     //region CAPABILITIES
-    /** An actor adds [CoreCapability.MOVE] to whatever its supertypes provide. */
+    /** An actor adds [com.spartanlabs.gaming.gameobjects.combat.CoreCapability.MOVE] to whatever its supertypes provide. */
     override val capabilities: Set<Capability> = super.capabilities + CoreCapability.MOVE
 
     /** An actor exposes its [speed] under the key `"speed"`, on top of its supertypes' stats. */
@@ -89,10 +95,10 @@ open class Actor(
     /**
      * The actor's movement rate in units per tick.
      *
-     * A [ModularStat] so that hastes and slows can be layered on as [StatMod]s rather than
-     * folded into one multiplier: adjust [ModularStat.base] for a permanent change, or
-     * [ModularStat.applyMod] / [ModularStat.removeMod] for temporary ones. Its effective
-     * [ModularStat.value] (base `10.0`) is what each [Movement] strategy advances the actor by,
+     * A [com.spartanlabs.gaming.gameobjects.combat.ModularStat] so that hastes and slows can be layered on as [com.spartanlabs.gaming.gameobjects.combat.StatMod]s rather than
+     * folded into one multiplier: adjust [com.spartanlabs.gaming.gameobjects.combat.ModularStat.base] for a permanent change, or
+     * [com.spartanlabs.gaming.gameobjects.combat.ModularStat.applyMod] / [com.spartanlabs.gaming.gameobjects.combat.ModularStat.removeMod] for temporary ones. Its effective
+     * [com.spartanlabs.gaming.gameobjects.combat.ModularStat.value] (base `10.0`) is what each [Movement] strategy advances the actor by,
      * and what [ActorSnapshot] captures. A negative value simply runs the actor backwards; it
      * is not rejected.
      */
@@ -158,7 +164,7 @@ open class Actor(
      * [location] or [destination] holds a NaN coordinate.
      */
     val isOneStepAway : Result<Boolean> get() = location.distanceFrom(destination)
-        .map { distance -> distance < speed }
+        .map { distance -> distance compareTo speed }
 
     /**
      * The displacement to apply this tick: a vector of length [speed] pointing from
@@ -174,7 +180,7 @@ open class Actor(
 
     /**
      * Runs the base per-frame work, then - while [CoreCapability.MOVE] is usable - applies
-     * this tick's [movement]. An actor whose move capability is suppressed by a [Buff] holds
+     * this tick's [movement]. An actor whose move capability is suppressed by a [com.spartanlabs.gaming.gameobjects.combat.Buff] holds
      * position for that tick.
      */
     override fun onUpdate() {

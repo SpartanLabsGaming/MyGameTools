@@ -7,18 +7,17 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.ActorSnapshot
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AliveSnapshot
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
 import com.spartanlabs.gaming.gameobjects.DrawableSnapshot
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.VisibleObjectSnapshot
 //endregion
 
 //region 2. Intended Function
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion
@@ -64,7 +63,7 @@ class SnapshotRoundTripTest {
         fun attach(target: VisibleObject) = target.apply {
             angle = random.nextInt(0, 360)
             this.subObjects += subObjects
-            repeat(random.nextInt(0, 3)) { applyBuff(randomBuff(it)) }
+            repeat(random.nextInt(0, 3)) { apply(randomBuff(it)) }
         }
         return listOf(
             attach(VisibleObject(dimensions = randomDimensions(), location = randomPoint())),
@@ -92,8 +91,8 @@ class SnapshotRoundTripTest {
     @Test
     fun `an object's active buffs travel with its snapshot and survive the round trip`() {
         val actor = Actor(location = randomPoint(), dimensions = randomDimensions()).apply {
-            applyBuff(Buff("root", durationTicks = 7, suppressedCapabilities = setOf(CoreCapability.MOVE)))
-            applyBuff(Buff("haste", durationTicks = -1, statMods = mapOf("speed" to StatMod("haste", 0.3))))
+            apply(Buff("root", durationTicks = 7, suppressedCapabilities = setOf(CoreCapability.MOVE)))
+            apply(Buff("haste", durationTicks = -1, statMods = mapOf("speed" to StatMod("haste", 0.3))))
         }
 
         val snapshot = DrawableSnapshot from actor

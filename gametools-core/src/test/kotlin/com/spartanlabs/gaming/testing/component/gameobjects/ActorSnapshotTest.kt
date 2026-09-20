@@ -7,12 +7,11 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.ActorSnapshot
-import com.spartanlabs.gaming.gameobjects.ModularStat
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 2. Intended Function
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion

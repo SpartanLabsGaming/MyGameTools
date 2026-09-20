@@ -7,15 +7,14 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.ActorSnapshot
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AliveSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot
 import com.spartanlabs.gaming.gameobjects.DrawableSnapshot
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 import com.spartanlabs.gaming.gameobjects.VisibleObjectSnapshot
 //endregion
 
 //region 2. Intended Function
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion

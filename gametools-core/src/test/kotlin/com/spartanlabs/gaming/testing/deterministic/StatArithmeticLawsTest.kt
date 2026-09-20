@@ -2,12 +2,12 @@ package com.spartanlabs.gaming.testing.deterministic
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.CombinedStat
-import com.spartanlabs.gaming.gameobjects.ModularStat
-import com.spartanlabs.gaming.gameobjects.compareTo
-import com.spartanlabs.gaming.gameobjects.minus
-import com.spartanlabs.gaming.gameobjects.plus
-import com.spartanlabs.gaming.gameobjects.times
+import com.spartanlabs.gaming.gameobjects.combat.CombinedStat
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.compareTo
+import com.spartanlabs.gaming.gameobjects.combat.minus
+import com.spartanlabs.gaming.gameobjects.combat.plus
+import com.spartanlabs.gaming.gameobjects.combat.times
 //endregion
 
 //region 3. Utility / Catch-all

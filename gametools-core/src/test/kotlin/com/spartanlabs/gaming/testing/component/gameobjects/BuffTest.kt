@@ -2,10 +2,10 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.BuffSnapshot
-import com.spartanlabs.gaming.gameobjects.CoreCapability
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.BuffSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 4. Programming Infrastructure and Support

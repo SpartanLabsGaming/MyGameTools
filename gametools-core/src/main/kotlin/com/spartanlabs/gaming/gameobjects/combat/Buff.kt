@@ -1,21 +1,22 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 //region 2. Intended Function
+import com.spartanlabs.gaming.gameobjects.GameObject
 import kotlinx.serialization.Serializable
 //endregion
 
 /**
- * A temporary effect layered onto a [GameObject]: for [durationTicks] ticks it applies
- * [StatMod]s to the object's named [GameObject.stats] and/or holds a set of [Capability]s
+ * A temporary effect layered onto a [com.spartanlabs.gaming.gameobjects.GameObject]: for [durationTicks] ticks it applies
+ * [StatMod]s to the object's named [com.spartanlabs.gaming.gameobjects.GameObject.stats] and/or holds a set of [Capability]s
  * suppressed, then reverts both.
  *
- * Attach one with [GameObject.applyBuff] and it is driven automatically: [GameObject.tick]
+ * Attach one with [com.spartanlabs.gaming.gameobjects.GameObject.apply] and it is driven automatically: [com.spartanlabs.gaming.gameobjects.GameObject.tick]
  * runs [onTick], counts [durationTicks] down, and once it hits zero removes the buff - undoing
  * its mods, freeing its capabilities, and firing [onExpired]. Remove one early with
- * [GameObject.removeBuff] or [GameObject.dispel].
+ * [com.spartanlabs.gaming.gameobjects.GameObject.removeBuff] or [com.spartanlabs.gaming.gameobjects.GameObject.dispel].
  *
  * Stacking is the caller's concern. Two buffs whose [statMods] carry a [StatMod] of the same
- * [StatMod.name] on the same stat share fate on removal, because [Moddable.removeMod] drops
+ * [StatMod.name] on the same stat share fate on removal, because [com.spartanlabs.gaming.gameobjects.Moddable.removeMod] drops
  * every mod of that name; give concurrent buffs distinct mod names, or lean on [StatMod]'s
  * own [StatMod.StackingType] deliberately. A capability stays suppressed while *any* active
  * buff lists it, so overlapping suppressors resolve on their own.
@@ -25,9 +26,9 @@ import kotlinx.serialization.Serializable
  *
  * @property name the key this buff is tracked and dispelled by
  * @property durationTicks ticks left before the buff expires; decremented each
- *   [GameObject.tick]. A negative value never counts down, so the buff lasts until it is
+ *   [com.spartanlabs.gaming.gameobjects.GameObject.tick]. A negative value never counts down, so the buff lasts until it is
  *   removed explicitly.
- * @property statMods stat key (as exposed by [GameObject.stats]) to the [StatMod] applied for
+ * @property statMods stat key (as exposed by [com.spartanlabs.gaming.gameobjects.GameObject.stats]) to the [StatMod] applied for
  *   the duration; an entry whose key the object does not expose is logged and skipped.
  * @property suppressedCapabilities the capabilities held unusable for the duration.
  */
@@ -53,7 +54,7 @@ open class Buff(
 
 /**
  * An immutable, serializable copy of a [Buff]'s client-facing state: what it is, how long it
- * has left, and which capabilities it is holding down. Carried by [GameObjectSnapshot] so a
+ * has left, and which capabilities it is holding down. Carried by [com.spartanlabs.gaming.gameobjects.GameObjectSnapshot] so a
  * client can render buff timers and grey out disabled abilities.
  *
  * @property name the buff's [Buff.name]

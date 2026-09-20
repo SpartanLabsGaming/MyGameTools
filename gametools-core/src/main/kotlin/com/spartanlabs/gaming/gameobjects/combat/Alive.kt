@@ -1,4 +1,4 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
@@ -9,17 +9,27 @@ import com.spartanlabs.geometry.Square
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.EventBus
 import com.spartanlabs.gaming.event.GameEvent
+import com.spartanlabs.gaming.gameobjects.Actor
+import com.spartanlabs.gaming.gameobjects.ActorSnapshot
+import com.spartanlabs.gaming.gameobjects.DrawableSnapshot
+import com.spartanlabs.gaming.gameobjects.EntityId
+import com.spartanlabs.gaming.gameobjects.Moddable
+import com.spartanlabs.gaming.gameobjects.Player
+import com.spartanlabs.gaming.gameobjects.VisibleObject
+import com.spartanlabs.gaming.gameobjects.log
 import com.spartanlabs.gaming.simulation.RandomSource
 import com.spartanlabs.gaming.simulation.SeededRandom
 //endregion
 
-//region 2. Intended Function
+//region 3.2.2 Kotlinx extensions
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.collections.plus
+
 //endregion
 
 /**
- * An [Actor] with [health] that can be depleted.
+ * An [com.spartanlabs.gaming.gameobjects.Actor] with [health] that can be depleted.
  *
  * It carries a red [healthBar] sub-object that follows the actor and whose width tracks
  * [health] as a fraction of its maximum, both refreshed every [tick].
@@ -33,7 +43,6 @@ open class Alive(
     dimensions: Dimensions,
     maxHealth: Double
 ) : Actor(location = location, dimensions = dimensions){
-
     //region STATS
     /** The actor's health, from `maxHealth` down to (and past) zero. */
     var health: CombinedStat = CombinedStat(startingValue = maxHealth, maxValue = maxHealth)
@@ -52,6 +61,7 @@ open class Alive(
 
     /** Probability in `0.0..1.0` that this actor dodges an incoming hit; defaults to `0.0` (never). */
     var evasion: ModularStat = ModularStat(0.0)
+
 
     /** An alive adds [CoreCapability.ATTACK] to whatever its supertypes provide. */
     override val capabilities: Set<Capability> = super.capabilities + CoreCapability.ATTACK
@@ -85,11 +95,11 @@ open class Alive(
     var faction: String = DEFAULT_FACTION
 
     /**
-     * The [Player] this actor belongs to, or `null` when it is unowned.
+     * The [com.spartanlabs.gaming.gameobjects.Player] this actor belongs to, or `null` when it is unowned.
      *
-     * Kept in step with [Player.ownedAlives] in both directions: assigning a new owner pulls
+     * Kept in step with [com.spartanlabs.gaming.gameobjects.Player.ownedAlives] in both directions: assigning a new owner pulls
      * this actor off the previous owner's roster and adds it to the new one, and
-     * [Player.own] / [Player.disown] drive this property.
+     * [com.spartanlabs.gaming.gameobjects.Player.own] / [com.spartanlabs.gaming.gameobjects.Player.disown] drive this property.
      */
     var owner: Player? = null
         set(value) {
@@ -176,7 +186,7 @@ open class Alive(
         /** The target's [health] ran out. */
         TARGET_DIED,
 
-        /** The target left its [World] while still alive. */
+        /** The target left its [com.spartanlabs.gaming.gameobjects.World] while still alive. */
         TARGET_REMOVED
     }
 
@@ -220,13 +230,10 @@ open class Alive(
      * @param potentialAttacker the actor whose [attackRange] gates the check
      * @return `true` if this actor is within [potentialAttacker]'s [attackRange]
      */
-    protected infix fun isWithinAttackRangeOf(potentialAttacker: Alive): Boolean {
-        val distance = distanceFrom(potentialAttacker).getOrElse {
-            log.warn("Failed to calculate distance between two Alives during attack stage")
-            0.0
-        }
-        return distance <= potentialAttacker.attackRange
-    }
+    protected infix fun isWithinAttackRangeOf(potentialAttacker: Alive) =
+        distanceFrom(potentialAttacker).getOrNull()?.let { distance ->
+            distance <= potentialAttacker.attackRange
+        } ?: false.also { log.warn("Failed to calculate distance between two Alives during attack stage") }
 
     /**
      * If [attackTarget] can no longer be fought, clears the attack, fires [onAttackEnded] and
@@ -247,7 +254,7 @@ open class Alive(
     }
 
     /**
-     * `true` only when [attackTarget] once belonged to a [World] and no longer does - never for
+     * `true` only when [attackTarget] once belonged to a [com.spartanlabs.gaming.gameobjects.World] and no longer does - never for
      * a target that was never added to one, so worldless combat is unaffected.
      */
     private fun attackTargetLeftWorld(): Boolean {
@@ -280,14 +287,14 @@ open class Alive(
     protected open infix fun onAttacked(attacker: Alive) {}
 
     /**
-     * Rolls [target]'s [evasion] against this world's seeded [World.rng] (a per-instance
+     * Rolls [target]'s [evasion] against this world's seeded [com.spartanlabs.gaming.gameobjects.World.rng] (a per-instance
      * fallback when this actor is not in a world); on a miss the swing is dropped, otherwise it
      * proceeds to [hit].
      */
     private infix fun attemptHit(target: Alive) =
         if (evasionRng().nextDouble() > target.evasion) hit(target) else Unit
 
-    /** The [World.rng] of the world this actor is in, or a per-instance seeded fallback for a worldless actor. */
+    /** The [com.spartanlabs.gaming.gameobjects.World.rng] of the world this actor is in, or a per-instance seeded fallback for a worldless actor. */
     private fun evasionRng(): RandomSource = world?.rng ?: fallbackRng
 
     /** Seeded on [entityId] so a worldless actor's rolls are still reproducible run to run. */
@@ -356,7 +363,7 @@ open class Alive(
     var deathResponse: DeathResponse = DeathResponse.REMOVAL
     /** What an [Alive] does the moment its [health] runs out. */
     enum class DeathResponse {
-        /** Queue the actor into its [World.removeList] so it drops out of the game. */
+        /** Queue the actor into its [com.spartanlabs.gaming.gameobjects.World.removeList] so it drops out of the game. */
         REMOVAL,
 
         /** Send the actor back to its [respawn] point at full [health]. */
@@ -368,7 +375,7 @@ open class Alive(
      * Applies [deathResponse] the first tick this actor's [health] runs out. Runs once per
      * death; a [DeathResponse.RESPAWN] actor can die again once it is back.
      *
-     * - [DeathResponse.REMOVAL] queues the actor into its [world]'s [World.removeList].
+     * - [DeathResponse.REMOVAL] queues the actor into its [world]'s [com.spartanlabs.gaming.gameobjects.World.removeList].
      * - [DeathResponse.RESPAWN] moves it to [respawn] and restores full [health].
      */
     protected open fun die() {
@@ -508,15 +515,15 @@ class AttackIntent(val target: Alive) : Intent() {
 //endregion
 //region SERIALIZATION
 /**
- * An immutable, serializable copy of an [Alive]'s state, layered on its [ActorSnapshot]: its
- * health, side, owner, and combat stats. Sent in place of an [ActorSnapshot] whenever a
- * broadcast object is an [Alive] (see [DrawableSnapshot]).
+ * An immutable, serializable copy of an [Alive]'s state, layered on its [com.spartanlabs.gaming.gameobjects.ActorSnapshot]: its
+ * health, side, owner, and combat stats. Sent in place of an [com.spartanlabs.gaming.gameobjects.ActorSnapshot] whenever a
+ * broadcast object is an [Alive] (see [com.spartanlabs.gaming.gameobjects.DrawableSnapshot]).
  *
  * Each combat stat is captured as its effective [ModularStat.value] at snapshot time, with
  * every applied [StatMod] already folded in.
  *
- * @property id the actor's stable [EntityId] ([EntityId.UNASSIGNED] if unowned)
- * @property actor the underlying [ActorSnapshot] - movement, drawable state, sub-objects
+ * @property id the actor's stable [com.spartanlabs.gaming.gameobjects.EntityId] ([com.spartanlabs.gaming.gameobjects.EntityId.Companion.UNASSIGNED] if unowned)
+ * @property actor the underlying [com.spartanlabs.gaming.gameobjects.ActorSnapshot] - movement, drawable state, sub-objects
  * @property health the actor's health at snapshot time
  * @property faction the side the actor belongs to at snapshot time
  * @property ownerName the name of the actor's [Alive.owner], or `null` when it is unowned

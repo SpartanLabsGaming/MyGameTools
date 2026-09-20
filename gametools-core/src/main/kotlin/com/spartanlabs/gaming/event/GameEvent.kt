@@ -3,9 +3,9 @@ package com.spartanlabs.gaming.event
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.gaming.gameobjects.GameObject
-import com.spartanlabs.gaming.gameobjects.Intent
+import com.spartanlabs.gaming.gameobjects.combat.Intent
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 
@@ -110,7 +110,7 @@ interface GameEvent {
     data class IntentIssued(val actor: Actor, val intent: Intent) : GameEvent
 
     /**
-     * An [Actor]'s standing order was cleared back to [com.spartanlabs.gaming.gameobjects.Idle]
+     * An [Actor]'s standing order was cleared back to [com.spartanlabs.gaming.gameobjects.combat.Idle]
      * via [Actor.issue] / [Actor.clearIntent].
      *
      * @property actor the actor whose order was cleared

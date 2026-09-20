@@ -2,10 +2,10 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.CombinedStat
-import com.spartanlabs.gaming.gameobjects.StatMod
-import com.spartanlabs.gaming.gameobjects.compareTo
-import com.spartanlabs.gaming.gameobjects.plus
+import com.spartanlabs.gaming.gameobjects.combat.CombinedStat
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.compareTo
+import com.spartanlabs.gaming.gameobjects.combat.plus
 //endregion
 
 //region 4. Programming Infrastructure and Support

@@ -2,6 +2,9 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.BuffSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.Capability
 import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.serializations.PointSnapshot
 //endregion
@@ -27,11 +30,11 @@ internal val log: Logger = LoggerFactory.getLogger("com.spartanlabs.gaming.gameo
  * game loop calls [tick], which runs [onUpdate] only while the object is [active].
  *
  * Two things it carries that subtypes build on:
- * - [capabilities] - the set of [Capability]s the type inherently has (an [Actor] can move, an
- *   [Alive] can also attack). [can] answers whether one is usable *right now*, taking any
- *   suppressing [Buff] into account, and each subtype gates its own per-tick work on it.
- * - [buffs] - temporary effects attached with [applyBuff]. For their duration a [Buff] layers
- *   [StatMod]s onto the object's named [stats] and/or holds [Capability]s suppressed; [tick]
+ * - [capabilities] - the set of [com.spartanlabs.gaming.gameobjects.combat.Capability]s the type inherently has (an [Actor] can move, an
+ *   [com.spartanlabs.gaming.gameobjects.combat.Alive] can also attack). [can] answers whether one is usable *right now*, taking any
+ *   suppressing [com.spartanlabs.gaming.gameobjects.combat.Buff] into account, and each subtype gates its own per-tick work on it.
+ * - [buffs] - temporary effects attached with [apply]. For their duration a [com.spartanlabs.gaming.gameobjects.combat.Buff] layers
+ *   [com.spartanlabs.gaming.gameobjects.combat.StatMod]s onto the object's named [stats] and/or holds [com.spartanlabs.gaming.gameobjects.combat.Capability]s suppressed; [tick]
  *   counts each one down and reverts it when it runs out.
  *
  * @param location the object's position in world space; defaults to the origin.
@@ -75,7 +78,7 @@ abstract class GameObject(val location: Point = Point()) {
      * Advances this object by one simulation step, unless it is inactive.
      *
      * Called once per frame by the owning game loop (which this library does not provide).
-     * While [active] is `true` it, in order: fires each active [Buff]'s [Buff.onTick] and
+     * While [active] is `true` it, in order: fires each active [com.spartanlabs.gaming.gameobjects.combat.Buff]'s [com.spartanlabs.gaming.gameobjects.combat.Buff.onTick] and
      * counts it down, runs [onUpdate], then removes any buff that has just run out (undoing
      * its stat mods and freeing its suppressed capabilities). A buff applied with a duration
      * of `n` is therefore in force for exactly `n` of these updates before it is dropped.
@@ -107,21 +110,21 @@ abstract class GameObject(val location: Point = Point()) {
 
     //region CAPABILITIES
     /**
-     * The [Capability]s this object type inherently has. Empty for a bare [GameObject]; a
+     * The [com.spartanlabs.gaming.gameobjects.combat.Capability]s this object type inherently has. Empty for a bare [GameObject]; a
      * subtype overrides this as `super.capabilities + ...` to add its own (see
-     * [com.spartanlabs.gaming.gameobjects.Actor] and [com.spartanlabs.gaming.gameobjects.Alive]).
+     * [com.spartanlabs.gaming.gameobjects.Actor] and [com.spartanlabs.gaming.gameobjects.combat.Alive]).
      *
      * This is only what the type *can* do in principle - use [can] to ask whether a capability
-     * is usable right now, which also accounts for any suppressing [Buff].
+     * is usable right now, which also accounts for any suppressing [com.spartanlabs.gaming.gameobjects.combat.Buff].
      */
     open val capabilities: Set<Capability> = emptySet()
 
     /**
      * Whether [capability] is usable on this object at this moment: it must be one of the
-     * object's [capabilities] and not currently held down by any active [Buff].
+     * object's [capabilities] and not currently held down by any active [com.spartanlabs.gaming.gameobjects.combat.Buff].
      *
      * The built-in hierarchy gates its own per-tick work on this - an [Actor] only moves while
-     * `can(CoreCapability.MOVE)`, an [Alive] only runs its attack cycle while
+     * `can(CoreCapability.MOVE)`, an [com.spartanlabs.gaming.gameobjects.combat.Alive] only runs its attack cycle while
      * `can(CoreCapability.ATTACK)` - and a consumer's subclass should do the same for its own
      * capabilities.
      *
@@ -131,10 +134,10 @@ abstract class GameObject(val location: Point = Point()) {
         capability in capabilities && activeBuffs.none { capability in it.suppressedCapabilities }
 
     /**
-     * This object's stats keyed by the name a [Buff] addresses them by. Empty for a bare
+     * This object's stats keyed by the name a [com.spartanlabs.gaming.gameobjects.combat.Buff] addresses them by. Empty for a bare
      * [GameObject]; a subtype overrides this as `super.stats + ...` to expose its own
      * ([com.spartanlabs.gaming.gameobjects.Actor] adds `"speed"`,
-     * [com.spartanlabs.gaming.gameobjects.Alive] adds `"health"`, `"damage"`, and its other
+     * [com.spartanlabs.gaming.gameobjects.combat.Alive] adds `"health"`, `"damage"`, and its other
      * combat stats).
      *
      * A getter rather than a stored map, so it keeps tracking a stat property that is later
@@ -144,7 +147,7 @@ abstract class GameObject(val location: Point = Point()) {
     //endregion
 
     //region BUFFS
-    /** Backing store for [buffs]; mutated only through [applyBuff] / [removeBuff]. */
+    /** Backing store for [buffs]; mutated only through [apply] / [removeBuff]. */
     private val activeBuffs: MutableList<Buff> = mutableListOf()
 
     /** The [Buff]s currently on this object, in the order they were applied. A read-only view. */
@@ -160,7 +163,7 @@ abstract class GameObject(val location: Point = Point()) {
      *
      * @param buff the effect to attach
      */
-    fun applyBuff(buff: Buff) {
+    infix fun applyBuff(buff: Buff) {
         activeBuffs.add(buff)
         buff.statMods.forEach { (key, mod) ->
             val stat = stats[key]
@@ -170,7 +173,7 @@ abstract class GameObject(val location: Point = Point()) {
         log.debug("Buff '{}' applied to a {} for {} tick(s)", buff.name, this::class.simpleName, buff.durationTicks)
         buff.onApplied(this)
     }
-
+    infix fun apply(buff: Buff) = applyBuff(buff)
     /**
      * Detaches [buff] early: reverts each of its [Buff.statMods] via [Moddable.removeMod],
      * releases its capability suppressions, and fires [Buff.onExpired]. A no-op if the buff

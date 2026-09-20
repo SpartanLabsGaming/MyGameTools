@@ -68,7 +68,7 @@ class World(val seed: Long = Random.nextLong()) {
 
     /**
      * Objects to drop from [gameObjects] at the end of the current [tick]. An object adds
-     * itself here during its own tick - a dying [Alive] with [Alive.DeathResponse.REMOVAL]
+     * itself here during its own tick - a dying [com.spartanlabs.gaming.gameobjects.combat.Alive] with [com.spartanlabs.gaming.gameobjects.combat.Alive.DeathResponse.REMOVAL]
      * does - and [tick] removes them once the pass is done, so removal never disturbs iteration.
      */
     val removeList: ArrayList<GameObject> = ArrayList()
@@ -106,7 +106,7 @@ class World(val seed: Long = Random.nextLong()) {
     /**
      * The bus this world publishes [GameEvent]s on: [GameEvent.EntitySpawned] /
      * [GameEvent.EntityRemoved] as objects join and leave, plus the combat and death events an
-     * owned [Alive] raises. Subscribe to it to react to what the simulation does without
+     * owned [com.spartanlabs.gaming.gameobjects.combat.Alive] raises. Subscribe to it to react to what the simulation does without
      * wiring into the code that does it.
      */
     val events: EventBus = EventBus()
@@ -198,7 +198,7 @@ class World(val seed: Long = Random.nextLong()) {
 
     /**
      * Adds [gameObject] to [gameObjects] and numbers it (see [byId]); for an [Actor] it also
-     * sets [Actor.world] so a [Alive.DeathResponse.REMOVAL] death can reach [removeList] and an
+     * sets [Actor.world] so a [com.spartanlabs.gaming.gameobjects.combat.Alive.DeathResponse.REMOVAL] death can reach [removeList] and an
      * [Actor.issue] can publish on [events]. Adding straight to [gameObjects] still works, but
      * then an [Actor] needs its [Actor.world] set by hand and the object is not resolvable
      * through [byId] until the next [tick].

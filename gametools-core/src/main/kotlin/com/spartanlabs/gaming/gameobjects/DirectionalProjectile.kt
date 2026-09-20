@@ -2,6 +2,7 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
@@ -12,7 +13,7 @@ import com.spartanlabs.gaming.spatial.SpatialIndex
 
 /**
  * A [Projectile] that flies in a straight line along a fixed heading for a limited number of
- * ticks, dealing its [damage] to every [Alive] it passes through - each one only once, so it
+ * ticks, dealing its [damage] to every [com.spartanlabs.gaming.gameobjects.combat.Alive] it passes through - each one only once, so it
  * can pierce a whole line of targets.
  *
  * Collision uses the same broad-then-narrow phase as [HomingProjectile]: [Actor.nearby] over
@@ -22,14 +23,14 @@ import com.spartanlabs.gaming.spatial.SpatialIndex
  *
  * @param location where the projectile starts
  * @param dimensions the projectile's size
- * @param damage the health removed from each [Alive] it hits
+ * @param damage the health removed from each [com.spartanlabs.gaming.gameobjects.combat.Alive] it hits
  * @param directionAngle the heading to travel along, in whole degrees (normalised to `0..359`)
  * @param maxDuration how many ticks the projectile lives before deactivating; must be positive
  * @param index the spatial index of candidate targets, keyed by world position, kept current by the caller
- * @param searchRadius half-extent of the broad-phase window scanned for [Alive]s each tick;
+ * @param searchRadius half-extent of the broad-phase window scanned for [com.spartanlabs.gaming.gameobjects.combat.Alive]s each tick;
  *        defaults to triple the projectile's width
  */
-class DirectionalProjectile(
+open class DirectionalProjectile(
     location: Point,
     dimensions: Dimensions,
     damage: Double,
@@ -55,7 +56,7 @@ class DirectionalProjectile(
         searchRadius: Double = dimensions.width * 3
     ) : this(location, dimensions, damage, directionAngle, maxDuration, QuadtreeSpatialIndex(quadtree), searchRadius)
 
-    /** The [Alive]s already damaged, so none is hit twice. */
+    /** The [com.spartanlabs.gaming.gameobjects.combat.Alive]s already damaged, so none is hit twice. */
     private val hitAlives = mutableSetOf<Alive>()
 
     /** Ticks elapsed since the projectile was created. */

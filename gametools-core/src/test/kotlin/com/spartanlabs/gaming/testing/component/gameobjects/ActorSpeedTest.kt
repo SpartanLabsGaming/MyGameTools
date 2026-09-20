@@ -5,10 +5,10 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
 import com.spartanlabs.gaming.gameobjects.Movement
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -80,7 +80,7 @@ class ActorSpeedTest {
     @Test
     fun `a speed buff applied through applyBuff wears off on its own`() {
         val actor = directionalActor()
-        actor.applyBuff(Buff("haste", durationTicks = 2, statMods = mapOf("speed" to StatMod("haste", 0.5))))
+        actor.apply(Buff("haste", durationTicks = 2, statMods = mapOf("speed" to StatMod("haste", 0.5))))
 
         actor.tick() // +50% -> 15
         actor.tick() // still +50% this tick, then the buff is pruned
@@ -94,7 +94,7 @@ class ActorSpeedTest {
     fun `a buff that reassigns nothing still tracks a wholesale speed replacement`() {
         val actor = directionalActor()
         actor.speed = ModularStat(base = 20.0)
-        actor.applyBuff(Buff("haste", durationTicks = -1, statMods = mapOf("speed" to StatMod("haste", 0.5))))
+        actor.apply(Buff("haste", durationTicks = -1, statMods = mapOf("speed" to StatMod("haste", 0.5))))
 
         actor.tick()
 

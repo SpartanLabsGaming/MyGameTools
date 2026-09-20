@@ -287,7 +287,7 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   on `can(ATTACK)`.
 - **Buffs on the `GameObject` tree.** `Buff` (name, duration, stat mods, suppressed
   capabilities) with `onApplied` / `onTick` / `onExpired` hooks. `GameObject` gains `buffs`,
-  `applyBuff`, `removeBuff`, `dispel`; `tick()` ages and reverts them.
+  `apply`, `removeBuff`, `dispel`; `tick()` ages and reverts them.
 - `Moddable` interface unifying `ModularStat` and `CombinedStat` as `StatMod` targets;
   `GameObject.stats` exposes stats by name.
 - `BuffSnapshot` carried on `GameObjectSnapshot`, so active buffs reach every

@@ -8,8 +8,8 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.gameobjects.Actor
 import com.spartanlabs.gaming.gameobjects.ActorSnapshot
-import com.spartanlabs.gaming.gameobjects.Idle
-import com.spartanlabs.gaming.gameobjects.Intent
+import com.spartanlabs.gaming.gameobjects.combat.Idle
+import com.spartanlabs.gaming.gameobjects.combat.Intent
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 

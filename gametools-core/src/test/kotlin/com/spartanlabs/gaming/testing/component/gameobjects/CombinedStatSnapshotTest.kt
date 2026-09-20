@@ -2,12 +2,11 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.CombinedStat
-import com.spartanlabs.gaming.gameobjects.CombinedStatSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.CombinedStat
+import com.spartanlabs.gaming.gameobjects.combat.CombinedStatSnapshot
 //endregion
 
 //region 2. Intended Function
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion

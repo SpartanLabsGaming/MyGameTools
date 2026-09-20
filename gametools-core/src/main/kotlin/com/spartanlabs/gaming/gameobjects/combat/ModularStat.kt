@@ -1,9 +1,10 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.StatMod.StackingType
-import com.spartanlabs.gaming.gameobjects.StatMod.Type
+import com.spartanlabs.gaming.gameobjects.Moddable
+import com.spartanlabs.gaming.gameobjects.combat.StatMod.StackingType
+import com.spartanlabs.gaming.gameobjects.combat.StatMod.Type
 //endregion
 
 /**

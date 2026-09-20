@@ -6,11 +6,11 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AttackIntent
-import com.spartanlabs.gaming.gameobjects.Idle
-import com.spartanlabs.gaming.gameobjects.ModularStat
-import com.spartanlabs.gaming.gameobjects.Move
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AttackIntent
+import com.spartanlabs.gaming.gameobjects.combat.Idle
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.World
 //endregion

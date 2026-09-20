@@ -1,13 +1,15 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.Actor
+import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.geometry.Point
 //endregion
 
 /**
- * A unit's current standing order. Exactly one is active on an [Actor] at a time
- * ([Actor.intent]); issuing a new one via [Actor.issue] always tears down the previous one
+ * A unit's current standing order. Exactly one is active on an [com.spartanlabs.gaming.gameobjects.Actor] at a time
+ * ([com.spartanlabs.gaming.gameobjects.Actor.intent]); issuing a new one via [com.spartanlabs.gaming.gameobjects.Actor.issue] always tears down the previous one
  * first via [clear].
  *
  * Not a Kotlin `enum` (final, so neither [Alive] nor a consumer could extend it) and not
@@ -17,10 +19,10 @@ import com.spartanlabs.geometry.Point
  */
 abstract class Intent {
 
-    /** Stable wire label for this intent - see [ActorSnapshot.intent]. */
+    /** Stable wire label for this intent - see [com.spartanlabs.gaming.gameobjects.ActorSnapshot.intent]. */
     abstract val label: String
 
-    /** Wires up the mechanism this order drives. Called by [Actor.issue] after the previous intent's [clear]. */
+    /** Wires up the mechanism this order drives. Called by [com.spartanlabs.gaming.gameobjects.Actor.issue] after the previous intent's [clear]. */
     open fun issue(actor: Actor) {}
 
     /** Stops the mechanism and undoes any side effect. Called when this intent is replaced or explicitly cleared. */
@@ -38,10 +40,10 @@ data object Idle : Intent() {
  *
  * [clear] is what actually halts an actor in place - not [Idle.issue] - so replacing a `Move`
  * (with another `Move`, an attack, or an explicit [Actor.clearIntent]) always leaves the actor
- * at rest under [Movement.Targeting] unless the next intent's own [issue] immediately sends it
+ * at rest under [com.spartanlabs.gaming.gameobjects.Movement.Targeting] unless the next intent's own [issue] immediately sends it
  * somewhere else.
  *
- * @property movement the [Movement] strategy this order installs on [Actor.movement]
+ * @property movement the [com.spartanlabs.gaming.gameobjects.Movement] strategy this order installs on [Actor.movement]
  * @property destination if given, the point [Actor.destination] is set to when this order is issued
  */
 data class Move(val movement: Movement, val destination: Point? = null) : Intent() {

@@ -19,3 +19,6 @@ dokka {
         }
     }
 }
+dependencies {
+    implementation(kotlin("reflect"))
+}

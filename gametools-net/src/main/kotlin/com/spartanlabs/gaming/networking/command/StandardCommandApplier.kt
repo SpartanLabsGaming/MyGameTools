@@ -5,11 +5,11 @@ package com.spartanlabs.gaming.networking.command
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AttackIntent
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
 import com.spartanlabs.gaming.gameobjects.GameObject
-import com.spartanlabs.gaming.gameobjects.Move
+import com.spartanlabs.gaming.gameobjects.combat.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
@@ -57,7 +57,7 @@ sealed interface ApplyResult {
 
 /**
  * Carries out a GameTools-standard [ClientCommand] against [world] by resolving its [EntityId]
- * operands through [World.byId] and issuing the [com.spartanlabs.gaming.gameobjects.Intent] the
+ * operands through [World.byId] and issuing the [com.spartanlabs.gaming.gameobjects.combat.Intent] the
  * command names:
  *
  * | Command | Intent issued |
@@ -72,7 +72,7 @@ sealed interface ApplyResult {
  * ### Issuing a new intent clears the previous one
  *
  * [com.spartanlabs.gaming.gameobjects.Actor.issue] always tears down whatever intent was
- * previously active before installing the next one (see [com.spartanlabs.gaming.gameobjects.Intent.clear]).
+ * previously active before installing the next one (see [com.spartanlabs.gaming.gameobjects.combat.Intent.clear]).
  * So a [MoveTo], [MoveDir] or [Follow] issued on an [Alive] that was attacking calls off that
  * attack as a consequence of [AttackIntent.clear] - not a special case here - and a [Stop]
  * issued on an [Alive] that was only attacking (no active [Move]) cancels the attack the same

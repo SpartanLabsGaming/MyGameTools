@@ -6,10 +6,10 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.event.GameEvent
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AttackIntent
-import com.spartanlabs.gaming.gameobjects.Idle
-import com.spartanlabs.gaming.gameobjects.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AttackIntent
+import com.spartanlabs.gaming.gameobjects.combat.Idle
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 
@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 //endregion
 
 /**
- * Level 3 - integration between [com.spartanlabs.gaming.gameobjects.Intent], [Alive], and the
+ * Level 3 - integration between [com.spartanlabs.gaming.gameobjects.combat.Intent], [Alive], and the
  * [World]'s [com.spartanlabs.gaming.event.EventBus]: no sockets are involved, but this is the
  * first point where an [AttackIntent]'s self-clear subscription (Decision C) is exercised
  * through a real [World.tick] loop rather than direct method calls, the way it runs in

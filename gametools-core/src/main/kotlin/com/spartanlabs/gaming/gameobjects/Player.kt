@@ -1,21 +1,23 @@
 package com.spartanlabs.gaming.gameobjects
 
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+
 /**
- * A participant in the game that owns a roster of [Alive] actors - the units or characters
+ * A participant in the game that owns a roster of [com.spartanlabs.gaming.gameobjects.combat.Alive] actors - the units or characters
  * under one person's or one AI's control.
  *
  * This is a game-domain owner and is unrelated to the networking-level "player" tracked by
  * [com.spartanlabs.gaming.networking.GameServer], which only keys connections by name.
  *
- * Ownership is kept in step with [Alive.owner]: [own] and [disown] drive that property, and
- * assigning [Alive.owner] directly moves the actor on and off the corresponding roster. An
- * [Alive] therefore appears on at most one player's roster at a time.
+ * Ownership is kept in step with [com.spartanlabs.gaming.gameobjects.combat.Alive.owner]: [own] and [disown] drive that property, and
+ * assigning [com.spartanlabs.gaming.gameobjects.combat.Alive.owner] directly moves the actor on and off the corresponding roster. An
+ * [com.spartanlabs.gaming.gameobjects.combat.Alive] therefore appears on at most one player's roster at a time.
  *
  * @param name a label identifying the player; not required to be unique
  */
 class Player(val name: String) {
 
-    /** Backing store for [ownedAlives]; mutated only via [own]/[disown] and the [Alive.owner] setter. */
+    /** Backing store for [ownedAlives]; mutated only via [own]/[disown] and the [com.spartanlabs.gaming.gameobjects.combat.Alive.owner] setter. */
     private val roster: ArrayList<Alive> = ArrayList()
 
     /** The [Alive] actors this player owns, in the order they were acquired. */

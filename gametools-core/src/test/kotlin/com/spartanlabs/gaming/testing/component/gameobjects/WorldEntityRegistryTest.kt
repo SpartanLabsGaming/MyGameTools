@@ -6,7 +6,7 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.gaming.gameobjects.EntityId
 import com.spartanlabs.gaming.gameobjects.GameObject
 import com.spartanlabs.gaming.gameobjects.VisibleObject
@@ -21,7 +21,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
+
 //endregion
 
 /** Covers [World] numbering the objects it owns and resolving them through [World.byId]. */

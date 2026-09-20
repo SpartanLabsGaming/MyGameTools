@@ -2,6 +2,7 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
@@ -11,7 +12,7 @@ import com.spartanlabs.gaming.spatial.SpatialIndex
 //endregion
 
 /**
- * A [Projectile] that homes in on a single [Alive] and, the moment it collides with that
+ * A [Projectile] that homes in on a single [com.spartanlabs.gaming.gameobjects.combat.Alive] and, the moment it collides with that
  * target, deals its [damage] once and deactivates.
  *
  * Collision is tested each tick rather than by reaching the target's exact location:
@@ -29,7 +30,7 @@ import com.spartanlabs.gaming.spatial.SpatialIndex
  * @param target the actor to chase and hit
  * @param index the spatial index of candidate collision targets, keyed by world position
  */
-class HomingProjectile(
+open class HomingProjectile(
     location: Point,
     dimensions: Dimensions,
     damage: Double,

@@ -13,7 +13,6 @@ import com.spartanlabs.gaming.networking.command.ClientCommandCodec
 
 //region 2. Intended Function
 import java.util.concurrent.ConcurrentHashMap
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion
@@ -217,7 +216,7 @@ class GameServer @JvmOverloads constructor(
 
     /**
      * Snapshots and broadcasts the given world state to every connected player. Each object is
-     * snapshotted as the most specific kind that fits it - [com.spartanlabs.gaming.gameobjects.AliveSnapshot],
+     * snapshotted as the most specific kind that fits it - [com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot],
      * [com.spartanlabs.gaming.gameobjects.ActorSnapshot], or plain
      * [com.spartanlabs.gaming.gameobjects.VisibleObjectSnapshot].
      *
@@ -234,7 +233,7 @@ class GameServer @JvmOverloads constructor(
      * Broadcasts already-taken snapshots to every connected player as a `STATE <json>` message.
      *
      * The list serializes polymorphically: each entry carries a `type` field, so an
-     * [com.spartanlabs.gaming.gameobjects.AliveSnapshot] or
+     * [com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot] or
      * [com.spartanlabs.gaming.gameobjects.ActorSnapshot] is distinguishable from a plain
      * [com.spartanlabs.gaming.gameobjects.VisibleObjectSnapshot] on the wire.
      *

@@ -6,9 +6,9 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
 import com.spartanlabs.gaming.gameobjects.Movement
 import com.spartanlabs.gaming.gameobjects.VisibleObject
 //endregion
@@ -57,7 +57,7 @@ class CapabilityTest {
     fun `a suppressing buff blocks can without removing the capability from the type`() {
         val a = alive()
 
-        a.applyBuff(Buff("stun", durationTicks = 3, suppressedCapabilities = setOf(CoreCapability.MOVE, CoreCapability.ATTACK)))
+        a.apply(Buff("stun", durationTicks = 3, suppressedCapabilities = setOf(CoreCapability.MOVE, CoreCapability.ATTACK)))
 
         assertFalse(a.can(CoreCapability.MOVE))
         assertFalse(a.can(CoreCapability.ATTACK))
@@ -70,8 +70,8 @@ class CapabilityTest {
         val rootA = Buff("root-a", durationTicks = -1, suppressedCapabilities = setOf(CoreCapability.MOVE))
         val rootB = Buff("root-b", durationTicks = -1, suppressedCapabilities = setOf(CoreCapability.MOVE))
 
-        a.applyBuff(rootA)
-        a.applyBuff(rootB)
+        a.apply(rootA)
+        a.apply(rootB)
         assertFalse(a.can(CoreCapability.MOVE))
 
         a.removeBuff(rootA)
@@ -87,7 +87,7 @@ class CapabilityTest {
             movement = Movement.Directional
             angle = 0
         }
-        a.applyBuff(Buff("root", durationTicks = 2, suppressedCapabilities = setOf(CoreCapability.MOVE)))
+        a.apply(Buff("root", durationTicks = 2, suppressedCapabilities = setOf(CoreCapability.MOVE)))
 
         a.tick() // buff in force
         a.tick() // buff in force, then pruned

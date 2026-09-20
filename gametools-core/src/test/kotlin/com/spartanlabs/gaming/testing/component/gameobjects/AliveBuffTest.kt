@@ -5,19 +5,18 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.Buff
-import com.spartanlabs.gaming.gameobjects.CoreCapability
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.Buff
+import com.spartanlabs.gaming.gameobjects.combat.CoreCapability
 import com.spartanlabs.gaming.gameobjects.GameObject
-import com.spartanlabs.gaming.gameobjects.ModularStat
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 4. Programming Infrastructure and Support
 // 4.3 Testing
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 //endregion
 
@@ -48,7 +47,7 @@ class AliveBuffTest {
         val attacker = alive(0.0, 0.0).apply { attackEveryTick() }
         val target = alive(100.0, 0.0)
         attacker.issueAttack(target)
-        attacker.applyBuff(Buff("disarm", durationTicks = 3, suppressedCapabilities = setOf(CoreCapability.ATTACK)))
+        attacker.apply(Buff("disarm", durationTicks = 3, suppressedCapabilities = setOf(CoreCapability.ATTACK)))
 
         repeat(3) { attacker.tick() }
         assertEquals(100.0, target.health.current, "no swing progresses while ATTACK is suppressed")
@@ -62,7 +61,7 @@ class AliveBuffTest {
         val unit = alive(0.0, 0.0, maxHealth = 100.0)
         val faraway = alive(5000.0, 0.0)
         unit.issueAttack(faraway)
-        unit.applyBuff(Buff("root", durationTicks = 5, suppressedCapabilities = setOf(CoreCapability.MOVE)))
+        unit.apply(Buff("root", durationTicks = 5, suppressedCapabilities = setOf(CoreCapability.MOVE)))
         unit.health.current = 40.0
 
         repeat(3) { unit.tick() }
@@ -76,7 +75,7 @@ class AliveBuffTest {
         fun run(withBuff: Boolean): Double {
             val attacker = alive(0.0, 0.0).apply { attackEveryTick() }
             val target = alive(100.0, 0.0, maxHealth = 1_000.0)
-            if (withBuff) attacker.applyBuff(
+            if (withBuff) attacker.apply(
                 Buff("rage", durationTicks = -1, statMods = mapOf("damage" to StatMod("rage", 1.0)))
             )
             attacker.issueAttack(target)
@@ -91,7 +90,7 @@ class AliveBuffTest {
     fun `a bleed buff can kill through Buff onTick and death is handled the same tick`() {
         val unit = alive(0.0, 0.0, maxHealth = 30.0).apply { deathResponse = Alive.DeathResponse.RESPAWN }
         unit.respawn = Point(500.0, 500.0)
-        unit.applyBuff(Bleed("bleed", durationTicks = -1, perTick = 12.0))
+        unit.apply(Bleed("bleed", durationTicks = -1, perTick = 12.0))
 
         repeat(3) { unit.tick() } // 12 + 12 + 12 = 36 > 30
 

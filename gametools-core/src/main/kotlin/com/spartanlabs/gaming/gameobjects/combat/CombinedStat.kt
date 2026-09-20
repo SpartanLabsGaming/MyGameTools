@@ -1,6 +1,7 @@
-package com.spartanlabs.gaming.gameobjects
+package com.spartanlabs.gaming.gameobjects.combat
 
 //region 2. Intended Function
+import com.spartanlabs.gaming.gameobjects.Moddable
 import kotlinx.serialization.Serializable
 //endregion
 

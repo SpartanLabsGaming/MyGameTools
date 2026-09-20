@@ -5,7 +5,7 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.Alive
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.gaming.gameobjects.World
 //endregion
 

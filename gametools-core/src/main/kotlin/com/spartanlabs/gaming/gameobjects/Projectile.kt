@@ -2,6 +2,7 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.combat.Alive
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 //endregion

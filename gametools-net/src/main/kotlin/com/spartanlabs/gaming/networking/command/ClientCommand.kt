@@ -3,10 +3,10 @@ package com.spartanlabs.gaming.networking.command
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Actor
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AttackIntent
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AttackIntent
 import com.spartanlabs.gaming.gameobjects.EntityId
-import com.spartanlabs.gaming.gameobjects.Move
+import com.spartanlabs.gaming.gameobjects.combat.Move
 import com.spartanlabs.gaming.gameobjects.Movement
 //endregion
 
@@ -56,7 +56,7 @@ interface ClientCommand
  * issues a [Move] with [Movement.Targeting] and that destination, which the actor walks to and
  * settles on.
  *
- * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * Issuing this [com.spartanlabs.gaming.gameobjects.combat.Intent] clears whatever order [actor] was
  * previously under - so it calls off a pending attack when [actor] is an [Alive].
  *
  * @property actor the actor to move
@@ -72,7 +72,7 @@ data class MoveTo(val actor: EntityId, val x: Double, val y: Double) : ClientCom
  * [applyTo], this sets the actor's facing and issues a [Move] with [Movement.Directional].
  * [Actor.destination] is ignored while this strategy is active.
  *
- * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * Issuing this [com.spartanlabs.gaming.gameobjects.combat.Intent] clears whatever order [actor] was
  * previously under - so it calls off a pending attack when [actor] is an [Alive].
  *
  * @property actor the actor to move
@@ -88,7 +88,7 @@ data class MoveDir(val actor: EntityId, val angleDegrees: Int) : ClientCommand
  * [Movement.Homing] on the object [target] resolves to, so it re-points at the target's
  * current position every tick.
  *
- * Issuing this [com.spartanlabs.gaming.gameobjects.Intent] clears whatever order [actor] was
+ * Issuing this [com.spartanlabs.gaming.gameobjects.combat.Intent] clears whatever order [actor] was
  * previously under - so it calls off a pending attack when [actor] is an [Alive] and [target]
  * resolves. To pursue while still attacking, send [Attack] - it closes on the target on its own.
  *

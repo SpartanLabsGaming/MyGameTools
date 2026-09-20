@@ -5,15 +5,14 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
-import com.spartanlabs.gaming.gameobjects.Alive
-import com.spartanlabs.gaming.gameobjects.AliveSnapshot
-import com.spartanlabs.gaming.gameobjects.ModularStat
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot
+import com.spartanlabs.gaming.gameobjects.combat.ModularStat
 import com.spartanlabs.gaming.gameobjects.Player
-import com.spartanlabs.gaming.gameobjects.StatMod
+import com.spartanlabs.gaming.gameobjects.combat.StatMod
 //endregion
 
 //region 2. Intended Function
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 //endregion

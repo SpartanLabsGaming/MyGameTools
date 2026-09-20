@@ -1,6 +1,8 @@
 package com.spartanlabs.gaming.gameobjects
 //region 1. Organization Internal
 // 1.1 Spartan Laboratories
+import com.spartanlabs.gaming.gameobjects.combat.Alive
+import com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot
 import com.spartanlabs.generaltools.Color
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
@@ -150,15 +152,14 @@ data class ColorSnapshot(val r: Int, val g: Int, val b: Int, val a: Int) {
 
 /**
  * The shared supertype of the per-object entries in a world-state broadcast. The most specific
- * kind is picked for each object: [AliveSnapshot] for an [Alive], else [ActorSnapshot] for an
+ * kind is picked for each object: [com.spartanlabs.gaming.gameobjects.combat.AliveSnapshot] for an [com.spartanlabs.gaming.gameobjects.combat.Alive], else [ActorSnapshot] for an
  * [Actor], else a plain [VisibleObjectSnapshot].
  *
  * It serializes polymorphically - every entry carries a `type` field naming which kind it is
  * - so [com.spartanlabs.gaming.networking.GameServer.broadcast] can send one mixed list and
  * each object is decoded back as the right type.
  */
-@Serializable
-sealed interface DrawableSnapshot {
+interface DrawableSnapshot {
 
     /**
      * The stable [EntityId] of the object this snapshots, so a client can track an object
