@@ -8,7 +8,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/gametools?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
-[![Docs](https://img.shields.io/badge/docs-Dokka-orange)](https://github.com/SpartanLabsGaming/MyGameTools)
+[![Docs](https://img.shields.io/badge/docs-Dokka-orange)](https://spartanlabsgaming.github.io/MyGameTools/api/)
+[![Website](https://img.shields.io/badge/website-GitHub%20Pages-7F52FF)](https://spartanlabsgaming.github.io/MyGameTools/)
 
 </div>
 
@@ -335,6 +336,15 @@ the real Gradle build through Gradle TestKit, verifying the `gametools` umbrella
 ```
 
 API documentation is generated with [Dokka](https://kotlinlang.org/docs/dokka-introduction.html) and published as the Javadoc artifact alongside each Maven Central release.
+
+### Project website
+
+The landing page and the browsable API reference live at
+**<https://spartanlabsgaming.github.io/MyGameTools/>** — `/` is the site, `/api/` is the full
+Dokka publication for every module. The page source is [`website/`](website/) (plain HTML/CSS/JS,
+no site generator); [`.github/workflows/pages.yml`](.github/workflows/pages.yml) regenerates the
+Dokka docs and redeploys both on every push to `master`. See [`website/README.md`](website/README.md)
+for how to preview it locally.
 
 ---
 

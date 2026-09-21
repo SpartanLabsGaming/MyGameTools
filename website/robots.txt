@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://spartanlabsgaming.github.io/MyGameTools/sitemap.xml

@@ -68,6 +68,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   hook is a natural place). The seam Phase 3 interest filtering and Phase 5 zone save/load
   build on — nothing consumes it yet. (#47)
 
+- Project website — a GitHub Pages site at <https://spartanlabsgaming.github.io/MyGameTools/>,
+  with the aggregated Dokka API reference mounted at `/api/`. The page source is `website/`
+  (plain HTML/CSS/JS, no site generator); the new `.github/workflows/pages.yml` regenerates
+  the docs and redeploys both on every push to `master`.
+
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
   so other modules (starting with `gametools-world`) can declare and publish their own events

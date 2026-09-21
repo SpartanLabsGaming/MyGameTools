@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameTools — a Kotlin engine layer for 2D multiplayer games</title>
+<meta name="description" content="GameTools is a Kotlin/JVM library with a composable game-object hierarchy, a stat system, spatial indexing, a typed event bus, a map/zone model and a UDP GameServer — published to Maven Central.">
+<link rel="canonical" href="https://spartanlabsgaming.github.io/MyGameTools/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="GameTools — a Kotlin engine layer for 2D multiplayer games">
+<meta property="og:description" content="Game objects, stats, spatial indexing, maps and zones, and UDP networking, out of the box. Kotlin/JVM, Apache-2.0, on Maven Central.">
+<meta property="og:url" content="https://spartanlabsgaming.github.io/MyGameTools/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#0b0d13">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" id="top">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#bg)"/>
+        <path d="M22 11.5H14.5A4.5 4.5 0 0 0 10 16v0a4.5 4.5 0 0 0 4.5 4.5H18V17h-3" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs><linearGradient id="bg" x1="2" y1="2" x2="30" y2="30">
+          <stop offset="0" stop-color="#7f52ff"/><stop offset="1" stop-color="#22d3ee"/>
+        </linearGradient></defs>
+      </svg>
+      <span>GameTools</span>
+      <span class="brand-version" data-version>5.1.0</span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#modules">Modules</a>
+      <a href="#install">Install</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="api/" class="nav-api">API docs</a>
+      <a class="nav-gh" href="https://github.com/SpartanLabsGaming/MyGameTools" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" width="16" height="16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        <span>GitHub</span>
+      </a>
+      <button class="theme-toggle" type="button" aria-label="Switch colour theme" title="Switch colour theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></g></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Kotlin / JVM &middot; Apache-2.0 &middot; Maven Central</p>
+        <h1>The plumbing every 2D&nbsp;multiplayer game needs — <span class="grad">already written</span>.</h1>
+        <p class="lede">
+          GameTools is a batteries-included engine layer: a composable game-object hierarchy,
+          a stat system with proper buff stacking, pluggable spatial indexing, a typed event bus,
+          a tiled map and zone model, and a UDP <code>GameServer</code> that speaks a typed command
+          protocol. Spend your time on gameplay instead of infrastructure.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#install">Get started</a>
+          <a class="btn btn-ghost" href="api/">Browse the API docs</a>
+        </div>
+        <ul class="hero-badges">
+          <li><a href="https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml" rel="noopener"><img src="https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml/badge.svg" alt="CI status" loading="lazy" width="90" height="20"></a></li>
+          <li><a href="https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools" rel="noopener"><img src="https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/gametools?label=Maven%20Central&amp;color=blue" alt="Latest version on Maven Central" loading="lazy" width="150" height="20"></a></li>
+          <li><a href="https://kotlinlang.org" rel="noopener"><img src="https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&amp;logoColor=white" alt="Kotlin 2.2.0" loading="lazy" width="105" height="20"></a></li>
+          <li><a href="https://www.apache.org/licenses/LICENSE-2.0.txt" rel="noopener"><img src="https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg" alt="Apache 2.0 licence" loading="lazy" width="125" height="20"></a></li>
+        </ul>
+      </div>
+
+      <div class="hero-code">
+        <figure class="code-card">
+          <figcaption class="code-head">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="code-title">Hero.kt</span>
+            <button class="copy" type="button" data-copy>Copy</button>
+          </figcaption>
+<pre><code data-lang="kotlin">val world = World(seed = 1_234L)
+val player = Player("Spartak")
+
+val hero = Alive(
+    location = Point(x = 100.0, y = 100.0),
+    dimensions = Dimensions(width = 40.0, height = 40.0),
+    maxHealth = 250.0
+)
+player.own(hero)
+world.add(hero)
+
+// Buffs stack additively or multiplicatively
+hero.damage.applyMod(
+    StatMod("sword", 0.25, StatMod.Type.MULTIPLICATIVE)
+)
+
+// Standing orders, not raw state pokes
+val target = Point(x = 400.0, y = 250.0)
+hero.issue(Move(Movement.Targeting, target))
+
+// React to what the simulation does
+world.events.subscribe { event ->
+    if (event is GameEvent.EntityDied) println(event)
+}
+
+world.tick()   // once per frame</code></pre>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="strip">
+    <div class="wrap strip-grid">
+      <div><strong>4</strong><span>published coordinates</span></div>
+      <div><strong>5</strong><span>test levels, gated separately</span></div>
+      <div><strong>1</strong><span>dependency line for everything</span></div>
+      <div><strong>0</strong><span>hidden global state — seeded RNG, deterministic tick</span></div>
+    </div>
+  </section>
+
+  <section id="features" class="section">
+    <div class="wrap">
+      <h2 class="section-title">What you get</h2>
+      <p class="section-lede">Each layer adds exactly one concern, so you can take the parts you want and leave the rest.</p>
+
+      <div class="cards">
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🕹️</span>Composable game objects</h3>
+          <p><code>GameObject → VisibleObject → Actor → Alive</code> — position, rendering, movement, combat.
+             Movement is a pluggable <code>Movement</code> strategy: chase-and-stop, chase-and-keep-chasing,
+             fixed heading, or homing.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">📊</span>Stats that stack correctly</h3>
+          <p><code>ModularStat</code> reshapes a <code>Double</code> through any number of named
+             <code>StatMod</code>s; <code>CombinedStat</code> keeps a current/max pair in proportion when
+             the ceiling moves, so a max-health buff never wastes or destroys the current value.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🗺️</span>Pluggable spatial index</h3>
+          <p>A <code>SpatialIndex&lt;E&gt;</code> port with two implementations — a point-region
+             <code>Quadtree</code> (the default, via <code>QuadtreeSpatialIndex</code>) and a
+             <code>UniformGrid</code> with O(1) amortised updates for roughly uniform density.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">📡</span>Typed event bus</h3>
+          <p><code>World.events</code> publishes <code>EntitySpawned</code>, <code>AttackLanded</code>,
+             <code>DamageDealt</code>, <code>EntityDied</code> and more. Synchronous, in-order,
+             single-threaded, with per-listener fault isolation.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🎯</span>Standing orders</h3>
+          <p><code>Actor.intent</code> tracks <em>what</em> a unit was told to do while <code>movement</code>
+             tracks <em>how</em>. <code>issue(Intent)</code> always tears the previous order down first, so
+             orders are mutually exclusive by construction.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🎲</span>Deterministic simulation</h3>
+          <p>Every random choice goes through a seeded <code>RandomSource</code>, so a fixed seed and a
+             fixed input sequence reproduce a run exactly. <code>SimulationLoop</code> adds an opt-in
+             fixed-timestep driver with bounded catch-up.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🧭</span>Maps, space and zones</h3>
+          <p><code>TiledMap</code> implements the <code>Space</code> port — terrain grid, static AABB
+             geometry, named spawn points, loaded from a <code>@Serializable</code> JSON
+             <code>MapDefinition</code>. <code>ZoneGrid</code>/<code>ZoneIndex</code> partition it and
+             report every crossing.</p>
+        </article>
+
+        <article class="card">
+          <h3><span class="card-icon" aria-hidden="true">🌐</span>UDP server &amp; command protocol</h3>
+          <p><code>GameServer</code> handles handshakes, one shared multiplexed socket and JSON
+             broadcast; <code>ClientCommand</code> carries <code>MoveTo</code>, <code>Follow</code>,
+             <code>Attack</code> and your own commands over a <code>COMMAND &lt;json&gt;</code> envelope,
+             addressing objects by <code>EntityId</code>.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture" class="section section-alt">
+    <div class="wrap">
+      <h2 class="section-title">Architecture</h2>
+      <p class="section-lede">Four inheritance layers, each one concern deep — plus the systems that own and observe them.</p>
+
+      <div class="arch">
+        <div class="arch-diagram">
+          <svg viewBox="0 0 420 470" role="img" aria-labelledby="arch-title arch-desc">
+            <title id="arch-title">The GameTools object hierarchy and the systems around it</title>
+            <desc id="arch-desc">GameObject is extended by VisibleObject, which is extended by Actor, which is extended by Alive and by Projectile. A World owns every GameObject and holds a SpatialIndex, an EventBus and an optional Space; a GameServer broadcasts snapshots of visible objects.</desc>
+
+            <g class="layer" transform="translate(30 20)">
+              <rect width="240" height="64" rx="12"/>
+              <text class="n" x="18" y="27">GameObject</text>
+              <text class="m" x="18" y="48">location · active · tick()</text>
+            </g>
+            <path class="edge" d="M150 84 V106"/>
+
+            <g class="layer" transform="translate(30 106)">
+              <rect width="270" height="64" rx="12"/>
+              <text class="n" x="18" y="27">VisibleObject</text>
+              <text class="m" x="18" y="48">area · color · angle · subObjects</text>
+            </g>
+            <path class="edge" d="M150 170 V192"/>
+
+            <g class="layer" transform="translate(30 192)">
+              <rect width="270" height="64" rx="12"/>
+              <text class="n" x="18" y="27">Actor</text>
+              <text class="m" x="18" y="48">movement · intent · destination</text>
+            </g>
+            <path class="edge" d="M150 256 V268 M115 268 H305 M115 268 V278 M305 268 V278"/>
+
+            <g class="layer accent" transform="translate(30 278)">
+              <rect width="170" height="64" rx="12"/>
+              <text class="n" x="16" y="27">Alive</text>
+              <text class="m" x="16" y="48">health · damage</text>
+            </g>
+            <g class="layer accent" transform="translate(220 278)">
+              <rect width="170" height="64" rx="12"/>
+              <text class="n" x="16" y="27">Projectile</text>
+              <text class="m" x="16" y="48">homing · directional</text>
+            </g>
+
+            <path class="edge dash" d="M115 342 V380 M305 342 V380"/>
+            <g class="layer world" transform="translate(30 380)">
+              <rect width="360" height="70" rx="12"/>
+              <text class="n" x="18" y="28">World</text>
+              <text class="m" x="18" y="50">SpatialIndex · EventBus · Space · tick()</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="arch-table-wrap">
+          <table class="table">
+            <caption class="sr-only">Responsibility of each layer</caption>
+            <thead><tr><th scope="col">Layer</th><th scope="col">Responsibility</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><code>GameObject</code></th><td>Position, the active flag, and the <code>tick()</code> lifecycle hook every entity shares.</td></tr>
+              <tr><th scope="row"><code>VisibleObject</code></th><td>Rendering: area, colour, texture, angle and nested sub-objects (health bars, nameplates).</td></tr>
+              <tr><th scope="row"><code>Actor</code></th><td>Movement via a pluggable <code>Movement</code> strategy, and the standing order in <code>intent</code>.</td></tr>
+              <tr><th scope="row"><code>Alive</code></th><td>Combat: health, damage, attack timing/range/speed, evasion, faction and <code>Player</code> ownership.</td></tr>
+              <tr><th scope="row"><code>Projectile</code></th><td>Travel-and-hit entities — home in on one target, or pierce in a straight line.</td></tr>
+              <tr><th scope="row"><code>World</code></th><td>Owns every object, reconciles the spatial index and the <code>EntityId</code> index each frame, drives the tick, publishes events.</td></tr>
+              <tr><th scope="row"><code>EventBus</code></th><td>Synchronous, single-threaded publish/subscribe, delivered in order with per-listener fault isolation.</td></tr>
+              <tr><th scope="row"><code>SimulationLoop</code></th><td>Opt-in fixed-timestep driver — a daemon thread calling <code>tick()</code> at a live-tunable rate.</td></tr>
+              <tr><th scope="row"><code>GameServer</code></th><td>UDP transport: handshakes, one shared multiplexed socket, input decoding, JSON broadcast.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="modules" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Modules</h2>
+      <p class="section-lede">Depend on the umbrella for everything, or on <code>gametools-core</code> alone when you don't need the server.</p>
+
+      <div class="cards modules">
+        <article class="card module">
+          <h3>core</h3>
+          <p class="coord"><code>io.github.spartanlabsgaming:gametools-core</code></p>
+          <p>The object hierarchy, stats and buffs, <code>SpatialIndex</code>, <code>Quadtree</code>,
+             <code>UniformGrid</code>, <code>Space</code>, <code>EntityId</code>, <code>World</code>,
+             <code>EventBus</code>, <code>SimulationLoop</code> and the <code>@Serializable</code>
+             geometry DTOs.</p>
+          <p class="deps">Depends on — nothing</p>
+        </article>
+
+        <article class="card module">
+          <h3>net</h3>
+          <p class="coord"><code>io.github.spartanlabsgaming:gametools-net</code></p>
+          <p><code>GameServer</code>, the <code>MouseAction</code> wire type, and the typed
+             <code>ClientCommand</code> protocol under <code>.command.*</code>.</p>
+          <p class="deps">Depends on <code>gametools-core</code></p>
+        </article>
+
+        <article class="card module">
+          <h3>world <span class="tag">Phase 1</span></h3>
+          <p class="coord"><code>io.github.spartanlabsgaming:gametools-world</code></p>
+          <p><code>TiledMap</code>, <code>TerrainLayer</code>, <code>StaticGeometry</code>,
+             <code>SpawnPoint</code> and the <code>MapDefinition</code>/<code>MapLoader</code> JSON
+             format; <code>Zone</code>, <code>ZoneGrid</code>, <code>ZoneIndex</code>. Physics and
+             vision are still to come.</p>
+          <p class="deps">Depends on <code>gametools-core</code></p>
+        </article>
+
+        <article class="card module umbrella">
+          <h3>umbrella <span class="tag tag-brand">start here</span></h3>
+          <p class="coord"><code>io.github.spartanlabsgaming:gametools</code></p>
+          <p>No source of its own — re-exports every module with <code>api</code>, so one dependency
+             line pulls the whole framework, exactly as the pre-4.0.0 <code>GameTools</code> artifact
+             did.</p>
+          <p class="deps">Depends on <code>core</code> · <code>net</code> · <code>world</code></p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="section section-alt">
+    <div class="wrap narrow">
+      <h2 class="section-title">Install</h2>
+      <p class="section-lede">Published to Maven Central. The latest release is <strong data-version>5.1.0</strong>.</p>
+
+      <div class="tabs" data-tabs>
+        <div class="tablist" role="tablist" aria-label="Build tool">
+          <button role="tab" id="tab-kts" aria-controls="panel-kts" aria-selected="true" type="button">Gradle (Kotlin)</button>
+          <button role="tab" id="tab-groovy" aria-controls="panel-groovy" aria-selected="false" tabindex="-1" type="button">Gradle (Groovy)</button>
+          <button role="tab" id="tab-maven" aria-controls="panel-maven" aria-selected="false" tabindex="-1" type="button">Maven</button>
+        </div>
+
+        <div role="tabpanel" id="panel-kts" aria-labelledby="tab-kts" tabindex="0">
+          <figure class="code-card">
+            <figcaption class="code-head"><span class="code-title">build.gradle.kts</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="kotlin">dependencies {
+    // everything, one line
+    implementation("io.github.spartanlabsgaming:gametools:5.1.0")
+
+    // — or, à la carte —
+    // no networking:
+    // implementation("io.github.spartanlabsgaming:gametools-core:5.1.0")
+    // GameServer (pulls in -core):
+    // implementation("io.github.spartanlabsgaming:gametools-net:5.1.0")
+}</code></pre>
+          </figure>
+        </div>
+
+        <div role="tabpanel" id="panel-groovy" aria-labelledby="tab-groovy" tabindex="0" hidden>
+          <figure class="code-card">
+            <figcaption class="code-head"><span class="code-title">build.gradle</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="kotlin">dependencies {
+    implementation 'io.github.spartanlabsgaming:gametools:5.1.0'
+}</code></pre>
+          </figure>
+        </div>
+
+        <div role="tabpanel" id="panel-maven" aria-labelledby="tab-maven" tabindex="0" hidden>
+          <figure class="code-card">
+            <figcaption class="code-head"><span class="code-title">pom.xml</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.github.spartanlabsgaming&lt;/groupId&gt;
+    &lt;artifactId&gt;gametools&lt;/artifactId&gt;
+    &lt;version&gt;5.1.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+          </figure>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div class="note">
+          <h3>Sources &amp; docs</h3>
+          <p>The umbrella's <code>-sources.jar</code> and <code>-javadoc.jar</code> bundle the Kotlin
+             sources and combined Dokka docs of every module, so IDE “Go to declaration” and quick-doc
+             resolve through the single coordinate.</p>
+        </div>
+        <div class="note">
+          <h3>Upgrading from 3.x?</h3>
+          <p>The single <code>io.github.spartanlabsgaming:GameTools</code> artifact became
+             <code>…:gametools</code> (lowercase) in 4.0.0. Swap the one dependency line — the
+             umbrella's transitive contents are unchanged, so no imports move.</p>
+        </div>
+        <div class="note">
+          <h3>Transitive dependencies</h3>
+          <p>GameTools brings in Spartan Laboratories' <a href="https://github.com/SpartanLaboratories" rel="noopener">WebTools</a>
+             and <a href="https://github.com/SpartanLaboratories" rel="noopener">GeneralTools</a>, plus
+             <code>kotlinx-serialization-json</code> and the slf4j API — bring your own slf4j binding
+             to see log output.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quickstart" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Quick start</h2>
+      <p class="section-lede">A world and a unit, then a server in front of them.</p>
+
+      <div class="quick-grid">
+        <figure class="code-card">
+          <figcaption class="code-head"><span class="code-title">Simulation</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="kotlin">import com.spartanlabs.gaming.gameobjects.*
+import com.spartanlabs.geometry.Point
+import com.spartanlabs.geometry.Dimensions
+
+// 1. Set up a world and a player
+val world = World()
+val player = Player("Spartak")
+
+// 2. Spawn a unit
+val hero = Alive(
+    location = Point(x = 100.0, y = 100.0),
+    dimensions = Dimensions(width = 40.0, height = 40.0),
+    maxHealth = 250.0
+)
+player.own(hero)
+world.add(hero)
+
+// 3. Buff a stat
+hero.damage.applyMod(
+    StatMod(
+        name = "sword-of-power",
+        value = 0.25,
+        type = StatMod.Type.MULTIPLICATIVE
+    )
+)
+
+// 4. Send it somewhere
+hero.destination = Point(x = 400.0, y = 250.0)
+
+// 5. Advance the simulation — once per frame
+world.tick()</code></pre>
+        </figure>
+
+        <figure class="code-card">
+          <figcaption class="code-head"><span class="code-title">Server</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="kotlin">import com.spartanlabs.gaming.networking.GameServer
+import com.spartanlabs.gaming.networking.command.*
+
+// + a SerializersModule for your own ClientCommand types
+val commands = ClientCommandCodec()
+
+val server = GameServer(
+    maxConnections = 8,
+    onPlayerInput = { playerName, input ->
+        println("$playerName -> $input")
+    },
+    onPlayerMessage = { playerName, message ->
+        println("$playerName says: $message")
+    },
+    commandCodec = commands,
+    onCommand = { playerName, command ->
+        // authorize first — applyTo() does not — then run
+        // the mechanism the command names
+        if (playerOwns(playerName, command)) {
+            command.applyTo(world)
+        }
+    }
+)
+
+// Broadcast world state to every client, once per tick
+// server.broadcast(DrawableSnapshot.from(someVisibleObject))</code></pre>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="testing" class="section section-alt">
+    <div class="wrap narrow">
+      <h2 class="section-title">Testing &amp; building</h2>
+      <p class="section-lede">Five test levels, each independently runnable so CI can gate them separately. Every module carries its own five-level tree; each task fans out across all modules.</p>
+
+      <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th scope="col">Gradle task</th><th scope="col">Level</th><th scope="col">Scope</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>componentTest</code></th><td>2 — Component</td><td>Isolated component / business-logic tests</td></tr>
+          <tr><th scope="row"><code>integrationTest</code></th><td>3 — Integration</td><td>Integration &amp; external interfaces (binds real UDP ports)</td></tr>
+          <tr><th scope="row"><code>deterministicTest</code></th><td>4a — Deterministic</td><td>Pure-logic input/output and law-based tests</td></tr>
+          <tr><th scope="row"><code>e2eTest</code></th><td>4b — End-to-end</td><td>Full client↔server round trips (binds real UDP ports)</td></tr>
+          <tr><th scope="row"><code>nonfunctionalTest</code></th><td>4c — Non-functional</td><td>Scalability &amp; robustness (binds real UDP ports)</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <figure class="code-card">
+        <figcaption class="code-head"><span class="code-title">Terminal</span><button class="copy" type="button" data-copy>Copy</button></figcaption>
+<pre><code data-lang="bash">./gradlew build                          # compile + test
+./gradlew componentTest                  # just the fast, isolated tests
+./gradlew integrationTest                # networking integration tests
+./gradlew :build-logic:integrationTest   # the convention plugins' own TestKit checks
+./gradlew dokkaGeneratePublicationHtml   # generate this site's API docs</code></pre>
+      </figure>
+
+      <p class="fineprint">Because a <code>GameServer</code> binds a fixed common UDP port, any test task that starts
+         one acquires a shared, single-permit Gradle build service, so port-binding tasks never run concurrently.</p>
+    </div>
+  </section>
+
+  <section id="resources" class="section">
+    <div class="wrap">
+      <h2 class="section-title">Go deeper</h2>
+      <div class="links">
+        <a class="link-card" href="api/">
+          <h3>API reference</h3>
+          <p>The full Dokka documentation for every module, regenerated on each push to <code>master</code>.</p>
+        </a>
+        <a class="link-card" href="https://github.com/SpartanLabsGaming/MyGameTools/blob/master/CHANGELOG.md" rel="noopener">
+          <h3>Changelog</h3>
+          <p>Every release, in Keep a Changelog form — including what is waiting in <em>Unreleased</em>.</p>
+        </a>
+        <a class="link-card" href="https://github.com/SpartanLabsGaming/MyGameTools/blob/master/CONTRIBUTING.md" rel="noopener">
+          <h3>Contributing</h3>
+          <p>Branching model, commit conventions, the five test levels and the release process.</p>
+        </a>
+        <a class="link-card" href="https://github.com/SpartanLabsGaming/MyGameTools/blob/master/docs/framework-vision-and-roadmap.md" rel="noopener">
+          <h3>Vision &amp; roadmap</h3>
+          <p>Where the framework is going: the phased plan behind the map, zone, physics and vision work.</p>
+        </a>
+        <a class="link-card" href="https://github.com/SpartanLabsGaming/MyGameTools/issues" rel="noopener">
+          <h3>Issues</h3>
+          <p>Bugs, feature requests, and the numbered plans each module's work is tracked under.</p>
+        </a>
+        <a class="link-card" href="https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools" rel="noopener">
+          <h3>Maven Central</h3>
+          <p>Published artifacts for the umbrella and each individual module.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>
+      Built by <a href="https://github.com/SpaSinghOut" rel="noopener">Spartak Singh</a> under
+      <a href="https://github.com/SpartanLaboratories" rel="noopener">Spartan Laboratories</a>.
+      Licensed under <a href="https://www.apache.org/licenses/LICENSE-2.0.txt" rel="noopener">Apache 2.0</a>.
+    </p>
+    <p class="footer-links">
+      <a href="https://github.com/SpartanLabsGaming/MyGameTools" rel="noopener">GitHub</a>
+      <a href="api/">API docs</a>
+      <a href="https://github.com/SpartanLabsGaming/MyGameTools/blob/master/SECURITY.md" rel="noopener">Security</a>
+      <a href="https://github.com/SpartanLabsGaming/MyGameTools/blob/master/CODE_OF_CONDUCT.md" rel="noopener">Code of conduct</a>
+    </p>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+</body>
+</html>
