@@ -43,3 +43,9 @@ bin/
 
 ### Firecrawl ###
 .firecrawl/
+
+### Project website ###
+# The Pages workflow mounts the Dokka publication at /api/; a local preview copy of it
+# under website/ is generated output, never committed.
+/website/api/
+/_site/
