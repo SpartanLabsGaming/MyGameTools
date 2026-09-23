@@ -1,150 +1,283 @@
-# Plan: `world-system-core` — the `WorldSystem` mechanism, its slots, and `World`'s registry
+# Plan: `world-system-core` — `WorldSystem` core mechanism (opt-in per-`World` system registry)
 
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76)
   — *"World Systems Stage 1: `WorldSystem` core mechanism (opt-in per-`World` system registry)"*.
-- **Architecture:** `docs/world-systems-implementation-architecture.md`, unit slug
-  `world-system-core` (§10 decomposition table, row 1; scope in §4.1–§4.4, §8, §10).
-- **Branch:** `feature/76-world-system-core`, off current `master` (`f727608`) — **not** off
-  `feature/71-combat-package`. None of #71's uncommitted or committed working-tree changes ride
-  in this unit's commits.
+  The issue body's own "annotation types are out of scope" line is superseded by C1 (both
+  architecture documents below); see Follow-ups F3.
+- **Architecture:** `docs/world-system-core-architecture.md` (unit slug `world-system-core`,
+  the systems-level design this plan makes concrete — §4 internal state model, §6 marker matrix,
+  §7 R1–R9 refinements/deviations, §9 decomposition), subordinate to
+  `docs/world-systems-implementation-architecture.md` (the grand design; §1.2 C1/C4/C5, §10
+  decomposition row 1, Cross-plan alignment). Where the two disagree on the registry's internal
+  shape (they do, on tier-1 storage — see "Deviations" below), the newer, more specific
+  `world-system-core-architecture.md` governs; that document is itself the source of truth cited
+  throughout this plan.
+- **Supersedes:** this plan replaces the older draft at this same path in place — re-planned from
+  scratch at the user's request against the newer architecture note, not layered on top of the
+  prior draft.
+- **Branch:** `feature/76-world-system-core`, off the latest `master`.
+- **Baseline:** `master` @ `540513a`.
 - **Commit:** TBD
-- **PR:** TBD. This plan document is **not** part of the implementation PR: it lands earlier,
-  together with the architecture and the other four unit plans, in the docs-only planning PR off
-  `master` (architecture §1.2, "Other settled points"). The implementation PR references it.
-- **What this plans:** a new `com.spartanlabs.gaming.annotation` package in `gametools-core`
-  (`ExperimentalGameToolsApi`, `SupportedExtension`); `WorldSystem` and the sealed
-  `CoreSystemSlot`/`CoreWorldSystemSlot` slot types in `com.spartanlabs.gaming.gameobjects`; four
-  new members on the existing `final class World` (`installSystem`, `uninstallSystem`,
-  `installedSystems`, `stepSystems`); the test-source-set-only Gradle opt-in in
-  `gametools-core/build.gradle.kts`; and this unit's own README/CONTRIBUTING/CHANGELOG duties.
-  No concrete `WorldSystem` (zone, experience, physics) is added here.
+- **PR:** TBD — closes #76. **This plan document is not part of that PR.** Per the settled
+  version-control point (grand design §1.2, "this planning pass lands via a docs-only PR"), this
+  document and the architecture note land together in a separate docs-only PR off `master`
+  (replacing the older draft at this path; the four sibling unit plans are already on `master`,
+  PR #83), before `feature/76-world-system-core` is cut. See §8 (Version control) for the
+  implementation branch's own commit sequence.
+- **What this plans:** the `com.spartanlabs.gaming.annotation` package
+  (`ExperimentalGameToolsApi`, `SupportedExtension`); `WorldSystem`; `CoreSystemSlot`/
+  `CoreWorldSystemSlot`; `World`'s `installSystem`/`uninstallSystem`/`installedSystems`/
+  `stepSystems` and their internal state model; the three `CONTRIBUTING.md` edits (I1); the
+  `gametools-core` test-only opt-in Gradle block.
 - **Status:** planning only. No source, test, or build file has been modified by this document.
-- **Target release:** unresolved project-wide — architecture §12 OD3 recommends not blocking this
-  unit on #71/#78; see this plan's §9 OD3 (carried).
-- **Dependencies:** none (architecture §10). Landing order 1 of 5; `zone-world-system` (#77) and
-  `experience-system` (#78) both depend on this unit.
-- **Related docs:** `docs/world-systems-implementation-architecture.md` (binding); the superseded
-  `docs/world-systems-plan-draft.md`; `docs/physics-core-seams-plan.md` (source of
-  `SupportedExtension`'s exact declaration, §2.2/§3.1, copied here per C1); `docs/issue-47-zones-plan.md`
-  (plan-doc skeleton precedent; `ZoneIndex.entitiesIn`'s "fresh copy" precedent,
-  `gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/zone/ZoneIndex.kt:68`);
-  `docs/api-openness-decisions-6.0.0.md` D4 (`World` stays closed to subclassing — unaffected by
-  this design, per architecture §7 item 5).
+- **Target release:** not settled independently — grand design §12 OD3 (resolved: #76/#77 need
+  not wait on #71 and may ship in their own Feature release). This unit's commits land under
+  `CHANGELOG.md`'s `[Unreleased]` heading; no version bump in this plan (`CONTRIBUTING.md`
+  §Releasing is a release-branch step, out of scope here).
+- **Dependencies:** none. This is decomposition position 1 of 5; `zone-world-system` (#77),
+  `experience-system` (#78), `world-system-graduation` (#79), and `physics-world-system` (#80)
+  all depend on it.
 
 ---
 
 ## 1. Context
 
-### 1.1 The problem, restated
+### 1.1 The settled ask
 
-`World` (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/World.kt`) has no
-general, opt-in way to host add-on per-frame or event-driven behaviour. The issue that originally
-proposed this (`docs/world-systems-plan-draft.md`) design has already been superseded by the
-architecture document's two-tier model; this unit builds the mechanism the architecture settled
-on: `WorldSystem`, its two ordering tiers, and `World`'s registry of four members. Concrete
-adapters (zone, experience, physics) are explicitly out of scope — #77/#78/#80.
+Give `World` a general, opt-in, zero-cost-when-unused way to host add-on per-frame behaviour: the
+`WorldSystem` contract, a two-tier ordering model (`CoreSystemSlot`/`CoreWorldSystemSlot`), and
+`World`'s own registry (`installSystem`, `uninstallSystem`, `installedSystems`, `stepSystems`),
+plus the `com.spartanlabs.gaming.annotation` package that gates the whole seam Experimental until
+#79.
 
-### 1.2 Current state (verified against `master` @ `f727608`)
+### 1.2 Acceptance criteria
 
-- `World` is `final class World(val seed: Long = Random.nextLong())`
-  (`World.kt:48`; D4, `docs/api-openness-decisions-6.0.0.md:132-150`, ruled closed). Its class doc
-  (`World.kt:20-47`) states `tick()`'s five-step order and the determinism contract: *"Given the
-  same [seed] and the same sequence of external calls, two worlds produce the same result"*
-  (`World.kt:41-43`). `tick()` (`World.kt:218-245`) never references any add-on system today.
-  `reindexSpatial()` (`World.kt:278-284`) is the last member before the closing brace at
-  `World.kt:285` — the new registry region is appended immediately after it, so it lands nowhere
-  near the KDoc lines `dcb396e` rewrites on `feature/71-combat-package` (`World.kt:70-71,
-  108-109, 200-201` on master, citing `Alive`/`Actor.world` in prose) — #71 and #76 can then merge
-  in either order with no conflict on those lines.
-- No `com.spartanlabs.gaming.annotation` package and no `@RequiresOptIn`/`@SupportedExtension`
-  type exists anywhere in the repo (verified: `gametools-core/src/main/kotlin/com/spartanlabs/gaming`
-  has only `event`, `gameobjects`, `simulation`, `spatial`). `com.spartanlabs.gaming.annotation.SupportedExtension`'s
-  exact, parameterless shape is already fixed by `docs/physics-core-seams-plan.md` §2.2/§3.1 — this
-  plan copies it verbatim (C1), adjusting only the sentences that name the Experimental tier's own
-  marker.
-- `EventBus` (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/event/EventBus.kt`) is the
-  direct precedent for symmetric subscribe/cancel: `subscribe` returns a `fun interface
-  Subscription { fun cancel() }` documented "Idempotent" (`EventBus.kt:39-41`); `publish`
-  (`EventBus.kt:73-89`) catches and logs a throwing listener rather than aborting delivery.
-- `Capability`/`CoreCapability` (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/combat/Capability.kt:18-34`)
-  is the direct precedent for an open interface plus a closed, ordered, library-defined enum
-  implementing it, both declared in one file — this plan follows that same one-file convention for
-  `CoreSystemSlot`/`CoreWorldSystemSlot`.
-- `SimulationLoop.advance` (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/simulation/SimulationLoop.kt:112-127`)
-  calls `world.tick()` then `onTick(world.tickCount)` once per whole tick, with no `dt` — the
-  documented, public (`advance` is not `private`) hook a driver wires `world.stepSystems()` into,
-  and the one this unit's deterministic test drives directly with no thread involved.
-  `SimulationLoop` itself never adopts `WorldSystem` — it is the driver, not a system.
-- `TiledMap.addSpawnPoint` (`gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/map/TiledMap.kt:113-116`)
-  is the repo's established precedent for `require`-based duplicate-registration rejection,
-  throwing `IllegalArgumentException` for a caller-wiring error rather than returning `Result`.
-- `GameObject.kt:23` declares `internal val log: Logger = LoggerFactory.getLogger("com.spartanlabs.gaming.gameobjects")`,
-  shared by every file in the `gameobjects` package including `World.kt` — `World`'s new members
-  log through this same instance, matching `World`'s existing `log.info`/`log.debug` calls.
-- `gametools-core/build.gradle.kts:6` and `gametools-world/build.gradle.kts:14` both still read
-  `5.1.0`. `gametools-world/build.gradle.kts:9` depends on core via `api(project(":gametools-core"))`
-  — the dependency edge runs one way, which is why the slot types must live in `core` (C5) for a
-  `gametools-world` adapter to reference them later.
-- `build-logic/src/main/kotlin/gametools.kotlin-library.gradle.kts` is the convention plugin both
-  `gametools-core/build.gradle.kts` and `gametools-world/build.gradle.kts` apply (via
-  `gametools.published-library`); it registers `componentTest`/`integrationTest`/`deterministicTest`/
-  `e2eTest`/`nonfunctionalTest` Gradle tasks filtering on `com.spartanlabs.gaming.testing.<level>.*`,
-  and declares `testImplementation("org.jetbrains.kotlin:kotlin-test")` — no MockK dependency
-  exists anywhere in the repo. It does **not** currently configure `compileTestKotlin`'s
-  `compilerOptions.optIn` — this unit adds that block directly to `gametools-core/build.gradle.kts`
-  (not the shared convention plugin, since `gametools-world`'s equivalent line is #77's own to add,
-  per this unit's stated out-of-scope list).
+- A `World` that installs nothing behaves exactly as it does today — `World.tick()` is unchanged
+  and never calls `stepSystems()`.
+- A `World` with systems installed steps them in a well-defined order — tier 1 by declared
+  `order`, then tier 2 in install order — from an explicit driver call.
+- `installSystem`/`uninstallSystem` are symmetric, idempotent on the uninstall side, and
+  failure-atomic on the install side (nothing recorded if `installOn` throws).
+- `installedSystems` never contains a system while its own `installOn` is running (#78 depends on
+  this).
+- Re-entrant `installSystem` (a system installing itself, or a second claimant of an in-flight
+  slot) and re-entrant `stepSystems()` are both rejected, not silently accepted (R1, R2).
+- Outside `gametools-core`'s own test source set (which opts in module-wide), every entry point to
+  the seam requires opting in to `ExperimentalGameToolsApi` (`@OptIn(ExperimentalGameToolsApi::class)`
+  or the equivalent compiler flag): `World`'s four new members, `CoreSystemSlot`/
+  `CoreWorldSystemSlot`, `WorldSystem.coreSlot`, and implementing `WorldSystem` (gated by
+  `@SubclassOptInRequired`). Only calling `installOn`/`uninstallFrom`/`step` on a `WorldSystem`
+  reference already obtained through one of those gated paths needs no further opt-in.
+- `CONTRIBUTING.md` gains the three I1 edits; README/CONTRIBUTING/CHANGELOG all reflect this
+  unit's new surface in this unit's own commits.
 
-### 1.3 Acceptance criteria (architecture §1.3, narrowed to this unit's scope)
+### 1.3 Where this plugs into the existing design
 
-1. `gametools-core` gains a new, public `com.spartanlabs.gaming.annotation` package with
-   `ExperimentalGameToolsApi` (`@RequiresOptIn(level = ERROR)`) and `SupportedExtension`
-   (documentary, no gate), exactly as specified in architecture §4.1/§8 and
-   `docs/physics-core-seams-plan.md` §2.2.
-2. `WorldSystem` exists as a `@SubclassOptInRequired(ExperimentalGameToolsApi::class)` interface
-   with `installOn`, a default-no-op `uninstallFrom`, a default-no-op `step`, and a default-`null`
-   `coreSlot: CoreSystemSlot?`.
-3. `CoreSystemSlot` (`sealed interface`) and `CoreWorldSystemSlot` (`enum class`, `PHYSICS(0)`,
-   `ZONE(1)`) exist, both `@ExperimentalGameToolsApi`, in the same package as `World`.
-4. `World` gains `installSystem`, `uninstallSystem`, `installedSystems`, `stepSystems` — each
-   `@ExperimentalGameToolsApi` — with the exact registry semantics in §3.4 below. A `World` that
-   never calls any of the four behaves exactly as it does today; `World.tick()` never calls
-   `stepSystems()`.
-5. A consumer building against these types from `gametools-core`'s own test source set can do so
-   with a single `compilerOptions.optIn` line, with no main-source-set-wide flag anywhere.
-6. `README.md`, `CONTRIBUTING.md`, and `CHANGELOG.md` document this unit's own new surface in this
-   unit's own commits (architecture §7).
+`World` (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/World.kt`, 285 lines,
+`final class`) has no reference to any add-on system today. The new registry lands in a fresh
+`//region INSTALLED SYSTEMS` after `reindexSpatial()` (`World.kt:278-284`) and before the class's
+closing brace (`World.kt:285`) — verified: `class World(...)` opens at `World.kt:48`, the imports
+region is `World.kt:3-18`, `tick()`'s body starts at `World.kt:218`. `#71`
+(`feature/71-combat-package` @ `dcb396e`) touches only `World.kt:70-71,108-109,200-201` — three
+KDoc links rewritten to the moved `combat.Alive` — none of which this plan's new region or import
+line touches, so #76 and #71 merge cleanly in either order (confirmed by reading `dcb396e`'s own
+diff to `World.kt`).
 
 ---
 
-## 2. Design
+## 2. Deviations from the grand design
 
-### 2.1 Package/file placement — confirmed, not changed, from architecture §4.1–§4.3
+`docs/world-system-core-architecture.md` §7 records nine refinements/deviations (R1–R9) against
+`docs/world-systems-implementation-architecture.md`'s own literal text; this plan implements all
+nine. The two worth calling out explicitly:
 
-- `com.spartanlabs.gaming.annotation` (new top-level package in `gametools-core`) — matches the
-  precedent `docs/physics-core-seams-plan.md` §2.1 already established (flat, dedicated,
-  cross-cutting concern package, mirroring `org.jetbrains.annotations`/`kotlin.annotation`). Two
-  files: `ExperimentalGameToolsApi.kt`, `SupportedExtension.kt` (one type per file, matching the
-  package's own later precedent).
-- `WorldSystem.kt` and `CoreSystemSlot.kt` both land in the **existing**
-  `com.spartanlabs.gaming.gameobjects` package, beside `World` — not a new `world.system` package
-  (architecture §7 item 4 explicitly retires that sketch). `CoreSystemSlot`/`CoreWorldSystemSlot`
-  are declared together in one file, `CoreSystemSlot.kt`, following the `Capability.kt` precedent
-  (§1.2) of one interface plus its closed built-in enum sharing a file.
-- `World`'s four new members are added as genuine members of the existing `World.kt`, inside a new
-  `//region INSTALLED SYSTEMS` block appended immediately after `reindexSpatial()` (currently the
-  last member, `World.kt:278-284`) and before the class's closing brace (`World.kt:285`) — never
-  as extension functions, since the installed-system list is private mutable state that must live
-  inside the class (`World` is `final`, D4).
+- **R2 — the one literal contradiction.** The grand design states `stepSystems()` "rejects
+  nothing" (grand design §4.4). This plan's `stepSystems()` rejects exactly one thing — a
+  re-entrant call made from inside a system's own `step()` — via `IllegalStateException`, per the
+  architecture note's Ashley/`EventBus`-precedented decision (architecture §4.4, §7 R2). `tick()`
+  is unaffected either way; `install`/`uninstall` remain fully legal mid-pass.
+- **R5/R6 — the registry is one list, never a `TreeMap`.** The grand design's own Cross-plan
+  alignment section (its item 4, written for an earlier #76 pass) records a tier-1 `TreeMap` keyed
+  on `order`, with an explicit `import java.util.TreeMap`, and "a `CoreWorldSystemSlot`
+  unique-`order` test and KDoc invariant" justified by that `TreeMap`. **The `TreeMap` and its
+  import are not implemented by this plan.** The whole registry — tier 1 and tier 2 alike — is one
+  `MutableList<InstalledSystemRecord>` kept in step order at insert time, never a hash- or
+  tree-keyed collection (R6), and slot occupancy is checked by slot *equality*, never by `order`
+  value (R5). **The unique-`order` invariant and its test are kept, for a different reason:** the
+  registry no longer needs them to stay consistent, but tier 1's promise ("`PHYSICS` steps before
+  `ZONE` regardless of install order") holds only if the slots have distinct orders (R5). Follow-up
+  F4 (§11) records the correction owed to the grand design's item 4.
 
-### 2.2 `ExperimentalGameToolsApi` — exact declaration (C1, architecture §4.1/§8)
+The other six (R1, R3, R4, R7, R8, R9) are additions or completions, not contradictions, and are
+folded into §4 below without further flag.
+
+---
+
+## 3. Design
+
+### 3.1 Overview
+
+```mermaid
+classDiagram
+    class ExperimentalGameToolsApi {
+        <<annotation>>
+    }
+    class SupportedExtension {
+        <<annotation>>
+    }
+    class CoreSystemSlot {
+        <<sealed interface>>
+        +Int order
+    }
+    class CoreWorldSystemSlot {
+        <<enum>>
+        PHYSICS
+        ZONE
+    }
+    class WorldSystem {
+        <<interface>>
+        +installOn(world)
+        +uninstallFrom(world)
+        +step(world)
+        +CoreSystemSlot? coreSlot
+    }
+    class World {
+        +installSystem(system)
+        +uninstallSystem(system)
+        +List~WorldSystem~ installedSystems
+        +stepSystems()
+    }
+    CoreWorldSystemSlot ..|> CoreSystemSlot
+    WorldSystem --> CoreSystemSlot : coreSlot
+    World "1" o-- "*" WorldSystem
+    WorldSystem ..> ExperimentalGameToolsApi : gated by
+```
+
+### 3.2 Install → step → uninstall flow
+
+The full sequence diagrams (normal install, re-entrant self-install rejection, legitimate
+re-entrant helper install, uninstall, and one step pass with a mid-pass uninstall) are already
+drawn precisely in `docs/world-system-core-architecture.md` §4.2–§4.4 and are not redrawn here;
+this plan implements them literally. The single diagram below is the composite happy path, for
+orientation:
+
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant World
+    participant Sys as WorldSystem
+
+    Caller->>World: installSystem(sys)
+    World->>World: require not installed / not reserved (IAE)
+    World->>World: slot = sys.coreSlot (read once)
+    World->>World: require slot unoccupied, if non-null (IAE)
+    World->>World: push reservation
+    World->>Sys: installOn(world)
+    World->>World: pop reservation (finally)
+    World->>World: insert record at step-order position; log INFO
+    Caller->>World: stepSystems()
+    World->>World: check(!stepping) else ISE; stepping = true
+    World->>World: snapshot = installedRecords.toList(); log DEBUG
+    World->>Sys: step(world)  [skipped if record.active == false]
+    World->>World: stepping = false (finally)
+    Caller->>World: uninstallSystem(sys)
+    World->>World: remove record; record.active = false; log INFO
+    World->>Sys: uninstallFrom(world)
+```
+
+### 3.3 Internal state model (per `docs/world-system-core-architecture.md` §4.1)
+
+Everything below lives as private state inside `World`, in the new region. Exact declarations,
+not an illustrative sketch — the implementer follows this literally:
+
+| State | Declaration | Why |
+|---|---|---|
+| Installation records | `private val installedRecords: MutableList<InstalledSystemRecord>` | The single source of truth for "is this system installed", "who occupies this slot", and step order itself. One structure, never two kept in sync. |
+| In-flight reservations | `private val installReservations: ArrayDeque<Reservation>` (`kotlin.collections.ArrayDeque`, no import needed — same as `EventBus.kt`'s `queued: ArrayDeque<GameEvent>`) | LIFO: pushed with `addLast`, popped with `removeLast`. Closes the re-entrant-install gap (R1) without changing the settled check-then-`installOn`-then-record shape. A stack, not one field, because a composite system's `installOn` may install more than one helper. |
+| Stepping guard | `private var stepping: Boolean = false` | Detects re-entrant `stepSystems()` (R2). |
+
+`InstalledSystemRecord` and `Reservation` are both **private, non-`data` classes** — deliberately
+*not* `data class`, so their default `equals`/`hashCode` stay reference-identity (Kotlin's default
+for a plain class), which is exactly the identity comparison the registry needs and never calls
+`equals` on a consumer's `WorldSystem` (which may itself be a `data class`, R9):
 
 ```kotlin
-// gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/ExperimentalGameToolsApi.kt
+/**
+ * One successful [installSystem] call for a [WorldSystem]. Two records for the same [WorldSystem]
+ * instance (e.g. uninstalled then reinstalled) are distinct - what lets a step pass tell "this
+ * installation was removed after my snapshot was taken" apart from "this instance was reinstalled",
+ * without ever calling [equals] on a consumer's [WorldSystem].
+ */
+@OptIn(ExperimentalGameToolsApi::class)
+private class InstalledSystemRecord(val system: WorldSystem, val slot: CoreSystemSlot?) {
+    /** Cleared by [uninstallSystem] at the moment this record is removed; [stepSystems] skips a record whose [active] is false. */
+    var active: Boolean = true
+}
+
+/** An [installSystem] call still inside [WorldSystem.installOn], not yet recorded. */
+@OptIn(ExperimentalGameToolsApi::class)
+private class Reservation(val system: WorldSystem, val slot: CoreSystemSlot?)
+```
+
+Both classes carry `@OptIn(ExperimentalGameToolsApi::class)` individually — never a class- or
+file-level `@OptIn` on `World` itself (per the architecture's explicit instruction) — because
+their constructors take `CoreSystemSlot?`, itself a plain-`@ExperimentalGameToolsApi`-marked type.
+
+**Step order is maintained at insert time, not recomputed per access.** A tier-1 record
+(`slot != null`) is inserted immediately before the first record that is tier 2 or whose slot has
+a greater `order`; a tier-2 record (`slot == null`) is appended:
+
+```kotlin
+/** Inserts [record] at its step-order position (tier 1 by [CoreSystemSlot.order], else appended). */
+@OptIn(ExperimentalGameToolsApi::class)
+private fun insertInStepOrder(record: InstalledSystemRecord) {
+    val slot = record.slot
+    if (slot == null) {
+        installedRecords.add(record)
+        return
+    }
+    val insertAt = installedRecords.indexOfFirst { it.slot == null || it.slot.order > slot.order }
+    installedRecords.add(if (insertAt == -1) installedRecords.size else insertAt, record)
+}
+```
+
+No hash- or tree-keyed collection exists anywhere in the registry, by construction (R6):
+`java.lang.Enum.hashCode()` is identity-based and varies per JVM run, so a hash-keyed traversal of
+`CoreWorldSystemSlot`/`WorldSystem` would make step order non-deterministic across runs — a direct
+violation of `World`'s existing determinism contract (`World.kt:41-43`).
+
+---
+
+## 4. File-by-file changes
+
+### 4.1 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/ExperimentalGameToolsApi.kt`
+
+No imports needed (`kotlin.annotation.*`, `kotlin.RequiresOptIn` resolve via Kotlin's default
+imports; no import-region comment required, matching `SupportedExtension`'s own precedent).
+
+```kotlin
 package com.spartanlabs.gaming.annotation
 
+/**
+ * Marks a public declaration as **Experimental**: a seam whose shape has not yet been proven by a
+ * real consumer. Unlike [SupportedExtension], a declaration tagged [ExperimentalGameToolsApi] may
+ * change incompatibly in a Feature release, not only a Major one - see `CONTRIBUTING.md`
+ * §Versioning - until it graduates to Stable Core (untagged) or [SupportedExtension].
+ *
+ * Gated at [RequiresOptIn.Level.ERROR] - deliberate opt-in is the whole point of this tier (this
+ * is a small, deliberate seam an unintentional touch should fail to compile against, not a vast,
+ * everyday surface a consumer is expected to brush against constantly). A consumer opts in with
+ * `@OptIn(ExperimentalGameToolsApi::class)` at the narrowest scope that needs it, or the
+ * `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` compiler flag for a whole
+ * module.
+ *
+ * Never deleted, even once nothing in this library still uses it: a consumer's own
+ * `@OptIn(ExperimentalGameToolsApi::class)` would fail to compile with an unresolved reference if
+ * this class were removed. It stays live as the tier's permanent marker for the next Experimental
+ * seam.
+ */
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
 @Target(
@@ -153,27 +286,52 @@ package com.spartanlabs.gaming.annotation
 )
 @RequiresOptIn(
     level = RequiresOptIn.Level.ERROR,
-    message = "This is an experimental GameTools API: its seam is not yet proven by a real " +
-        "consumer and may change in a minor release. Opt in explicitly to use it.",
+    message = "This declaration is Experimental: it may change incompatibly in a Feature release until it graduates to Stable Core or Supported Extension.",
 )
 annotation class ExperimentalGameToolsApi
 ```
 
-`ERROR`, not `WARNING` — architecture §8/§9: a small, deliberate seam where an unintentional touch
-should fail the build, matching `kotlin.ExperimentalStdlibApi`'s own precedent, not
-`kotlinx`'s `WARNING`-level marker for a vast everyday surface. One library-wide marker, not a
-per-feature one, per architecture §9's rejected-alternative reasoning: three seams (`WorldSystem`,
-the slot types, `World`'s four members) share exactly one lifecycle (Experimental until #79), and
-the marker class is never deleted even after everything it once gated graduates (§4.7) — a
-consumer's `@OptIn(ExperimentalGameToolsApi::class)` would fail to compile ("unresolved
-reference") if it were.
+**Error handling:** none applicable — an annotation class has no execution path.
+**Mutability:** none applicable — no properties, no state.
+**Logging:** none applicable.
+**Stability tier:** this class is itself the Experimental-tier mechanism, permanent, not tagged.
 
-### 2.3 `SupportedExtension` — copied verbatim from `docs/physics-core-seams-plan.md` §2.2/§3.1 (C1)
+### 4.2 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/SupportedExtension.kt`
+
+Reused verbatim from `docs/physics-core-seams-plan.md` §2.2/§3.1 (its `@SupportedExtension` half
+is explicitly superseded onto this unit — see that document's own top-of-file callout), with one
+correction: its KDoc's mention of the Experimental tier is now a link to the sibling marker that
+did not exist when that plan was drafted, and "a minor release" is corrected to "a Feature
+release" to match this repo's actual `Major.Feature.MinorChange` scheme (`CONTRIBUTING.md:139-144`)
+rather than generic semver terminology. Its em dashes are also normalised to ` - `: no `.kt` file on
+`master` contains an em dash (verified by `git grep`), and every existing KDoc in the repo uses the
+ASCII form. The declaration itself is copied verbatim.
 
 ```kotlin
-// gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/SupportedExtension.kt
 package com.spartanlabs.gaming.annotation
 
+/**
+ * Marks a public declaration as **Supported Extension**: a seam for a likely-but-non-core need
+ * - something a fair number of consumers will plausibly want, that is not what the surrounding
+ * library exists fundamentally to provide.
+ *
+ * This tier carries **the same semver guarantee as Stable Core** - the tag marks *purpose*, not
+ * a weaker stability promise. A breaking change to a `@SupportedExtension` declaration is a
+ * breaking change to the library, governed by the same versioning rules
+ * (`CONTRIBUTING.md` §Versioning) as anything else public. Contrast with an
+ * [ExperimentalGameToolsApi]-gated seam, whose shape may still change in a Feature release
+ * because no real consumer has built against it yet - nothing tagged `@SupportedExtension` is
+ * unproven in that sense.
+ *
+ * Where this tag lands on an `interface`, its shipped default implementation(s) double as the
+ * seam's **worked example** of how to extend it: written to be read, not merely to work.
+ *
+ * Purely documentary - `BINARY` retention, no `@RequiresOptIn` gate, no parameters. It changes
+ * nothing about how the annotated declaration compiles or runs; it exists for Dokka, IDE
+ * navigation, and a human deciding whether to extend something, not for the compiler to enforce.
+ * Modelled on JetBrains' `org.jetbrains.annotations.ApiStatus.NonExtendable` precedent for a
+ * documentary stability marker.
+ */
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
 @Target(
@@ -183,517 +341,431 @@ package com.spartanlabs.gaming.annotation
 annotation class SupportedExtension
 ```
 
-Identical declaration and identical KDoc content to `docs/physics-core-seams-plan.md` §3.1, with
-one adjustment: that plan's KDoc does not yet name a sibling Experimental marker (none existed
-when it was written). This unit's copy adds one sentence contrasting the two tiers by the marker's
-real name:
+**Error handling / Mutability / Logging:** none applicable, as §4.1.
+**Stability tier:** Stable Core, untagged — "infrastructure for stability itself must be stable."
 
-> Contrast with an `@ExperimentalGameToolsApi`-gated *Experimental* seam, whose shape may still
-> change in a minor release because no real consumer has built against it yet — nothing tagged
-> `@SupportedExtension` is unproven in that sense.
-
-No other prose changes. **This plan does not claim `CollisionResolver` is `@SupportedExtension`'s
-first user** — per this unit's explicit scope instruction, its first real application is
-`WorldSystem` at #79 (architecture §4.7), not any physics type. Any KDoc sentence in the copied
-source that named `CollisionResolver` as the worked example is dropped, not carried forward,
-since #49/#80 is unbuilt and out of scope here; the KDoc instead names `WorldSystem`'s eventual
-graduation (§4.7) as the seam this tier's first real, in-repo consumer.
-
-### 2.4 `WorldSystem` — the mechanism (architecture §4.2)
+### 4.3 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/WorldSystem.kt`
 
 ```kotlin
-// gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/WorldSystem.kt
 package com.spartanlabs.gaming.gameobjects
 
-@SubclassOptInRequired(ExperimentalGameToolsApi::class)
-interface WorldSystem {
-    fun installOn(world: World)
-    fun uninstallFrom(world: World) {}
-    fun step(world: World) {}
-    val coreSlot: CoreSystemSlot? get() = null
-}
-```
-
-- `@SubclassOptInRequired(ExperimentalGameToolsApi::class)` on the interface itself, not a plain
-  `@ExperimentalGameToolsApi` — stable since Kotlin 2.1, gives an implementor "requires opt-in to
-  be implemented" rather than a generic opt-in error (architecture Research finding 2). No extra
-  Gradle opt-in is needed for `SubclassOptInRequired` itself; it is unconditionally stable.
-- Plain `interface`, not `fun interface` — it is a stateful lifecycle participant with a
-  default-bodied teardown hook and a property, not a single computation; alternatives in §7.
-- `uninstallFrom` defaults to a no-op. It is the instance-side counterpart `World.uninstallSystem`
-  needs to release what `installOn` acquired (a live `EventBus.Subscription`, a held guard) —
-  without it, teardown could only ever drop a system from the step list, never let it clean up
-  after itself (architecture Research finding 4, four independent ECS/engine precedents). Adding
-  it now costs nothing binary- or source-compatibility-wise under this repo's Kotlin 2.2 toolchain
-  (`-jvm-default=enable` by default, Research finding 5), so it ships from #76 rather than being
-  deferred to whichever adapter first needs it.
-- `coreSlot` defaults to `null` (tier 2). Read once, at install time (§3.4) — a system must not
-  change what it returns after installation.
-
-### 2.5 `CoreSystemSlot` / `CoreWorldSystemSlot` — tier-1 slots (architecture §4.3)
-
-```kotlin
-// gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/CoreSystemSlot.kt
-package com.spartanlabs.gaming.gameobjects
-
-@ExperimentalGameToolsApi
-sealed interface CoreSystemSlot {
-    val order: Int
-}
-
-@ExperimentalGameToolsApi
-enum class CoreWorldSystemSlot(override val order: Int) : CoreSystemSlot {
-    PHYSICS(0), // reserved for #80's PhysicsWorldSystem
-    ZONE(1),    // #77's ZoneWorldSystem
-}
-```
-
-`sealed interface`, not the plain `interface` in the relayed sketch — carried from architecture
-§4.3/§9 OD1 exactly. A plain `interface` would let any module declare a competing, core-looking
-slot type, defeating C5's own stated intent that "only library-defined slots exist." Sealed direct
-subtypes must share module and package (architecture Research finding 3, independently
-compiler-verified) — a `gametools-world` type may still *return* an existing
-`CoreWorldSystemSlot` value from a `CoreSystemSlot?`-typed `coreSlot` property; it just cannot
-mint a new subtype of the sealed interface itself. This is confirmed to the user again as OD1,
-carried in §9 below.
-
-`order` is compared, never `ordinal`; only relative order across slots is contractual — a future
-slot inserted between two existing ones may renumber. `CoreWorldSystemSlot`'s KDoc states
-explicitly that the enum may gain entries in a later feature release (a reserved `VISION` slot is
-named as the anticipated example, for #50) and that a consumer must not write an exhaustive
-`when` over it without an `else` branch.
-
-### 2.6 `World` registry members (architecture §4.4)
-
-```kotlin
-// appended to the existing World.kt, in a new region after reindexSpatial()
-//region INSTALLED SYSTEMS
-@ExperimentalGameToolsApi
-fun installSystem(system: WorldSystem)
-
-@ExperimentalGameToolsApi
-fun uninstallSystem(system: WorldSystem)
-
-@ExperimentalGameToolsApi
-val installedSystems: List<WorldSystem>
-
-@ExperimentalGameToolsApi
-fun stepSystems()
+//region 1. Organization Internal
+// 1.2 Spartan Gaming
+import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
 //endregion
-```
-
-Backing state, private to `World`, declared at the top of the same region:
-
-```kotlin
-private val tier1: TreeMap<CoreSystemSlot, WorldSystem> = TreeMap(compareBy { it.order })
-private val tier2: MutableList<WorldSystem> = mutableListOf()
-```
-
-(`TreeMap` keyed by a `Comparator` over `order`, not `Comparable<CoreSystemSlot>` on the slot type
-itself, since `CoreSystemSlot` carries no natural ordering of its own beyond `order` — avoids
-forcing `CoreSystemSlot` to implement `Comparable` for a `World`-internal bookkeeping detail.)
-
-All four are exactly the members architecture §4.4 specifies, none returning `Result` — see §3.4
-for the full semantics and their `@throws`/logging contracts, and §7 for why `Result` is rejected
-here (mirrors `TiledMap.addSpawnPoint`/`ZoneGrid`'s existing `require`-based convention).
-
-### 2.7 `World`'s class-KDoc and determinism-contract update
-
-The class doc's determinism sentence (`World.kt:41-43` on master: *"Given the same [seed] and the
-same sequence of external calls, two worlds produce the same result."*) is extended with one
-clause naming install/uninstall call order as one of those external calls:
-
-> `installSystem`/`uninstallSystem` call order is one such external call — the same fixed sequence
-> against a fixed seed reproduces the same step order and the same result.
-
-A new short paragraph is added after the existing five-step `tick()` list (not replacing any of
-its five points, which are untouched) naming `stepSystems()` as a *separate*, driver-called
-operation `tick()` never invokes:
-
-> `stepSystems()` is a separate, opt-in operation a driver calls once per frame (typically from
-> [com.spartanlabs.gaming.simulation.SimulationLoop]'s `onTick`) — [tick] never calls it. A
-> [World] that installs no [WorldSystem] behaves exactly as before this existed.
-
-This is the one class-doc edit in this unit and lands in the same commit as the new region; it
-does not touch any of the three KDoc anchors `dcb396e` rewrites on `feature/71-combat-package`
-(§1.2), so #71 and #76 merge cleanly in either order.
-
-### 2.8 Precedent shift, stated explicitly (architecture §6, §11)
-
-This is the first time `World` hosts externally supplied behaviour. The mitigation is structural:
-`World` depends only on the `WorldSystem` interface, declared in its own package — never a
-concrete adapter, never another module — continuing the deliberate rule three historical commits
-already state (`0d586b5`, `a0f1717`, `34db6bc`: "add-ons import `World`, never the reverse"). The
-mechanism is opt-in with zero behavioural change when nothing is installed, matching D4's own
-anticipated compositional answer for "a per-frame phase a consumer wants to add"
-(`docs/api-openness-decisions-6.0.0.md:132-150`).
-
-### 2.9 Flow
-
-```mermaid
-sequenceDiagram
-    participant Caller
-    participant World
-    participant Sys as WorldSystem
-
-    Caller->>World: installSystem(sys)
-    World->>World: require not already installed (identity)
-    World->>World: require slot unoccupied (if coreSlot != null)
-    World->>Sys: installOn(world)
-    World->>World: record in step order (tier 1 by order, else tier 2 appended)
-    World-->>Caller: Unit — throws IllegalArgumentException on either require, before installOn runs
-
-    loop once per frame, driven externally (e.g. SimulationLoop.onTick)
-        Caller->>World: stepSystems()
-        World->>World: snapshot step order (tier 1 by order, then tier 2 install order)
-        World->>Sys: step(world)
-    end
-
-    Caller->>World: uninstallSystem(sys)
-    alt sys currently installed
-        World->>World: remove from step order first
-        World->>Sys: uninstallFrom(world)
-    else not installed
-        World->>World: no-op, DEBUG log
-    end
-```
-
----
-
-## 3. File-by-file changes
-
-### 3.1 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/ExperimentalGameToolsApi.kt`
-
-New file, new package. No imports needed (`MustBeDocumented`, `Retention`, `Target`,
-`RequiresOptIn` and their nested types resolve from `kotlin.*`/`kotlin.annotation.*` without an
-explicit import).
-
-```kotlin
-package com.spartanlabs.gaming.annotation
 
 /**
- * Marks a public declaration as **Experimental**: a seam whose shape has not yet been proven by
- * a real consumer and may still change in a minor release. Use of anything so annotated must be
- * an explicit, deliberate opt-in (`@OptIn(ExperimentalGameToolsApi::class)` or a propagating
- * annotation on the using declaration) — never a blanket compiler flag on a main source set.
+ * Opt-in, per-frame or event-driven add-on behaviour for a [World], installed via
+ * [World.installSystem] and stepped via [World.stepSystems].
  *
- * `ERROR`-level: an unintentional touch of an Experimental seam should fail the build outright,
- * the same posture Kotlin's own `kotlin.ExperimentalStdlibApi` takes, not the `WARNING` level
- * `kotlinx` reserves for a vast, everyday surface a consumer is expected to brush against
- * constantly.
+ * A [WorldSystem] may claim a library-reserved slot via [coreSlot] for a guaranteed relative step
+ * order (tier 1), or default to `null` (tier 2) for trust-the-caller install order, always
+ * stepped after every tier-1 system. A [World] rejects installing the same instance twice and a
+ * second claimant of the same [CoreSystemSlot], but not two distinct instances of the same class;
+ * an implementation that must be unique per [World] checks [World.installedSystems] inside its own
+ * [installOn] - it never contains this system while [installOn] is running.
  *
- * One marker shared by every Experimental GameTools seam, not one per feature: every seam this
- * annotates shares the same meaning ("unproven shape, may change in a minor") and, in practice,
- * the same graduation lifecycle. This class is **never deleted**, even once nothing in the
- * library carries it any more — a consumer's own `@OptIn(ExperimentalGameToolsApi::class)` would
- * fail to compile ("unresolved reference") if it were, so it remains, undeprecated, as the
- * tier's permanent marker for the next seam that needs it.
- */
-@MustBeDocumented
-@Retention(AnnotationRetention.BINARY)
-@Target(
-    AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY,
-    AnnotationTarget.CONSTRUCTOR, AnnotationTarget.TYPEALIAS,
-)
-@RequiresOptIn(
-    level = RequiresOptIn.Level.ERROR,
-    message = "This is an experimental GameTools API: its seam is not yet proven by a real " +
-        "consumer and may change in a minor release. Opt in explicitly to use it.",
-)
-annotation class ExperimentalGameToolsApi
-```
-
-**Error handling:** none applicable — an annotation class has no execution path.
-**Mutability:** none applicable.
-**Logging:** none applicable.
-**Stability tier:** N/A — it *is* the Experimental marker (architecture §8).
-
-### 3.2 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/SupportedExtension.kt`
-
-Per §2.3 — identical declaration to `docs/physics-core-seams-plan.md` §3.1, KDoc adjusted per
-§2.3's one added sentence and with no `CollisionResolver` reference.
-
-**Error handling / Mutability / Logging:** none applicable, same reasoning as §3.1.
-**Stability tier:** Stable Core (architecture §8: "infrastructure for stability itself must be
-stable").
-
-### 3.3 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/WorldSystem.kt`
-
-Per §2.4. Full KDoc on the interface and each member:
-
-```kotlin
-/**
- * An opt-in add-on that hosts per-frame or event-driven behaviour on a [World] without [World]
- * itself knowing anything about it. Install with [World.installSystem], step every installed
- * system once per frame with [World.stepSystems] (called by a driver — [World.tick] never calls
- * it), and tear down symmetrically with [World.uninstallSystem].
+ * A single [WorldSystem] instance may be installed on more than one [World]: every hook receives
+ * the relevant [World] as a parameter and this interface holds no back-reference to any one
+ * [World]. An implementation that keeps per-[World] state keys it by the [World] instance, or
+ * rejects a second, different [World] from its own [installOn] with [IllegalStateException].
  *
- * Requires opt-in to implement: `@SubclassOptInRequired(ExperimentalGameToolsApi::class)`. This
- * seam has not yet been proven by a real consumer and may still change in a minor release before
- * it graduates to `@SupportedExtension`.
+ * Single-threaded, like [World]: every hook runs on the thread driving the [World] it is given.
  *
- * A plain interface, not a functional interface — a [WorldSystem] is a stateful lifecycle
- * participant ([installOn]/[uninstallFrom] pair with acquiring/releasing a resource), not a
- * single computation.
- *
- * Whether one instance may be installed on several worlds at once is the implementation's call,
- * and its KDoc should say which. `ZoneWorldSystem` refuses it, because its `ZoneIndex` holds
- * per-world state; `ExperienceSystem` allows it.
- *
- * Known limitation: a system without a [coreSlot] always steps after every slotted system. It can
- * never run before `PHYSICS` or between `PHYSICS` and `ZONE`. Per-entity work that must precede
- * physics belongs in [GameObject.tick], which [World.tick] runs before any driver calls
- * [World.stepSystems].
+ * Implementing this interface requires opting in to [ExperimentalGameToolsApi], and so does reading
+ * [coreSlot]; the whole interface may change incompatibly in a Feature release until it graduates.
+ * Calling [installOn], [uninstallFrom] or [step] on a reference obtained some other way needs no
+ * opt-in of its own.
  */
 @SubclassOptInRequired(ExperimentalGameToolsApi::class)
 interface WorldSystem {
 
     /**
-     * Called once, by [World.installSystem], before this system is recorded in
-     * [World.installedSystems]. Wire up whatever this system needs from [world] here (e.g.
-     * subscribe to [World.events]).
+     * Runs once, immediately after [World.installSystem]'s checks pass and before it records this
+     * system - [world]'s [World.installedSystems] does not contain this system while this call is
+     * running. Must be failure-atomic: if this throws, [world] records nothing for this system and
+     * never calls [uninstallFrom] for this attempt, so an implementation must leave nothing behind,
+     * including any helper [WorldSystem] it installed on [world] itself. Installing this same
+     * system again, or a system claiming the same [coreSlot], from inside this call is rejected by
+     * [world] with [IllegalArgumentException].
      *
-     * @param world the world this system is being installed on
-     * @throws Exception any exception this method throws propagates to the [World.installSystem]
-     *   caller and aborts the install — nothing is recorded when this throws
+     * @param world the [World] this system is being installed on
      */
     fun installOn(world: World)
 
     /**
-     * Called once, by [World.uninstallSystem], immediately after this system has already been
-     * removed from [World.installedSystems] — this system is never present in that list while
-     * its own [uninstallFrom] runs. Release here whatever [installOn] acquired. No-op by
-     * default, for a system with nothing to release.
+     * Runs once, immediately after [World.uninstallSystem] removes this system from [world] -
+     * releases whatever [installOn] acquired. Default: no-op. Never called for a system that was
+     * never installed on [world] (an [World.uninstallSystem] call for one is an idempotent no-op).
      *
-     * @param world the world this system is being uninstalled from
+     * @param world the [World] this system is being uninstalled from
      */
     fun uninstallFrom(world: World) {}
 
     /**
-     * Called once per [World.stepSystems] call, in this system's step-order position. No-op by
-     * default, for a system with no per-frame work of its own (e.g. a purely event-reactive
-     * system that does everything in [installOn]).
+     * Runs once per [World.stepSystems] call while this system is installed on [world], in step
+     * order. Default: no-op. An exception thrown here propagates to the [World.stepSystems] caller
+     * and ends that pass early - systems later in the pass do not step this time. Calling
+     * [World.stepSystems] on [world] from inside this call throws [IllegalStateException].
      *
-     * @param world the world this system is stepping on
+     * @param world the [World] driving this step
      */
     fun step(world: World) {}
 
     /**
-     * `null` (the default) enrolls this system in tier 2: install-order, always stepped after
-     * every tier-1 system. A non-null value claims that [CoreSystemSlot] in tier 1, sorted by
-     * [CoreSystemSlot.order] regardless of install order — a second system claiming an already
-     * occupied slot is rejected by [World.installSystem]. Read once, at install time; this
-     * system must not change what it returns afterward.
+     * The tier-1 [CoreSystemSlot] this system claims, or `null` (the default) for tier 2 - always
+     * stepped after every tier-1 system, in install order. Read exactly once, by
+     * [World.installSystem], at install time; must return the same value for the lifetime of this
+     * object - changing what it returns afterward has no effect on an already-installed system.
      */
-    val coreSlot: CoreSystemSlot? get() = null
+    @ExperimentalGameToolsApi
+    val coreSlot: CoreSystemSlot?
+        get() = null
 }
 ```
 
-**Error handling:** `installOn`/`uninstallFrom`/`step` are implementor-supplied; their exceptions
-are the implementor's own — expected failures (e.g. "world already has an `ExperienceSystem`")
-are the implementor's `require`, matching `installSystem`'s own convention (§3.4), not `Result` —
-this interface prescribes no wrapping. **Mutability:** none of its own; implementors decide their
-own state. **Logging:** none of its own — `World`'s registry logs the lifecycle events (§3.4).
-**Stability tier:** Experimental (`@SubclassOptInRequired(ExperimentalGameToolsApi::class)`);
-graduates to `@SupportedExtension` at #79 (out of scope here).
+**Error handling:** the interface's own default bodies (`uninstallFrom`, `step`) never throw. What
+an *implementation* of `installOn`/`step` throws is the implementor's choice; the KDoc above states
+exactly what `World` does with it in each case (never wrapped in `Result` — matches `World`'s own
+`require`/`check`-based convention, §4.4/§4.5).
+**Mutability:** stateless as an interface; an implementation's own fields are its business.
+**Logging:** none in the interface itself — `World`'s registry logs install/uninstall/step
+lifecycle events (§4.5); an implementation may log its own domain-specific work inside its hooks.
 
-### 3.4 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/CoreSystemSlot.kt`
-
-Per §2.5. Full KDoc, matching `Capability`/`CoreCapability`'s own KDoc register:
+### 4.4 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/CoreSystemSlot.kt`
 
 ```kotlin
+package com.spartanlabs.gaming.gameobjects
+
+//region 1. Organization Internal
+// 1.2 Spartan Gaming
+import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+//endregion
+
 /**
- * A library-reserved tier-1 slot a [WorldSystem] may claim via [WorldSystem.coreSlot], giving it
- * a guaranteed relative step order against every other tier-1 system regardless of install order.
- * The built-in hierarchy uses [CoreWorldSystemSlot]; unlike [com.spartanlabs.gaming.gameobjects.combat.Capability],
- * this is `sealed` — only library-defined slots exist, by construction, not by convention. A
- * consumer may still have their own [WorldSystem] *return* an existing [CoreWorldSystemSlot]
- * value (a deliberate replacement of a shipped adapter); what a consumer cannot do is declare a
- * *new* [CoreSystemSlot] subtype that looks core but is not.
+ * A library-reserved "tier 1" ordering slot a [WorldSystem] may claim via [WorldSystem.coreSlot]
+ * for a guaranteed relative step order, regardless of install order.
  *
- * @property order this slot's position among tier-1 systems, ascending, and unique across every
- *   [CoreSystemSlot]. It is compared, never [Enum.ordinal]. Only the *relative* order across slots
- *   is contractual: a slot inserted between two existing ones may renumber both.
+ * `sealed` so only this module can declare a slot - a consumer cannot mint a competing
+ * "core-looking" slot; every library-defined slot is a [CoreWorldSystemSlot] constant. A
+ * consumer's own [WorldSystem] may still legitimately return an *existing* [CoreWorldSystemSlot]
+ * value (a deliberate replacement of a shipped adapter) - [World.installSystem]'s
+ * one-claimant-per-slot check makes that safe.
+ *
+ * Only *relative* [order] across slots is contractual; a future built-in slot may be inserted
+ * between two existing ones, renumbering them - do not compare [order] against a literal
+ * constant. Library-defined slots always have pairwise-distinct [order] values, so the relative
+ * step order of any two claimed slots never depends on install order.
+ *
+ * May change incompatibly in a Feature release until it graduates - see [ExperimentalGameToolsApi].
  */
 @ExperimentalGameToolsApi
 sealed interface CoreSystemSlot {
+    /** This slot's position relative to every other [CoreSystemSlot]; a lower value steps first. */
     val order: Int
 }
 
 /**
- * The tier-1 slots GameTools itself reserves. May gain entries in a later feature release (a
- * `VISION` slot, positioned after [PHYSICS], is anticipated for a future vision system) — do not
- * write an exhaustive `when` over this enum without an `else` branch.
+ * The library-defined [CoreSystemSlot]s, in ascending [order]. New constants may be added in a
+ * Feature release - do not write an exhaustive `when` over this enum without an `else` branch.
  *
- * @property order the stable wire/ordering key, matching [CoreSystemSlot.order]
+ * @property order see [CoreSystemSlot.order]
  */
 @ExperimentalGameToolsApi
 enum class CoreWorldSystemSlot(override val order: Int) : CoreSystemSlot {
-
-    /** Reserved for `gametools-world`'s `PhysicsWorldSystem` (issue #80). */
+    /** Reserved for a future physics `WorldSystem` adapter. */
     PHYSICS(0),
 
-    /** Reserved for `gametools-world`'s `ZoneWorldSystem` (issue #77). */
+    /** Reserved for a future zone-membership `WorldSystem` adapter. */
     ZONE(1),
 }
 ```
 
-**Error handling / Mutability:** none applicable — pure value types. **Logging:** none applicable.
-**Stability tier:** Experimental (`@ExperimentalGameToolsApi` — plain marker, not
-`@SubclassOptInRequired`, since nothing here is meant to be subclassed by a consumer at all; a
-consumer only *reads* `order` or *returns* an existing constant). Graduates to untagged Stable
-Core at #79.
+Note the deliberate generic phrasing ("a future physics/zone-membership `WorldSystem` adapter")
+rather than naming `PhysicsWorldSystem`/`ZoneWorldSystem` directly: neither type exists yet, so a
+`[PhysicsWorldSystem]`/`[ZoneWorldSystem]` KDoc link would be an unresolved Dokka reference at this
+point in the sequence, and a bare backticked forward-reference to a not-yet-designed-here type name
+is still an internal-planning detail that does not belong in published KDoc — the constant's own
+doc comment (`@property order`) and its position in the enum already carry the necessary meaning.
 
-### 3.5 Changed: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/World.kt`
+**Error handling:** none — no function bodies, `order` is a simple property.
+**Mutability:** `order` is `val`, fixed per enum constant; `CoreWorldSystemSlot.entries` is
+JVM-immutable.
+**Logging:** none.
 
-Two edits, both additive:
+### 4.5 Changed: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/gameobjects/World.kt`
 
-1. **Class doc** (§2.7) — extend the determinism sentence and add the `stepSystems()` /
-   `tick()` separation paragraph. No existing line in the five-step `tick()` list changes.
-2. **New region**, appended after `reindexSpatial()` (currently `World.kt:278-284`), before the
-   closing brace:
+**Import block** (`World.kt:3-18`, group "1.2 Spartan Gaming") — one new line, alphabetically
+first in that group:
+
+```kotlin
+//region 1. Organization Internal
+// 1.2 Spartan Gaming
+import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.event.EventBus
+import com.spartanlabs.gaming.event.GameEvent
+import com.spartanlabs.gaming.simulation.RandomSource
+import com.spartanlabs.gaming.simulation.SeededRandom
+import com.spartanlabs.gaming.spatial.Quadtree
+import com.spartanlabs.gaming.spatial.QuadtreeSpatialIndex
+import com.spartanlabs.gaming.spatial.SpatialIndex
+//endregion
+```
+
+**Class KDoc** (`World.kt:20-47`) — insert a new subsection at the *end* of the prose, after the
+determinism sentence (`World.kt:42-43`) and before the blank `*` line and `@param seed`
+(`World.kt:44-45`). Placing it any earlier would put the World-wide determinism paragraph under
+this new heading in the rendered KDoc:
+
+```
+ *
+ * ### Installed systems
+ * A [World] can also host opt-in [WorldSystem]s ([installSystem], [uninstallSystem],
+ * [installedSystems]). [tick] never steps them: a driver calls [stepSystems] once per frame after
+ * [tick], e.g. `SimulationLoop(world, onTick = { world.stepSystems() })`. Systems that claim a
+ * [CoreSystemSlot] step first, in slot order; the rest follow in install order. A [World] with
+ * nothing installed pays nothing for this. Experimental - see [ExperimentalGameToolsApi].
+```
+
+And extend the existing determinism sentence (`World.kt:41-43`) in place:
+
+Before:
+```
+ * [GameEvent]s are delivered synchronously as they are published, not batched at the end.
+ * Given the same [seed] and the same sequence of external calls, two worlds produce the same
+ * result.
+```
+
+After:
+```
+ * [GameEvent]s are delivered synchronously as they are published, not batched at the end.
+ * Given the same [seed] and the same sequence of external calls - including [installSystem],
+ * [uninstallSystem], and [stepSystems] - two worlds produce the same result.
+```
+
+**`tick()` KDoc** (`World.kt:215-217`) — one added sentence:
+
+Before: `Advances the world by one frame. See the class doc for the exact order of operations.`
+
+After: `Advances the world by one frame. See the class doc for the exact order of operations.
+Never steps an installed [WorldSystem] - see [stepSystems].`
+
+**New region**, after `reindexSpatial()` (`World.kt:278-284`), before the class's closing brace
+(`World.kt:285`):
 
 ```kotlin
     //region INSTALLED SYSTEMS
-    private val tier1: TreeMap<CoreSystemSlot, WorldSystem> = TreeMap(compareBy { it.order })
-    private val tier2: MutableList<WorldSystem> = mutableListOf()
+    /**
+     * One successful [installSystem] call for a [WorldSystem]. Two records for the same
+     * [WorldSystem] instance (e.g. uninstalled then reinstalled) are distinct - what lets a step
+     * pass tell "this installation was removed after my snapshot was taken" apart from "this
+     * instance was reinstalled", without ever calling [equals] on a consumer's [WorldSystem]
+     * (which may itself be a `data class`).
+     */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private class InstalledSystemRecord(val system: WorldSystem, val slot: CoreSystemSlot?) {
+        /** Cleared by [uninstallSystem] at removal; [stepSystems] skips a record whose [active] is false. */
+        var active: Boolean = true
+    }
+
+    /** An [installSystem] call still inside [WorldSystem.installOn], not yet recorded. */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private class Reservation(val system: WorldSystem, val slot: CoreSystemSlot?)
 
     /**
-     * Installs [system] on this world: [WorldSystem.installOn] runs first, then [system] is
-     * recorded in [installedSystems]' step order. If [system] declares a [WorldSystem.coreSlot],
-     * it joins tier 1, sorted by [CoreSystemSlot.order] regardless of install order; otherwise it
-     * joins tier 2, appended after every tier-1 system, in install order.
-     *
-     * @param system the system to install
-     * @throws IllegalArgumentException if [system] (by reference identity) is already installed
-     *   on this world, or if [system] declares a [WorldSystem.coreSlot] already claimed by
-     *   another installed system — both checked, and both throw, before [WorldSystem.installOn]
-     *   runs. If [WorldSystem.installOn] itself throws, nothing is recorded and that exception
-     *   propagates instead.
+     * Every installed system's [InstalledSystemRecord], kept in step order at insert time: tier 1
+     * ([InstalledSystemRecord.slot] non-null) by [CoreSystemSlot.order], then tier 2 (`slot ==
+     * null`) in install order. The only backing structure for [installedSystems], slot occupancy,
+     * and [stepSystems]'s own order - never a hash- or tree-keyed collection, so iteration order
+     * never depends on a [CoreWorldSystemSlot] constant's (identity-based, per-run) hash code.
      */
-    @ExperimentalGameToolsApi
-    fun installSystem(system: WorldSystem) {
-        require(tier1.values.none { it === system } && tier2.none { it === system }) {
-            "$system is already installed on this world"
+    private val installedRecords: MutableList<InstalledSystemRecord> = mutableListOf()
+
+    /**
+     * In-flight [installSystem] calls, most recently pushed last. Consulted by both `require`s in
+     * [installSystem] so a re-entrant call sees every installation still in progress up the call
+     * stack, not just [installedRecords].
+     */
+    private val installReservations: ArrayDeque<Reservation> = ArrayDeque()
+
+    /** `true` for the duration of one [stepSystems] call, so a re-entrant call is rejected. */
+    private var stepping: Boolean = false
+
+    /**
+     * Inserts [record] at its step-order position: immediately before the first record that is
+     * tier 2 or whose slot has a greater [CoreSystemSlot.order] than [record]'s (tier 1), or at
+     * the end (tier 2).
+     */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private fun insertInStepOrder(record: InstalledSystemRecord) {
+        val slot = record.slot
+        if (slot == null) {
+            installedRecords.add(record)
+            return
         }
-        val slot = system.coreSlot
-        if (slot != null) {
-            val occupant = tier1[slot]
-            require(occupant == null) { "slot $slot is already claimed by $occupant" }
-        }
-        system.installOn(this)
-        if (slot != null) tier1[slot] = system else tier2.add(system)
-        log.info("World installed a {} system{}", system::class.simpleName, slot?.let { " (slot $it)" } ?: "")
+        // A tier-1 record goes before the first record that is tier 2 or has a strictly greater
+        // order. "Strictly" means an equal order (library slots never share one) lands after the
+        // existing record, so install order breaks the tie deterministically.
+        val insertAt = installedRecords.indexOfFirst { it.slot == null || it.slot.order > slot.order }
+        installedRecords.add(if (insertAt == -1) installedRecords.size else insertAt, record)
     }
 
     /**
-     * Uninstalls [system] from this world: removed from [installedSystems] first, then
-     * [WorldSystem.uninstallFrom] runs — [system] is never present in [installedSystems] while
-     * its own [WorldSystem.uninstallFrom] executes. Idempotent: uninstalling a system not
-     * currently installed is a no-op.
+     * Installs [system] onto this [World]: calls [WorldSystem.installOn] once, then - only if it
+     * returns normally - records [system] in step order so a later [stepSystems] call steps it.
+     *
+     * Checked, both as [IllegalArgumentException], before [WorldSystem.installOn] runs:
+     * - [system] must not already be installed on this [World], and must not itself be in the
+     *   middle of an [installSystem] call further up the call stack (a re-entrant self-install).
+     * - if [WorldSystem.coreSlot] (read exactly once, right here) is non-null, that slot must not
+     *   already be claimed by another installed or currently-installing system.
+     *
+     * [WorldSystem.installOn] must be failure-atomic: if it throws, this [World] records nothing
+     * for [system] and never calls [WorldSystem.uninstallFrom] for this attempt - any partial
+     * state [system] itself acquired (e.g. a helper [WorldSystem] it installed) is [system]'s own
+     * responsibility to undo. The exception propagates to the caller unchanged, and [system] may
+     * be installed again later.
+     *
+     * [installedSystems] never contains [system] while [WorldSystem.installOn] is still running.
+     * Single-threaded, like every other [World] member: call this only from the thread driving
+     * this [World]. This member, [uninstallSystem], [installedSystems], and [stepSystems] are
+     * gated [ExperimentalGameToolsApi] - their shape may still change incompatibly in a Feature
+     * release until they graduate.
+     *
+     * @param system the system to install
+     * @throws IllegalArgumentException if [system] is already installed, is already being
+     *   installed (a re-entrant call), or claims a [WorldSystem.coreSlot] another installed or
+     *   currently-installing system already holds
+     */
+    @ExperimentalGameToolsApi
+    fun installSystem(system: WorldSystem) {
+        require(installedRecords.none { it.system === system } && installReservations.none { it.system === system }) {
+            "system $system is already installed on, or is already being installed on, this World"
+        }
+        val slot = system.coreSlot
+        if (slot != null) {
+            val occupant = installedRecords.firstOrNull { it.slot == slot }?.system
+                ?: installReservations.firstOrNull { it.slot == slot }?.system
+            require(occupant == null) { "slot $slot is already claimed by $occupant" }
+        }
+        installReservations.addLast(Reservation(system, slot))
+        try {
+            system.installOn(this)
+        } finally {
+            installReservations.removeLast()
+        }
+        insertInStepOrder(InstalledSystemRecord(system, slot))
+        log.info("World installed a {} (slot={})", system::class.simpleName, slot)
+    }
+
+    /**
+     * Removes [system] from this [World]'s installed systems, then calls
+     * [WorldSystem.uninstallFrom] once. Idempotent: a [system] that is not currently installed is
+     * a no-op.
+     *
+     * [system] is removed - absent from [installedSystems] and from the next [stepSystems] pass -
+     * *before* [WorldSystem.uninstallFrom] runs, the mirror image of [installSystem]'s own
+     * ordering. If [WorldSystem.uninstallFrom] throws, [system] stays removed either way and the
+     * exception propagates to the caller unchanged.
+     *
+     * Single-threaded, like every other [World] member.
      *
      * @param system the system to uninstall
      */
     @ExperimentalGameToolsApi
     fun uninstallSystem(system: WorldSystem) {
-        val slot = tier1.entries.find { it.value === system }?.key
-        val removed = if (slot != null) tier1.remove(slot) != null else tier2.removeAll { it === system }
-        if (!removed) {
-            log.debug("World.uninstallSystem: {} was not installed, no-op", system::class.simpleName)
+        val index = installedRecords.indexOfFirst { it.system === system }
+        if (index == -1) {
+            log.debug("World received an uninstallSystem call for a {} that was not installed - no-op", system::class.simpleName)
             return
         }
+        val record = installedRecords.removeAt(index)
+        record.active = false
+        log.info("World uninstalled a {} (slot={})", system::class.simpleName, record.slot)
         system.uninstallFrom(this)
-        log.info("World uninstalled a {} system", system::class.simpleName)
     }
 
     /**
-     * Every system currently installed, in the order [stepSystems] would step them: tier 1 by
-     * [CoreSystemSlot.order], then tier 2 in install order. A fresh copy on every access, not a
-     * live view — mutating the returned list has no effect on this world.
+     * The [WorldSystem]s currently installed on this [World], tier 1 (by [CoreSystemSlot.order])
+     * then tier 2 (in [installSystem] order) - the exact order [stepSystems] steps them in. A
+     * fresh copy on every read; mutating it does not affect this [World]'s registry. Never
+     * contains a system that is still inside its own [WorldSystem.installOn] call. Empty for a
+     * [World] with nothing installed.
      */
     @ExperimentalGameToolsApi
     val installedSystems: List<WorldSystem>
-        get() = tier1.values.toList() + tier2
+        get() = installedRecords.map { it.system }
 
     /**
-     * Steps every installed system once, in [installedSystems]' order, over a snapshot taken
-     * before this pass — a system uninstalled earlier in the same pass is skipped for the rest of
-     * it; a system installed mid-pass steps from the *next* call. A separate, opt-in operation a
-     * driver calls once per frame (typically from
-     * [com.spartanlabs.gaming.simulation.SimulationLoop]'s `onTick`); [tick] never calls this.
+     * Steps every currently-installed [WorldSystem] once, tier 1 (by [CoreSystemSlot.order]) then
+     * tier 2 (in [installSystem] order), over a snapshot taken at the start of this call - not
+     * [installedSystems] recomputed mid-pass. Never called by [tick]; a driver (typically
+     * [com.spartanlabs.gaming.simulation.SimulationLoop]'s `onTick`) calls it once per frame, e.g.
+     * `SimulationLoop(world, onTick = { world.stepSystems() })`.
      *
-     * @throws Exception any exception a [WorldSystem.step] throws propagates uncaught, exactly
-     *   as an exception from [GameObject.tick] does during [tick] — it is not this method's job
-     *   to isolate a misbehaving system from its caller
+     * A system [uninstallSystem]-ed earlier in this same pass is skipped for the rest of the pass.
+     * A system [installSystem]-ed during this pass steps from the *next* [stepSystems] call, not
+     * this one. If a [WorldSystem.step] throws, the exception propagates to the caller, no system
+     * after it steps this pass, and this [World]'s registry is left exactly as [WorldSystem.step]
+     * left it - the next [stepSystems] call runs normally.
+     *
+     * @throws IllegalStateException if called re-entrantly - from inside a [WorldSystem.step] this
+     *   same call is already running, directly or indirectly
      */
     @ExperimentalGameToolsApi
     fun stepSystems() {
-        val order = installedSystems
-        log.debug("World.stepSystems: stepping {} system(s)", order.size)
-        order.forEach { system ->
-            if (tier1.values.any { it === system } || tier2.any { it === system }) system.step(this)
+        check(!stepping) { "World.stepSystems() was called re-entrantly, from inside a WorldSystem.step() this same call is already running" }
+        stepping = true
+        try {
+            val snapshot = installedRecords.toList()
+            log.debug("World stepping {} system(s)", snapshot.size)
+            snapshot.forEach { record -> if (record.active) record.system.step(this) }
+        } finally {
+            stepping = false
         }
     }
     //endregion
 ```
 
-(The `if (tier1... || tier2...)` re-check in `stepSystems()` implements "a system uninstalled
-earlier in the same pass is skipped for the remainder of that pass" against the snapshot already
-taken — a cheap `O(k)` membership re-check against the still-small installed-system count, not a
-second full pass.)
+**Error handling:** none of the four new members return `Result` — both `installSystem`'s
+rejection cases and `stepSystems`'s re-entrancy guard are caller-wiring errors, matching this
+repo's existing `require`-based precedent (`TiledMap.addSpawnPoint`,
+`gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/map/TiledMap.kt:113-116`) rather
+than an operational failure. `uninstallSystem` has no failure mode (idempotent, returns `Unit`).
+An exception a `WorldSystem`'s own hook throws is never caught by `World` — it propagates
+unchanged, exactly like `World.tick()`'s own `GameObject.tick()` calls.
 
-**Error handling:** `installSystem` throws `IllegalArgumentException` for its two caller-wiring
-checks (duplicate instance, occupied slot) — an expected, documented *caller* error, matching
-`TiledMap.addSpawnPoint`/`ZoneGrid`'s existing `require` convention (§1.2), not an operational
-failure warranting `Result` (this toolchain has no must-use checker, so an ignored `Result` would
-silently leave a system uninstalled — architecture §4.4/§9). `uninstallSystem` has no failure mode
-(idempotent, returns `Unit`). `stepSystems`/`installedSystems` reject nothing; a thrown exception
-from a system's own hook propagates uncaught, exactly like `tick()`'s own `GameObject.tick()`
-pass.
+**Mutability:** `installedRecords` (`MutableList`) is mutated only by `installSystem` (insert) and
+`uninstallSystem` (remove); `installReservations` (`ArrayDeque`) only by `installSystem`
+(push/pop, always paired via `try`/`finally`); `stepping` (`var`) only by `stepSystems`
+(set/cleared, always paired via `try`/`finally`); `InstalledSystemRecord.active` (`var`) only by
+`uninstallSystem` (set `false` once, never back to `true` — a record is never reactivated,
+reinstalling creates a new record).
 
-**Mutability:** `tier1`/`tier2` are private mutable collections (`TreeMap`, `MutableList`),
-exactly like `World`'s existing `gameObjects`/`byId`/`announced`. `installedSystems` always
-returns a fresh, immutable-from-the-caller's-view `List` copy — the `ZoneIndex.entitiesIn`
-precedent (§1.2).
+**Concurrency:** unchanged from the rest of `World` — single-threaded by convention, no
+synchronisation added. `installReservations`/`stepping` are plain fields, safe only because
+`World` is already documented as driven from one thread.
 
-**Concurrency:** unchanged — `World` remains single-threaded by convention; no synchronisation is
-added, matching every other member of the class.
+**Logging (slf4j, lazy `{}` placeholders, matching `World`'s existing house style — no
+`World.methodName:`-prefixed messages, per the existing `"World tick: ..."`/`"World removing
+..."`/`"World created with seed {}"` precedent):**
 
-**Logging (via the shared `internal val log` in `GameObject.kt:23`):**
-- `INFO` — `"World installed a {} system{}"` on a successful `installSystem`.
-- `INFO` — `"World uninstalled a {} system"` on a successful `uninstallSystem`.
-- `DEBUG` — `"World.uninstallSystem: {} was not installed, no-op"` on the idempotent no-op path.
-- `DEBUG` — `"World.stepSystems: stepping {} system(s)"` once per `stepSystems()` call, mirroring
-  `tick()`'s own `log.debug("World tick: advancing {} game object(s)", ...)` pattern
-  (`World.kt:224`).
+| Event | Level | Message |
+|---|---|---|
+| A system is installed | INFO | `"World installed a {} (slot={})"`, `system::class.simpleName`, `slot` |
+| A system is uninstalled (before `uninstallFrom` runs) | INFO | `"World uninstalled a {} (slot={})"`, `system::class.simpleName`, `record.slot` |
+| `uninstallSystem` called for a system not installed | DEBUG | `"World received an uninstallSystem call for a {} that was not installed - no-op"`, `system::class.simpleName` |
+| Once per `stepSystems()` call | DEBUG | `"World stepping {} system(s)"`, `snapshot.size` |
 
-**Stability tier:** Experimental (`@ExperimentalGameToolsApi` on each of the four members
-individually). Each member needs the marker explicitly. `WorldSystem` carries
-`@SubclassOptInRequired`, which gates only *implementing* it: merely naming `WorldSystem` in a
-signature (as `installSystem`, `uninstallSystem` and `installedSystems` do) does not gate a
-caller. `stepSystems()`'s signature does not mention it at all. Without the marker, all four would
-be callable with no opt-in. Graduates to untagged Stable Core at #79.
+No log line precedes either `require` throw in `installSystem` or the `check` throw in
+`stepSystems`, matching the repo's existing convention that the exception message is the
+diagnostic (`TiledMap.addSpawnPoint`, `ZoneGrid`'s constructor).
 
-**Imports added to `World.kt`**, in the file's existing numbered regions:
-- `com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` under `1. Organization Internal` /
-  `1.2 Spartan Gaming`;
-- `java.util.TreeMap` under `3. Utility / Catch-all` / a new `3.1 Java Standard library`
-  subgroup, placed above the existing `3.2 Kotlin` subgroup.
+### 4.6 Changed: `gametools-core/build.gradle.kts`
 
-`WorldSystem` and `CoreSystemSlot` share `World`'s package and need no import.
-`WorldSystem.kt` and `CoreSystemSlot.kt` each import only `ExperimentalGameToolsApi`, under
-`1.2 Spartan Gaming`.
-
-**Invariant the `TreeMap` relies on.** The comparator keys tier 1 on `order` alone, so two
-distinct slots with equal `order` would collide as one key. Slot `order` values must therefore be
-unique across every `CoreSystemSlot`. The sealed interface makes that a library-internal
-invariant: only `gametools-core` can declare slots. It is locked in by a test (§5,
-`CoreWorldSystemSlotTest`), and `CoreSystemSlot.order`'s KDoc states it.
-
-### 3.6 Changed: `gametools-core/build.gradle.kts`
-
-Add the test-source-set-only opt-in (architecture §8's "Gradle test-only opt-in" row), immediately
-after the existing `dependencies { }` block:
+Insert between the existing `mavenPublishing { }` block (lines 5–11) and the `dokka { }` block
+(line 13) — never appended at end of file, since `#71`'s branch appends its own, unrelated
+`dependencies { implementation(kotlin("reflect")) }` block there:
 
 ```kotlin
 tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compileTestKotlin") {
@@ -701,396 +773,569 @@ tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compile
 }
 ```
 
-No main-source-set flag, ever — production code that wants to use `WorldSystem`/the slot
-types/`World`'s four members opts in explicitly per call site or per class, the same as any other
-consumer (architecture §8, last row). This line is removed at #79 (out of scope here).
-`gametools-world`'s equivalent line is #77's own to add — not touched by this unit.
+Identical shape to #77's own `gametools-world` copy (`docs/zone-world-system-plan.md:423-424`);
+#79 removes both. No main-source-set opt-in, ever.
 
-**Error handling / Logging:** N/A — build configuration, not runtime code.
+### 4.7 Changed: `README.md`
 
----
+**Modules table, core row (`README.md:148`).**
 
-## 4. Documentation impact (Audience-Reach rings)
-
-- **Inner Core (in-editor).** The one new `//region INSTALLED SYSTEMS` / `//endregion` block in
-  `World.kt` (§3.5); the two new annotation files need no import-region comments (no imports).
-- **Component Ring (KDoc/API contracts).** The primary ring this unit touches. Full KDoc, per
-  §3.1–§3.5, on every new public declaration: `ExperimentalGameToolsApi`, `SupportedExtension`,
-  `WorldSystem` and its four members, `CoreSystemSlot`/`CoreWorldSystemSlot`, and `World`'s four
-  new members plus the class-doc update. Every KDoc must render correctly under
-  `./gradlew dokkaGeneratePublicationHtml`.
-- **Boundary Ring.** Not touched — no wire format, no protocol, no cross-service concern in this
-  unit.
-- **Architectural Outer Layer.**
-  - `README.md`:
-    - **Modules table, core row** (currently `README.md:147`) — add `annotation` to the package
-      list and name both new types.
-    - **Architecture Mermaid class diagram** (`README.md:33-119`):
-      - add an `interface WorldSystem` node (`installOn`, `uninstallFrom`, `step`, `coreSlot`);
-      - add `CoreSystemSlot` with `CoreWorldSystemSlot`, in the diagram's existing `<<interface>>`
-        / `<<enumeration>>` notation;
-      - add `World "1" o-- "*" WorldSystem : installed`, beside the existing
-        `World "1" o-- "*" GameObject` edge (`README.md:112`).
-      This is an architectural shift, and the README rule wants it shown.
-    - **Layer table** (`README.md:120-138`) — add one row, e.g. `| WorldSystem | interface
-      (Experimental) | An opt-in add-on a World hosts: installed with installSystem, stepped by a
-      driver via stepSystems once per frame, never by tick; library-reserved CoreWorldSystemSlots
-      give built-in systems a guaranteed order |`. `World`'s own row is left as is, because
-      installed systems are a separate, driver-called operation (§2.7).
-    - **Features** — add a bullet under **Game Objects** naming `WorldSystem`, the registry and
-      the two-tier model, explicitly marked Experimental.
-  - `CONTRIBUTING.md` — the Module layout table's `gametools-core` row (currently
-    `CONTRIBUTING.md:33`) gains `annotation` to its package list, mirroring README exactly (same
-    drift risk `docs/physics-core-seams-plan.md` §7 already flagged — kept in sync here too).
-  - `CHANGELOG.md` — one `[Unreleased] ### Added` entry (draft below).
-  - `docs/world-systems-implementation-architecture.md` already documents this unit's design; no
-    update owed to it from this unit. The eight documentation-correction pointer edits in the
-    architecture's §7 table are the planner's own docs-only-PR responsibility, not this
-    implementation unit's — not duplicated here.
-
-### `CHANGELOG.md` — `[Unreleased] ### Added` draft
-
-```markdown
-- `com.spartanlabs.gaming.annotation` — two API-stability-tier markers: `ExperimentalGameToolsApi`
-  (`@RequiresOptIn(level = ERROR)`, for a seam not yet proven by a real consumer) and
-  `SupportedExtension` (documentary only, no compiler gate, for a likely-but-non-core seam that
-  carries the same semver guarantee as Stable Core). Both purely documentary/opt-in
-  infrastructure — neither adds any domain surface on its own.
-- `WorldSystem` — an opt-in, `@ExperimentalGameToolsApi`-gated interface for hosting per-frame or
-  event-driven add-on behaviour on a `World`: `installOn`/`uninstallFrom` (symmetric lifecycle
-  hooks), a no-op-default `step`, and an optional `coreSlot` claiming one of the library-reserved
-  `CoreWorldSystemSlot`s (`PHYSICS`, `ZONE`) for a guaranteed relative step order regardless of
-  install order. `World` gains `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems`
-  — all additive; a `World` that installs nothing behaves exactly as before. `World.tick()` never
-  calls `stepSystems()` — a driver calls it explicitly, once per frame (e.g. from
-  `SimulationLoop`'s `onTick`). No concrete system ships yet — `ZoneWorldSystem` (#77),
-  `ExperienceSystem` (#78), and `PhysicsWorldSystem` (#80) follow. (#76)
+Before:
+```
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 ```
 
+After:
+```
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation,annotation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `WorldSystem` (Experimental), `EventBus`, `SimulationLoop`, and the `@SupportedExtension` / `@ExperimentalGameToolsApi` API-stability markers — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+```
+
+**Layering table** (`README.md:124` header) — `World` row (`README.md:132`) gains a clause; a new
+row for `WorldSystem` immediately after the `SimulationLoop` row (`README.md:134`):
+
+Before (`World` row):
+```
+| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
+```
+
+After:
+```
+| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, publishes lifecycle/combat `GameEvent`s on its `EventBus`, and hosts opt-in installed `WorldSystem`s (Experimental) |
+```
+
+New row, inserted after the `SimulationLoop` row:
+```
+| `WorldSystem` | interface | Opt-in, per-frame or event-driven add-on behaviour for a `World` (Experimental): installed via `World.installSystem`, stepped by a driver via `World.stepSystems`; built-in systems claim a library-reserved `CoreSystemSlot` and step first, everything else steps after them in install order |
+```
+
+**Architecture mermaid diagram** (`README.md:34-120`) — insert a `WorldSystem` `<<interface>>`
+class block immediately after the existing `class World { ... }` block (ends `README.md:80`,
+before `class Space {` at `README.md:81`):
+
+```mermaid
+    class WorldSystem {
+        <<interface>>
+        +CoreSystemSlot coreSlot
+        +installOn(world)
+        +uninstallFrom(world)
+        +step(world)
+    }
+```
+
+(`+CoreSystemSlot coreSlot`, without `?`: the existing diagram never marks nullability — e.g. it
+lists no `?` anywhere in `README.md:34-120` — and puts properties before methods, as in
+`class Space`.)
+
+And add one association, immediately after the existing `World "1" o-- "0..1" Space` line
+(`README.md:115`):
+```
+    World "1" o-- "*" WorldSystem
+```
+
+Do **not** add `CoreSystemSlot`/`CoreWorldSystemSlot` to the diagram — the class list already
+runs long, and the slot types are `WorldSystem`'s own internal ordering detail, not a top-level
+architectural relationship.
+
+**Features, Game Objects section (`README.md:157-169`)** — one new bullet after "Opt-in
+fixed-timestep loop" (`README.md:168`), before "Serializable snapshots" (`README.md:169`):
+
+```
+- **Opt-in installed systems** (Experimental) — a `WorldSystem` adds per-frame or event-driven behaviour to a `World` without subclassing it: implement `installOn` (and `step` / `uninstallFrom` as needed), `World.installSystem(it)`, then call `World.stepSystems()` once per frame from your own driver, e.g. `SimulationLoop(world, onTick = { world.stepSystems() })` — `World.tick()` never calls it. `uninstallSystem` tears a system down symmetrically. Built-in systems claim a library-reserved `CoreSystemSlot` (`CoreWorldSystemSlot.PHYSICS`, then `ZONE`) and always step first, in that order, whatever order they were installed in; your own systems step after them, in install order. Experimental: opt in with `@OptIn(ExperimentalGameToolsApi::class)` or the `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` compiler flag — the shape may change incompatibly in a Feature release until it graduates.
+```
+
+### 4.8 Changed: `CONTRIBUTING.md` (the three I1 edits)
+
+**1. Module layout table, core row (`CONTRIBUTING.md:33`).**
+
+Before:
+```
+| `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
+```
+
+After:
+```
+| `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation,annotation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
+```
+
+**2. Coding rules paragraph (`CONTRIBUTING.md:18-24`)** — one sentence appended at the end:
+
+Before (ends): `` ...structured slf4j logging, KDoc on every public declaration, region-grouped imports, one test class per file. Tests are organised by the five-level hierarchy into `com.spartanlabs.gaming.testing.<level>` packages. ``
+
+After (append): `` Public surface is tiered: Stable Core is untagged, a likely-but-non-core seam carries `@SupportedExtension` (the same semver guarantee as Stable Core), and an unproven seam is gated `@ExperimentalGameToolsApi` until it graduates. ``
+
+**3. Versioning table (`CONTRIBUTING.md:139-144`)** — one new row, immediately after the `feat!:`
+row (`CONTRIBUTING.md:143`):
+
+Before/after context:
+```
+| `feat!:` / `BREAKING CHANGE:` | Major release | `1.9.0` → `2.0.0` |
+| An incompatible change limited to `@ExperimentalGameToolsApi` surface (commit it without `!` or a `BREAKING CHANGE:` footer) | Feature release, not Major | `1.9.0` → `1.10.0`; graduation out of Experimental is recorded in `CHANGELOG.md` |
+| `docs` / `chore` / `ci` / `test` / `build` / `refactor` | none — rides the next release | |
+```
+
+(the first and third rows are unchanged, existing rows; only the middle row is new.) The
+parenthetical is what keeps the table consistent: without it, an Experimental-only breaking change
+committed the Conventional-Commits way (`feat!:`) would match both the Major row above it and this
+row.
+
+### 4.9 Changed: `CHANGELOG.md`
+
+Two `[Unreleased] ### Added` bullets, appended at the end of the existing `### Added` list
+(after the "Project website" bullet, before the `### Changed` heading at `CHANGELOG.md:76`),
+matching the file's existing register (backticked type — dash — prose — `(#issue)`):
+
+```markdown
+- `com.spartanlabs.gaming.annotation` — the library's API-stability tier markers.
+  `ExperimentalGameToolsApi` is an `@RequiresOptIn(level = ERROR)` gate for a seam whose shape is
+  not yet proven by a real consumer and may change incompatibly in a Feature release until it
+  graduates; opt in with `@OptIn(ExperimentalGameToolsApi::class)` or
+  `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi`. `SupportedExtension` is
+  purely documentary (no compiler gate, `BINARY` retention): it marks a likely-but-non-core seam
+  that carries the same semver guarantee as Stable Core. Nothing carries `SupportedExtension` yet.
+  (#76)
+- `WorldSystem` — an opt-in, per-frame or event-driven add-on contract for a `World`, with
+  `installOn`/`uninstallFrom`/`step` hooks and an optional `coreSlot` claim on a library-reserved
+  `CoreWorldSystemSlot` (`PHYSICS`, then `ZONE`), which steps in that relative order whatever order
+  the systems were installed in; every other system steps afterwards, in install order. `World`
+  gains `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems` to host it;
+  `World.tick()` is unchanged and never calls `stepSystems()` — a driver does, e.g. from a
+  `SimulationLoop`'s `onTick`. Ships Experimental: implementing `WorldSystem`, or using `World`'s
+  new members, the slot types or `coreSlot`, requires opting in to `ExperimentalGameToolsApi`.
+  (#76)
+```
+
+Note: the annotation bullet is credited `(#76)`, not `(#49)`. `docs/physics-core-seams-plan.md`
+§3.6's own draft bullet cited `(#49)` and named `CollisionResolver` as the reason
+`SupportedExtension` exists; that half of that plan is superseded onto this unit, and the
+annotation has no user until #79 applies it to `WorldSystem`.
+
 ---
 
-## 5. Test plan (5-level hierarchy)
+## 5. Documentation impact (Audience-Reach rings)
 
-Per-package tree under `com.spartanlabs.gaming.testing.<level>`, mirroring the production
-packages exactly (`annotation`, `gameobjects`). One test class per file; `kotlin.test` on the
-JUnit 5 platform (no MockK in this repo — hand-rolled recording fakes throughout, matching
-`WorldLifecycleEventsTest`'s own `recorder(world)` pattern); backtick test names.
+- **Inner Core (in-editor):** the new `//region INSTALLED SYSTEMS` / `//endregion` block in
+  `World.kt` (§4.5); one Level-1 line comment inside `insertInStepOrder` explaining the tie-break
+  rule (already included in §4.5's code block).
+- **Component Ring (KDoc/API contracts):** the primary ring this unit touches. Full Level-2 KDoc
+  on every new public declaration (§4.1–§4.5): both annotations, `WorldSystem` and its four
+  members, `CoreSystemSlot`/`CoreWorldSystemSlot`, and `World`'s four new members plus its
+  extended class/`tick()` KDoc. Must render without a *new* unresolved-link warning under
+  `./gradlew dokkaGeneratePublicationHtml` — an unresolved KDoc link is a Dokka **warning**, not a
+  build failure, in this repo (`CONTRIBUTING.md`'s own note describes the task as "also catches
+  broken KDoc links", not that it fails the build over one) — but this unit's own new KDoc must
+  not *introduce* one, and per the #71-coexistence constraint (below) must never link to a type
+  #71 moves into `gameobjects.combat`.
+- **Boundary Ring (protocol/integration):** not touched — no wire format, no cross-service
+  concern.
+- **Architectural Outer Layer:** `docs/world-system-core-architecture.md` already documents this
+  unit's design; no update owed to it by this plan. `docs/world-systems-implementation-
+  architecture.md`'s own Cross-plan alignment section needs a one-line pointer to the newer
+  architecture note once this docs-only PR lands — named as Follow-up F4 (§11), not this plan's to
+  edit (out of scope per the boundary rules governing this plan-writing pass).
+- **README / CONTRIBUTING / CHANGELOG currency:** all three updated in this unit's own commits
+  (§4.7–§4.9), per the grand design's own "each unit documents its own surface" rule.
+
+**#71 coexistence constraint (hard, verified):** none of this unit's KDoc `[link]`s or test
+imports may reference `Alive`, `Buff`, `Capability`, `CoreCapability`, `CombinedStat`,
+`ExperienceReceiver`, `DefaultExperienceReceiver`, `Intent`, `Idle`, `Move`, `AttackIntent`,
+`ModularStat`, or `StatMod` — all of which `#71` (`dcb396e`) moves into `gameobjects.combat`, and
+whose real package differs depending on merge order relative to #71. None of this unit's KDoc
+names `Capability`/`CoreCapability` at all (the precedent is recorded in the architecture note
+instead), so the constraint in `docs/world-system-core-architecture.md` §5 is met trivially. Test fixtures use
+`Actor`/`VisibleObject`/`GameObject` (not moved by #71) or no game object at all, matching the
+existing `WorldLifecycleEventsTest`/`WorldTest` precedent (`Actor(location = Point(x, 0.0))`).
+
+---
+
+## 6. Test plan (5-level hierarchy)
+
+All new tests live in `gametools-core`. `kotlin.test` on the JUnit 5 platform, per this repo's
+actual convention (no MockK anywhere in the repo) — nothing in this unit makes an external call to
+mock in any case. One test class per file.
 
 ### Level 1 — gating
 
-No `testing.gating` package exists in this repo (verified). Per the established convention, level
-1 in practice is `./gradlew componentTest deterministicTest` before pushing, using the level 2/4a
-tests below — no separate artifact.
+No `testing.gating` package exists in this repo; per its own convention, Level 1 in practice means
+"compiles and passes `componentTest deterministicTest` before every push", using the Level 2/4a
+tests below. Additionally, three commands/procedures this unit specifically owes, none checked in
+as a test file:
+
+1. **The opt-in gate is real.** Temporarily remove the `compileTestKotlin` block (§4.6) from
+   `gametools-core/build.gradle.kts`, run `./gradlew :gametools-core:compileTestKotlin`, and
+   confirm a compile error at every use of the gated surface in the new test sources: implementing
+   `WorldSystem`, calling any of `World`'s four new members, referencing `CoreSystemSlot`/
+   `CoreWorldSystemSlot`, and reading `coreSlot`. Restore the block afterward.
+2. **The unconfirmed `-opt-in`/`@SubclassOptInRequired` interaction (architecture §6, "Level-1
+   verification owed").** With the module-wide `compileTestKotlin` opt-in flag in place (its
+   normal state), confirm a test fixture can `class Fake : WorldSystem` with **no** per-class
+   `@OptIn(ExperimentalGameToolsApi::class)`. If that fails to compile, the module flag does not
+   satisfy `@SubclassOptInRequired` for this combination — fall back to
+   `@OptIn(ExperimentalGameToolsApi::class)` on every test fake class that implements
+   `WorldSystem`, and note the fallback was needed in this file's own commit message.
+3. **Dokka output.** Run `./gradlew dokkaGeneratePublicationHtml`; read its output for any new
+   unresolved-KDoc-link warning this unit's own KDoc introduced (in particular, confirm no link
+   into `gameobjects.combat` leaked in regardless of merge order relative to #71). A pre-existing,
+   unrelated warning does not block this unit — the task does not fail the build over one either
+   way.
 
 ### Level 2 — component
 
-**New:** `gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/annotation/ExperimentalGameToolsApiTest.kt`
-- `it fails to compile if a documented annotation target is removed` — a compile-time fixture
-  (one `@ExperimentalGameToolsApi`-annotated usage per target: class, top-level function,
-  property, secondary constructor, type alias), same rationale as
-  `docs/physics-core-seams-plan.md` §5's `SupportedExtensionTest` (`AnnotationTarget.PROPERTY`/
-  `TYPEALIAS` do not reliably round-trip through plain JVM reflection).
-- `carries @MustBeDocumented` — checked through its JVM form,
-  `ExperimentalGameToolsApi::class.java.isAnnotationPresent(java.lang.annotation.Documented::class.java)`
-  (the Kotlin compiler emits `@Documented` for `@MustBeDocumented`). If the implementer finds
-  that surface not observable, drop the assertion and record it in §6, as
-  `docs/physics-core-seams-plan.md` already flagged.
-- `@RequiresOptIn`'s `ERROR` level is **not** asserted by reflection. `kotlin.RequiresOptIn` is
-  itself `BINARY`-retained, so it is invisible at runtime. The level is proven at compile time
-  instead: the test source set only compiles because of the opt-in flag (§3.6, §6).
-- `retention is BINARY (not visible on a usage at runtime)` — same negative-test shape as
-  `docs/physics-core-seams-plan.md` §5: apply the annotation to a test-local class, assert
-  `isAnnotationPresent(ExperimentalGameToolsApi::class.java) == false` at runtime.
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/annotation/`:
 
-**New:** `gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/annotation/SupportedExtensionTest.kt`
-— identical structure and assertions to `docs/physics-core-seams-plan.md` §5's own
-`SupportedExtensionTest` (compile fixture across the five targets; `@MustBeDocumented` check;
-`BINARY`-retention runtime-invisibility check). Not duplicating that plan's own flagged caveat
-about the exact JVM-reflection surface of `@Retention`/`@Target` themselves — carried forward
-identically here (§6).
+- **`ExperimentalGameToolsApiTest.kt`**
+  - `it can be applied to a class, function, property, constructor, and type alias` — a
+    compile-time fixture per target (a marked class, a marked top-level function, a marked
+    property, a marked secondary constructor, a marked type alias), each referenced once in the
+    test body so an unused-fixture warning cannot hide a future accidental `@Target` narrowing.
+  - `it carries @MustBeDocumented, observable via the compiled JVM annotation` —
+    `ExperimentalGameToolsApi::class.java.isAnnotationPresent(java.lang.annotation.Documented::class.java)`.
+    (Not `MustBeDocumented::class.java` — Kotlin's `@MustBeDocumented` compiles to the JVM's own
+    `java.lang.annotation.Documented`, and that is the certain, toolchain-independent fact to
+    assert; the level of Kotlin-specific reflection needed to see `@MustBeDocumented` itself is
+    not relied upon.)
+  - `usage is invisible at runtime (BINARY retention)` — apply `@ExperimentalGameToolsApi` to a
+    test-local class; assert
+    `marked::class.java.isAnnotationPresent(ExperimentalGameToolsApi::class.java) == false`.
+  - `it declares no members` — `ExperimentalGameToolsApi::class.java.declaredMethods.isEmpty()`.
+  - **Not asserted here, by design:** `@RequiresOptIn`'s own presence/level via reflection.
+    `RequiresOptIn` is itself `BINARY`-retained, so it is invisible to `isAnnotationPresent` at
+    runtime; the ERROR-level opt-in gate is a compile-time fact, verified at Level 1 above, not
+    here.
+- **`SupportedExtensionTest.kt`** — the same shape as `physics-core-seams-plan.md` §5's own design
+  for this class (compile fixture across the five targets; `@MustBeDocumented`
+  usage-invisibility), with the same correction as above: assert `@MustBeDocumented` via
+  `java.lang.annotation.Documented`, not by attempting to reflect on `MustBeDocumented` itself; and
+  the same "no members" check.
 
-**New:** `gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/gameobjects/CoreWorldSystemSlotTest.kt`
-- `` `order` is compared, PHYSICS before ZONE `` — `CoreWorldSystemSlot.PHYSICS.order < CoreWorldSystemSlot.ZONE.order`.
-- `` every slot's `order` is unique `` —
-  `CoreWorldSystemSlot.entries.map { it.order }.toSet().size == CoreWorldSystemSlot.entries.size`.
-  Guards the invariant `World`'s `order`-keyed `TreeMap` relies on (§3.5) when a slot such as
-  `VISION` is added later.
-- `` `CoreWorldSystemSlot` implements `CoreSystemSlot` `` — a compile-time fact, asserted via a
-  `val slot: CoreSystemSlot = CoreWorldSystemSlot.ZONE` fixture (forces the subtyping relationship
-  to keep compiling).
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/gameobjects/`:
 
-**New:** `gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/component/gameobjects/WorldInstalledSystemsTest.kt`
-— the primary behavioural suite, using a test-local hand-rolled fake:
-
-```kotlin
-@OptIn(ExperimentalGameToolsApi::class)
-private class RecordingSystem(
-    override val coreSlot: CoreSystemSlot? = null,
-    private val onInstall: (World) -> Unit = {},
-    private val onUninstall: (World) -> Unit = {},
-    private val onStep: (World) -> Unit = {},
-) : WorldSystem {
-    val installed = mutableListOf<World>()
-    val uninstalled = mutableListOf<World>()
-    val stepped = mutableListOf<World>()
-    override fun installOn(world: World) { installed += world; onInstall(world) }
-    override fun uninstallFrom(world: World) { uninstalled += world; onUninstall(world) }
-    override fun step(world: World) { stepped += world; onStep(world) }
-}
-```
-
-Behaviours locked in (each its own `@Test`, backtick-named):
-- `` `installSystem` calls `installOn` then records the system `` — order asserted via a shared
-  mutable log both the fake and a post-install check append to.
-- `` a tier-1 system claiming PHYSICS and one claiming ZONE step PHYSICS then ZONE regardless of
-  install order `` — install ZONE first, then PHYSICS; assert `installedSystems` and the
-  `stepSystems()`-observed order both put PHYSICS first.
-- `` a test-local system claiming an existing CoreWorldSystemSlot is accepted `` — claiming
-  `CoreWorldSystemSlot.PHYSICS`/`.ZONE` from a test-local `WorldSystem` is legal (locks in "claiming
-  an existing slot is legal," architecture §4.3).
-- `` installing a second instance with an already-installed reference is rejected `` —
-  `installSystem(sameInstance)` twice throws `IllegalArgumentException`, and `installOn` is called
-  exactly once (`installed.size == 1` after the failed second call).
-- `` installing a second system claiming an occupied slot is rejected, and its installOn never
-  runs `` — asserts the second `RecordingSystem`'s `installed` log stays empty after the thrown
-  `IllegalArgumentException`.
-- `` if `installOn` throws, nothing is recorded `` — a `RecordingSystem(onInstall = { throw
-  IllegalStateException() })`; assert the thrown exception propagates and `installedSystems` does
-  not contain it afterward.
-- `` `uninstallSystem` on an absent system is an idempotent no-op `` — no exception, no log call
-  recorded on the fake.
-- `` `uninstallSystem` removes the system before calling `uninstallFrom` `` — the fake's
-  `onUninstall` callback asserts `world.installedSystems` does not contain `this` system at the
-  moment it runs.
-- `` `uninstallSystem` frees a claimed slot for a new claimant `` — uninstall a `PHYSICS`-slot
-  system, then install a second, distinct `PHYSICS`-slot system successfully.
-- `` a system uninstalled mid-`stepSystems` pass is skipped for the rest of that pass `` — a
-  `RecordingSystem` whose `onStep` callback calls `world.uninstallSystem` on a second,
-  later-in-order system installed alongside it; assert the second system's `stepped` log stays
-  empty for that call.
-- `` a system installed mid-`stepSystems` pass steps from the next call, not the current one `` —
-  symmetric case: one system's `onStep` installs a third system; assert the third system's
-  `stepped` log is empty after the current `stepSystems()` call and non-empty after the next.
-- `` `installedSystems` is a fresh copy in step order — mutating it does not affect the world ``
-  — `(world.installedSystems as MutableList).clear()` (or attempt `+=`) does not change a
-  subsequent `stepSystems()`'s observed step count.
-- `` a `stepSystems` call with no installed systems is a no-op `` — no exception, `DEBUG` log path
-  exercised (not asserted directly — logging is not test-asserted in this repo's existing
-  convention; see §6).
-- `` a throwing `step` propagates out of `stepSystems`, and does not prevent the DEBUG log from
-  having already fired for the call `` — `assertFailsWith<IllegalStateException> { world.stepSystems() }`.
-- `` `World.tick()` never calls `stepSystems()` `` — install a `RecordingSystem`, call
-  `world.tick()` several times with no `stepSystems()` call, assert `stepped` stays empty.
+- **`WorldSystemDefaultsTest.kt`**
+  - `uninstallFrom does nothing by default` — a minimal `WorldSystem` overriding only `installOn`;
+    calling `uninstallFrom` directly does not throw and has no observable effect.
+  - `step does nothing by default` — same shape for `step`.
+  - `coreSlot is null by default` — a minimal `WorldSystem`'s `coreSlot` is `null`.
+- **`CoreWorldSystemSlotTest.kt`**
+  - `PHYSICS orders before ZONE` — `CoreWorldSystemSlot.PHYSICS.order < CoreWorldSystemSlot.ZONE.order`.
+  - `every library-defined slot has a pairwise-distinct order` — over `CoreWorldSystemSlot.entries`,
+    `entries.map { it.order }.distinct().size == entries.size` (the R5 invariant this KDoc
+    promises and the registry itself no longer depends on, but consumers do).
+- **`WorldInstallSystemTest.kt`**
+  - `installOn is called exactly once, with the installing World` — a recording fake.
+  - `installedSystems excludes the system while installOn is running` — a fake whose `installOn`
+    asserts `world.installedSystems` does not contain it.
+  - `installing the same instance twice throws IllegalArgumentException and does not call
+    installOn again`.
+  - `installing a second system claiming an occupied slot throws IllegalArgumentException naming
+    the slot and the occupant, and does not call its installOn` — assert the message mentions both
+    and the second system's recording `installOn` never ran.
+  - `if installOn throws, nothing is recorded and the exception propagates` — the fake is absent
+    from `installedSystems` afterward.
+  - `a system whose installOn threw can be installed again later` — same instance, second call
+    succeeds.
+  - `two distinct instances of an equal data class WorldSystem are both installed` — proves
+    identity, not `equals`, drives the duplicate-instance check.
+  - `coreSlot is read exactly once` — a fake whose `coreSlot` getter increments a counter; after
+    one `installSystem` call the counter is `1`, and stays `1` through a subsequent `uninstallSystem`/
+    `stepSystems` call.
+  - `a system that re-entrantly installs itself from its own installOn throws
+    IllegalArgumentException`.
+  - `a system that re-entrantly installs a second claimant of its own in-flight slot throws
+    IllegalArgumentException`.
+  - `a system that installs an unrelated helper from its own installOn succeeds, and the helper is
+    recorded before the outer system` — assert `installedSystems == listOf(helper, outer)`.
+  - `a system that uninstalls itself from inside its own installOn is a no-op, and the outer
+    install still succeeds` — the system ends up installed.
+  - `if installOn installs a helper and then throws, the helper stays installed and the outer
+    system is not` — pins the documented no-rollback rule: `World` never undoes work a nested,
+    completed `installSystem` did; undoing it is the outer system's own failure-atomicity duty.
+- **`WorldUninstallSystemTest.kt`**
+  - `the system is removed from installedSystems before uninstallFrom runs` — a fake whose
+    `uninstallFrom` asserts it is already absent from `world.installedSystems`.
+  - `uninstalling a system that was never installed is a no-op` — no exception, `uninstallFrom`
+    not called.
+  - `uninstallSystem is idempotent` — calling it twice on the same system has the same effect as
+    once.
+  - `if uninstallFrom throws, the system stays removed and the exception propagates`.
+  - `uninstalling a tier-1 system frees its slot for a later install` — install a second system on
+    the same slot after the first is uninstalled; it succeeds.
+  - `a system can be uninstalled and reinstalled` — reinstalling succeeds and the system appears
+    in `installedSystems` again.
+- **`WorldInstalledSystemsTest.kt`**
+  - `installedSystems is empty for a World with nothing installed`.
+  - `installedSystems is a fresh copy on every read` — two consecutive reads are `equals` but not
+    the same reference (or: mutating a `toMutableList()` copy of one read does not affect a later
+    read).
+  - `installedSystems reflects step order: tier 1 by order, then tier 2 by install order`
+    regardless of the order systems were installed in.
+- **`WorldStepSystemsTest.kt`**
+  - `stepSystems on an empty World does nothing and does not throw`.
+  - `stepSystems steps every installed system once, tier 1 by order then tier 2 by install order` —
+    install four fakes (PHYSICS-slot, ZONE-slot, two tier-2) in a scrambled order; assert the
+    recorded step order matches tier rules regardless.
+  - `a system uninstalled by an earlier system's step is skipped for the rest of that pass`.
+  - `a system installed by an earlier system's step is not stepped until the next stepSystems call`.
+  - `a system uninstalled and reinstalled mid-pass is not stepped again this pass, and steps
+    normally next call`.
+  - `if a step throws, later systems in the pass do not step, the exception propagates, and the
+    registry is unchanged`.
+  - `the next stepSystems call after a throwing step runs normally`.
+  - `a re-entrant stepSystems call throws IllegalStateException, and the stepping guard resets
+    afterward` — a fake whose `step` calls `world.stepSystems()`; assert the ISE, then assert a
+    following, non-nested `stepSystems()` call succeeds.
+  - `World.tick() never steps installed systems` — install a recording fake, call `world.tick()`
+    several times, assert it was never stepped.
 
 ### Level 3 — integration
 
-Not applicable. No external interface, database, or third-party service is touched. No test
-added — matching `docs/physics-core-seams-plan.md` §5's own precedent for a similarly-scoped
-mechanism-only unit.
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/integration/gameobjects/`:
+
+- **`WorldSystemEventBusIntegrationTest.kt`** — drives the real `EventBus` (no fake), covering
+  `WorldSystem`'s only sanctioned integration point onto existing infrastructure:
+  - `a system that subscribes in installOn and cancels in uninstallFrom receives
+    EntitySpawned/EntityRemoved only while installed` — install the system, `world.add(Actor(...))`
+    (fires `EntitySpawned`), assert received; `world.uninstallSystem(it)`; add/remove another
+    `Actor`; assert nothing further received.
+  - `one WorldSystem instance installed on two different Worlds tracks each World's own events
+    independently, keyed by the World instance` — per `WorldSystem`'s multi-`World` contract
+    (§4.3's KDoc).
 
 ### Level 4a — deterministic
 
-**New:** `gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/deterministic/gameobjects/WorldInstalledSystemsDeterminismTest.kt`
-- `` identical install sequences on identically-seeded worlds produce identical step order `` —
-  build two fresh `World(seed = 42)` instances, install the same sequence of `RecordingSystem`s
-  (mixed tier 1/tier 2, deliberately out-of-slot-order) on each, call `stepSystems()` on both, and
-  assert both worlds' recorded step-order class-name sequences are `assertContentEquals`.
-- `` a `SimulationLoop` driven via `advance(...)` with `onTick = { world.stepSystems() }` steps
-  installed systems exactly once per whole tick `` — construct
-  `SimulationLoop(world, onTick = { world.stepSystems() })`, install a `RecordingSystem`, call
-  `advance(oneWholeTickWorthOfNanos)` a fixed number of times (no thread — `advance` is public and
-  called directly), and assert the fake's `stepped.size` equals the tick count. This is the
-  concrete proof that `stepSystems()` composes with the documented `SimulationLoop.onTick` driver
-  pattern named in architecture §1.3/§4.4, exercised without starting `start()`'s daemon thread.
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/deterministic/gameobjects/`
+(mirroring production package — the repo's existing flat `testing.deterministic.*` files are
+drift from an earlier convention, not the pattern to copy):
+
+- **`WorldSystemOrderingLawsTest.kt`**
+  - `step order and installedSystems are the same law-shaped result for every install permutation`
+    — four fakes (`PHYSICS`-slot, `ZONE`-slot, two tier-2, named so their relative tier-2 identity
+    is trackable), all 24 permutations (`4!`) of install order; for each, the expected order is
+    derived from the rule itself (tier 1 by `order`, tier 2 by that permutation's own relative
+    install order) and compared against the actual `installedSystems`/step trace — a property
+    test, not 24 hard-coded expectations.
+  - `identical install/uninstall/step call sequences on two different Worlds produce identical
+    traces` — same fakes, same call sequence, on `World()` and `World()`; assert the two recorded
+    step traces are equal.
 
 ### Level 4b — e2e
 
-Not applicable. No full client↔server flow is implicated by a mechanism with no concrete adapter
-yet — matches architecture §1.3's own framing that only #80 gets an end-to-end physics-ordering
-regression test, out of this unit's scope.
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/e2e/gameobjects/` (this package
+does not exist yet in `gametools-core` — this is the first e2e test to drive `SimulationLoop`):
+
+- **`WorldSystemSimulationLoopE2ETest.kt`**
+  - `a SimulationLoop with onTick = { world.stepSystems() } steps installed systems once per tick,
+    in tier order, after tick() runs` — drive via `SimulationLoop.advance(realElapsedNanos)`
+    (`SimulationLoop.kt:112-127`; no thread needed), a tier-1 and a tier-2 fake each recording the
+    `World.tickCount` they observed; assert both were stepped every tick, in tier order, and each
+    observed the `tickCount` value `tick()` had already advanced to that frame.
+  - `uninstalling a system between two advance() calls stops it from stepping on the next one`.
 
 ### Level 4c — non-functional
 
-Not applicable. `stepSystems()` adds one list snapshot plus N virtual calls per frame — negligible
-next to `tick()`'s own per-object work (architecture §11); nothing to benchmark with zero
-concrete systems installed anywhere in the repo yet.
+`gametools-core/src/test/kotlin/com/spartanlabs/gaming/testing/nonfunctional/gameobjects/`:
+
+- **`WorldSystemRegistryRobustnessTest.kt`**
+  - `many install/uninstall cycles leave the registry empty` — install and uninstall the same (or
+    several) systems a large number of times; assert `installedSystems.isEmpty()` at the end and
+    that no exception escaped.
+  - `roughly 1,000 no-op tier-2 systems each step roughly 1,000 times within a generous time
+    budget` — a throughput sanity check, not a strict benchmark (matching `WorldTickThroughputTest`'s
+    own "sane time budget" framing, not a hard numeric SLA).
+  - `a system that throws on every step does not corrupt the registry` — install it alongside a
+    normal system; call `stepSystems()` several times (each throws and propagates); after each
+    call, assert `installedSystems` is unchanged and a following `stepSystems()` call still runs
+    (the `stepping` flag never gets stuck `true`).
 
 ### Level 5 — UAT
 
-No `testing.uat` package exists in this repo. Not invented here. A registry mechanism with no
-concrete, observable system produces nothing a human evaluator can meaningfully assess in
-isolation — any UAT signal belongs to whichever unit first ships an observable system (#77/#78),
-matching `docs/physics-core-seams-plan.md` §5's own reasoning for a mechanism-only unit.
+No `testing.uat` package exists in this repo. A registry that a `World` opts into and a driver
+calls once per frame produces no UI or gameplay effect in isolation to evaluate — there is nothing
+to "feel" until a real adapter (`ZoneWorldSystem`, #77) exists. Written rationale, no test
+artifact: this mechanism's actual UAT signal belongs to whichever downstream unit first ships an
+observable, player-facing `WorldSystem` (`zone-world-system` or later), not this one.
 
----
+### What genuinely cannot be tested automatically
 
-## 6. What genuinely cannot be tested automatically
-
-- **Compile-time enforcement of `@SubclassOptInRequired`/`@RequiresOptIn`.** No automated test in
-  this repo's suite can assert "implementing `WorldSystem` without opt-in fails to compile" —
-  that would require a separate, deliberately-failing compilation harness this repo does not have
-  today (the same limitation `docs/physics-core-seams-plan.md` §6 notes for its own annotation).
-  The `compileTestKotlin`-scoped opt-in (§3.6) is itself the proof that opt-in is required at all:
-  if it were not, that Gradle block would be unnecessary and every test in `WorldInstalledSystemsTest`
-  would compile without it. Verified manually once by temporarily removing that block and
-  confirming the test module fails to compile — not something to keep as a standing automated
-  check.
-- **The exact JVM-reflection surface of `@Retention`/`@Target` on the annotations themselves** —
-  same flagged uncertainty `docs/physics-core-seams-plan.md` §5/§6 already carries; not
-  independently re-verified here.
-- **Cross-module use of `CoreWorldSystemSlot` from `gametools-world`.** This unit's own test suite
-  runs inside `gametools-core`, which has no test dependency on `gametools-world` — proving a
-  `gametools-world` adapter can return an existing `CoreWorldSystemSlot` from `coreSlot` is #77's
-  own test suite's job, not provable here (mirrors `docs/physics-core-seams-plan.md` §6's
-  identical cross-module limitation for `reconcileSpatialIndex`).
+- **`@RequiresOptIn`'s ERROR-level gate itself**, at Level 2 — `RequiresOptIn` is `BINARY`-retained
+  and invisible to runtime reflection; the Level-1 compile-error procedure (§6, Level 1 item 1) is
+  the only real proof, and it is manual/CI-console-observed, not a checked-in assertion.
+- **Whether the module-wide `-opt-in` flag alone satisfies `@SubclassOptInRequired`** for a fake
+  implementing `WorldSystem`, until actually tried (Level 1 item 2) — a fact about this exact
+  Kotlin/Gradle combination, not something a unit test can assert about itself.
+- **That a real downstream consumer's future `@OptIn(ExperimentalGameToolsApi::class)` usage
+  survives graduation cleanly** — only #79's own landing proves this for real.
 
 ---
 
 ## 7. Risks & edge cases
 
-- **Breaking changes:** none. Every new member on `World` is additive; `WorldSystem`/the slot
-  types are wholly new types. No existing public signature changes.
-- **API surface commitment:** from this commit, everything added here is genuinely public,
-  Experimental API — `@ExperimentalGameToolsApi`'s `ERROR` gate stops an accidental production
-  dependency, but the *shape* is still a real commitment the moment #77/#78 build against it; a
-  shape problem found there is architecture §4.7's named review checkpoint before #79 graduates.
-- **`sealed interface CoreSystemSlot` (OD1, carried below):** low cost to confirm now
-  (unreleased); high cost to reverse later (narrowing an already-open interface to `sealed` is a
-  breaking change; widening `sealed` to open is additive).
-- **The two-tier ordering limitation** (architecture §11): a tier-2 system always steps after
-  every tier-1 system — it can never run before `PHYSICS` or between `PHYSICS` and `ZONE`. Not a
-  defect in this unit's scope; documented on `WorldSystem.coreSlot`'s KDoc and carried to §10 as a
-  named future additive extension (`runsBefore: CoreSystemSlot? = null`), not built here.
-- **Concurrency:** unchanged — `World` remains single-threaded by convention; no new
-  synchronisation. `stepSystems()`'s snapshot-then-membership-recheck approach (§3.5) assumes no
-  concurrent mutation during the pass, exactly as `tick()`'s own `gameObjects.toList()` snapshot
-  does.
-- **Performance:** `installSystem`/`uninstallSystem`/`stepSystems` are all `O(k)` in the (expected
-  small) installed-system count; `installedSystems`'s fresh-copy-per-access cost is the same order
-  as `ZoneIndex.entitiesIn`'s already-accepted precedent.
-- **Cross-repo impact:** none. No wire/protocol change; `gametools-net` is untouched. Per standing
-  "no downstream consumer issues" guidance, `MyGameServer`/`GameGraphics` are not filed against.
-- **Migration:** none required — nothing behaves differently for an existing `World` consumer
-  until they explicitly call one of the four new members.
-- **Documentation drift risk (inherited, not new):** README's Modules table and CONTRIBUTING's
-  module-layout table list the same `core` package set in two places; this unit's edit to both
-  keeps them in sync, per the same risk `docs/physics-core-seams-plan.md` §7 already flagged.
+- **`#71` merge order.** No conflict either way: #71 touches only `World.kt:70-71,108-109,200-201`
+  (KDoc links), verified against `dcb396e`'s actual diff; this unit's new region and single import
+  line land elsewhere in the file. Mitigation: none needed beyond what is already true.
+- **The unconfirmed `-opt-in`/`@SubclassOptInRequired` interaction** (architecture §6). Mitigation:
+  Level-1 procedure with a named fallback (§6), decided empirically before this unit's tests are
+  considered done, not assumed.
+- **Dokka warnings are non-fatal in this repo.** `dokkaGeneratePublicationHtml` does not fail the
+  build over an unresolved link; a stray warning from an unrelated, pre-existing doc issue must
+  not be mistaken for this unit's own regression. Mitigation: the Level-1 procedure specifically
+  diffs *new* warnings this unit's own KDoc could introduce, not the task's exit code.
+- **Downstream plans (`#77`–`#80`) were drafted against the grand design's literal contract**,
+  which this unit's own architecture note refines in nine places (R1–R9) and contradicts in one
+  (R2). None of the four known downstream designs call `stepSystems()` re-entrantly or rely on an
+  unguarded re-entrant `installSystem` (grand design §10's own risk entry, confirmed still true
+  reading each plan's contract section), so no known consumer breaks — but each should be
+  re-verified against R1–R9 once this unit actually lands (Follow-up F2, §11).
+- **Consumers writing an exhaustive `when` over `CoreWorldSystemSlot`.** A future Feature release
+  may add a slot, which turns a consumer's `else`-less exhaustive `when` into a compile error. The
+  compiler accepts such a `when` today and cannot flag it in advance; the KDoc warning is the only
+  guard, and the Experimental tier's Feature-release allowance covers the break.
+- **The pending Kotlin 2.4.20 dependabot bump** (repo-wide, unrelated to this unit). No effect
+  expected on anything in this plan — nothing here depends on a Kotlin-version-specific compiler
+  behaviour beyond what is already stable in 2.2.0 (`@SubclassOptInRequired` has been stable since
+  2.1; `-jvm-default=enable` is 2.2's own default). Worth a quick re-run of the Level-1 procedure
+  if that bump lands before this branch merges, not a blocking dependency.
+- **Breaking changes:** none — every declaration in this unit is new.
+- **Cross-repo impact:** none — no wire/protocol change, `gametools-net` untouched.
+- **Concurrency/performance:** single-threaded, matching the rest of `World`; install/uninstall are
+  `O(n)` (an identity scan plus a list insert/removal); a step pass is one `O(n)` copy plus `n`
+  virtual calls with an `O(1)` skip check per entry. `n` stays small in practice (tier 1 bounded by
+  the number of built-in slots; tier 2 by however many systems a consumer installs). A `World`
+  that installs nothing pays nothing extra in `tick()`.
 
 ---
 
 ## 8. Version control
 
-- **Branch:** `feature/76-world-system-core`, off current `master` — fresh, not off
-  `feature/71-combat-package`. None of #71's changes (committed or working-tree) ride in this
-  unit's commits.
-- **Commit sequence** (each a coherent, independently reviewable unit):
-  1. `feat(annotation): add ExperimentalGameToolsApi and SupportedExtension stability-tier markers`
-     — both new annotation files (§3.1, §3.2) and their component tests (§5). This plan document
-     is not in this commit: it already landed in the docs-only planning PR. Body: cites #76,
-     `docs/world-system-core-plan.md`, and `docs/physics-core-seams-plan.md` §2.2/§3.1 as the
-     source of `SupportedExtension`'s exact shape (C1).
-  2. `feat(gameobjects): add the WorldSystem mechanism and its tier-1 slots` — `WorldSystem.kt`,
-     `CoreSystemSlot.kt` (§3.3, §3.4), plus their component tests. Body: cites architecture §4.2/
-     §4.3 and the `Capability`/`CoreCapability` precedent for the one-file interface+enum shape.
-  3. `feat(gameobjects): add World's installSystem/uninstallSystem/installedSystems/stepSystems registry`
-     — `World.kt`'s class-doc update and new region (§3.5), the `gametools-core/build.gradle.kts`
-     test-only opt-in (§3.6), and the component/deterministic tests (§5). Body: cites architecture
-     §4.4 for the exact registry semantics and states explicitly that `World.tick()` is untouched.
-  4. `docs: document the WorldSystem mechanism` — `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`
-     (§4). Body: notes these are this unit's own documentation obligations per architecture §7's
-     per-unit-documents-its-own-surface rule.
-
-  (Commits 1–3 are each independently compilable and testable; splitting further is not needed —
-  each is small and self-contained.)
-- **PR title** (valid Conventional Commit, becomes the merge-commit subject):
-  `feat(core): add the WorldSystem mechanism and World's opt-in system registry`.
-- **PR body:** `Closes #76`. No `BREAKING CHANGE:` footer — nothing here breaks an existing
-  caller. No version bump in this PR — the release branch does that (per every prior unit's
-  precedent in this repo's history).
-- Trailer reminder: attribute per the repo's existing commit convention.
+- **Branch:** `feature/76-world-system-core`, off the latest `master`.
+- **This branch's commits carry no unrelated changes** — in particular, none of #71's in-flight
+  `gameobjects.combat` package move rides here; branch fresh off `master`, not off
+  `feature/71-combat-package`.
+- **The plan document and architecture note do not land in this branch** — they land in a separate
+  docs-only PR off `master` (replacing the older draft of this plan; the four sibling plans are
+  already on `master`), ahead of this branch being cut (per the settled version-control point,
+  grand design §1.2). This branch's commits reference them by path, not by carrying them.
+- **Commit sequence** (each compiles and passes `componentTest deterministicTest` on its own; the
+  `compileTestKotlin` opt-in block lands in the first commit, because that commit's own tests
+  already need it):
+  1. `feat(annotation): add ExperimentalGameToolsApi and SupportedExtension stability markers` —
+     `annotation/ExperimentalGameToolsApi.kt`, `annotation/SupportedExtension.kt`, the
+     `gametools-core/build.gradle.kts` test-only opt-in block (§4.6), and the two annotations'
+     component tests (§4.1, §4.2, §6). The block must ride here: `ExperimentalGameToolsApiTest`
+     applies the marker to test-local fixtures and references them, which does not compile without
+     an opt-in. Body: why the marker pair and package placement; `Refs #76`.
+  2. `feat(gameobjects): add WorldSystem and CoreSystemSlot contracts` — `WorldSystem.kt`,
+     `CoreSystemSlot.kt` (§4.3, §4.4), and their component tests (`WorldSystemDefaultsTest.kt`,
+     `CoreWorldSystemSlotTest.kt`). Body: `Refs #76`.
+  3. `feat(gameobjects): add World's installed-systems registry` — `World.kt`'s import, class/
+     `tick()` KDoc, and new region (§4.5), plus the Level-2 install/uninstall/installedSystems/
+     stepSystems tests (§6). Body: cites R1/R2/R9 by name; `Refs #76`.
+  4. `test(gameobjects): add integration, deterministic, e2e, and non-functional coverage for
+     WorldSystem` — the Level 3/4a/4b/4c test files (§6). Body: `Refs #76`.
+  5. `docs: document WorldSystem and the API-stability tiers` — `README.md`, `CONTRIBUTING.md`,
+     `CHANGELOG.md` (§4.7–§4.9). Body: notes these are this unit's own documentation obligations;
+     `Refs #76`.
+- **PR title** (becomes the merge-commit subject, must be a valid Conventional Commit):
+  `feat(gameobjects): add WorldSystem core mechanism (opt-in per-World system registry)`.
+- **PR body:** `Closes #76`. Calls out: this is an Experimental seam gated
+  `@ExperimentalGameToolsApi`/`@SubclassOptInRequired`; R1 (re-entrant-install reservation), R2
+  (the one `stepSystems()` rejection case) and R9 (the step pass snapshots installation records,
+  so an uninstall-then-reinstall mid-pass is not stepped twice) as deliberate refinements over the
+  grand design's literal text, with R2 named as the one place this unit's behaviour differs from
+  that document's words; the Level-1 opt-in-gate result (and whether the test fakes needed the
+  `@OptIn` fallback); #71 coexistence (no KDoc link or test import into `gameobjects.combat`,
+  verified either merge order).
+- **Merge strategy:** rebase this branch onto `master` before merging (never rebase `master`
+  itself); merge to `master` as a merge commit (`--no-ff`), per `CONTRIBUTING.md` §Merge strategy.
+- **No version bump** in this PR — `CHANGELOG.md`'s entry stays under `[Unreleased]`; a release
+  branch decides the actual version number later (grand design §12 OD3).
+- **Trailer reminder:** attribute each commit per the repo's existing convention; no
+  `BREAKING CHANGE:` footer on any commit in this branch — every declaration this unit adds is new.
 
 ---
 
 ## 9. Interfaces with sibling units
 
-**Provides to `zone-world-system` (#77):**
-- `com.spartanlabs.gaming.gameobjects.WorldSystem` — `@SubclassOptInRequired(ExperimentalGameToolsApi::class) interface WorldSystem { fun installOn(world: World); fun uninstallFrom(world: World) {}; fun step(world: World) {}; val coreSlot: CoreSystemSlot? get() = null }`.
-  `ZoneWorldSystem` implements this, returning `CoreWorldSystemSlot.ZONE` from `coreSlot`.
-- `com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot.ZONE: CoreSystemSlot` (non-null,
-  `order = 1`), ready to return from `coreSlot`.
-- `World.installSystem(system: WorldSystem): Unit` (throws `IllegalArgumentException` on
-  duplicate-instance or occupied-slot), `World.uninstallSystem(system: WorldSystem): Unit`
-  (idempotent no-op if absent), `World.installedSystems: List<WorldSystem>` (fresh copy, step
-  order), `World.stepSystems(): Unit` (never called by `World.tick()`) — all `@ExperimentalGameToolsApi`.
-  #77 must import these from `com.spartanlabs.gaming.gameobjects`, not redeclare them.
-- The Gradle `compileTestKotlin`-scoped `compilerOptions.optIn` pattern (§3.6) as the template for
-  `gametools-world/build.gradle.kts`'s own equivalent line — #77's to add, not built here.
+**Depends on:** nothing in the decomposition.
 
-**Provides to `experience-system` (#78):** the same `WorldSystem`/registry contract as above,
-tier 2 (`coreSlot` left `null` — the default). `ExperienceSystem`'s own duplicate-instance guard
-(architecture §4.6) relies on `World.installedSystems` never containing the system currently being
-installed (§3.5's `installSystem` ordering: the identity/slot `require`s run, then `installOn`
-runs, *then* the system is recorded) — #78's plan must not assume `installedSystems` already
-contains the system mid-`installOn`.
+**Provides to `zone-world-system` (#77), `experience-system` (#78), `world-system-graduation`
+(#79), and `physics-world-system` (#80)** — the exact contract each already assumes, verified
+against their own plan documents:
 
-**Provides to `world-system-graduation` (#79):** every `@ExperimentalGameToolsApi`/
-`@SubclassOptInRequired` marker added by this unit, all removable in one pass once #77/#78 land;
-`@SupportedExtension`, ready to apply to `WorldSystem` only (architecture §4.7); the
-`compileTestKotlin` opt-in line in `gametools-core/build.gradle.kts`, ready to remove.
-
-**Provides to `physics-world-system` (#80):** `CoreWorldSystemSlot.PHYSICS: CoreSystemSlot`
-(`order = 0`, lower than `ZONE`'s `1`) — the slot `PhysicsWorldSystem` claims; the same
-`WorldSystem`/registry contract, used post-graduation (no Experimental marker needed by #80 if it
-lands after #79, per architecture §4.8).
-
-**Depends on:** nothing (architecture §10) — the only unit in the decomposition with no
-dependency on another.
-
-**Does not provide:** any concrete `WorldSystem` implementation, and no change to `ZoneIndex`,
-`Alive`, `SimulationLoop`, or `EventBus`. Does not widen `World.reconcileSpatialIndex()` (that
-remains #49's physics-core-seams unit's own job, unaffected by this unit landing one stage
-earlier than #49 originally planned per C1).
+- `interface WorldSystem { fun installOn(world: World); fun uninstallFrom(world: World) {}; fun step(world: World) {}; val coreSlot: CoreSystemSlot? get() = null }`,
+  gated `@SubclassOptInRequired(ExperimentalGameToolsApi::class)`.
+- `sealed interface CoreSystemSlot { val order: Int }` and
+  `enum class CoreWorldSystemSlot(override val order: Int) : CoreSystemSlot { PHYSICS(0), ZONE(1) }`,
+  both plain `@ExperimentalGameToolsApi`, both in `com.spartanlabs.gaming.gameobjects`
+  (`gametools-core`) so a `gametools-world` adapter can reference them (the dependency edge runs
+  `gametools-world → gametools-core` only).
+- `World.installSystem(system: WorldSystem)` — `IllegalArgumentException` for a duplicate instance
+  or an occupied slot, checked and thrown *before* `installOn` runs; nothing recorded if
+  `installOn` itself throws.
+- `World.uninstallSystem(system: WorldSystem)` — idempotent, removes then calls `uninstallFrom`.
+- `World.installedSystems: List<WorldSystem>` — fresh copy, step order, **never contains a system
+  while its own `installOn` is running** (#78's `ExperienceSystem` second-instance guard depends on
+  this exact guarantee).
+- `World.stepSystems()` — tier 1 by `order` then tier 2 by install order; never called by `tick()`;
+  rejects a re-entrant call with `IllegalStateException` (R2 — an **addition** relative to the
+  grand design's own text, not a removal of anything a sibling plan relies on: no known #77–#80
+  design calls `stepSystems()` from inside a `step()`).
+- The re-entrant-`installSystem` reservation guard (R1) — likewise additive; no known sibling
+  design installs re-entrantly in a way this would reject.
+- `com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi`/`SupportedExtension`, and the
+  `gametools-core`-side `compileTestKotlin` opt-in Gradle block (#77 owns the `gametools-world`
+  equivalent; #79 removes both).
+- **For #79 specifically — every `ExperimentalGameToolsApi` usage this unit leaves in main
+  source**, beyond the grand design's §8 list: the marker on `WorldSystem.coreSlot` (R3), and
+  `@OptIn(ExperimentalGameToolsApi::class)` on `World`'s two private record classes and on
+  `insertInStepOrder` (§4.5). All of them surface in #79's own completeness gate
+  (`docs/world-system-graduation-plan.md` §2.4, a repo-wide `grep` for `ExperimentalGameToolsApi`),
+  and its §6 already names the leftover-marker risk (with `CoreWorldSystemSlot` as its example);
+  #79's §3.1 edit to `WorldSystem.kt` should add removing `coreSlot`'s marker explicitly. The `@OptIn`s become inert once
+  the markers go, so removing them is tidiness, not correctness. The `coreSlot` marker is the
+  correctness case: leaving it would keep `coreSlot` Experimental on a graduated interface.
+- The exception-type split later units' own adapters should follow (already unified in the grand
+  design's Cross-plan alignment pass, not renegotiated here): a guard on an adapter's **own state**
+  throws `IllegalStateException` via `check`; a conflict with what `World` already holds throws
+  `IllegalArgumentException` via `require`.
 
 ---
 
 ## 10. Open decisions
 
-Carried from architecture §12, plus none genuinely new to this unit's own scope:
-
-1. **OD1 (carried) — confirm `sealed interface CoreSystemSlot`.** The relayed sketch (C5) shows a
-   plain `interface`; this plan uses `sealed interface` instead (§2.5), because a plain interface
-   lets a consumer mint a competing "core-looking" slot, contradicting C5's own stated intent that
-   only library-defined slots exist. **Recommendation: confirm `sealed`.** Low cost to confirm now
-   (unreleased); high cost to reverse after release (narrowing `sealed` later is a breaking
-   change; widening it is not).
-2. **OD3 (carried, restated for this unit only) — release targeting.** Not settled by the
-   interview. This unit (`#76`) is a purely additive `feat:` change with no dependency on #71 and
-   could ship Experimental in its own next Feature release without waiting on #71's Major.
-   **Recommendation: do not block this unit's release on #71** — let #76/#77 ship as their own
-   Feature release if convenient (architecture §12 OD3), and let #78/#79/#80 ride whichever Major
-   release #71 lands in.
-
-Architecture OD2 (the reshaped `ExperienceGrantor`/`AOEGrantor` tier) and OD4 (the two candidate
-XP defects) belong entirely to `experience-system` (#78) and are not restated here — this unit
-touches neither type.
+None. Every choice in this plan is directly dictated by `docs/world-system-core-architecture.md`
+(itself confidently resolved, per its own §11) or by this brief's binding settled requirement
+(C1/C4/C5/OD1, I1–I3). The one genuinely unconfirmed point — whether the module-wide test opt-in
+flag alone satisfies `@SubclassOptInRequired` for a test fake — is a compile-time fact, not a
+design choice, and is handled as a Level-1 verification procedure with a named fallback (§6), not
+an open decision requiring the user's input.
 
 ---
 
 ## 11. Sequencing & follow-ups
 
-- Lands first, per architecture §10 — `zone-world-system` (#77) and `experience-system` (#78)
-  both branch off `master` only after this unit merges.
-- **Documented limitation, not built here:** a tier-2 system can never step before `PHYSICS` or
-  between `PHYSICS` and `ZONE` (§7). The natural future extension, named but explicitly not
-  designed or built in this unit, is an additive `runsBefore: CoreSystemSlot? = null` on
-  `WorldSystem`, following the shape precedent of Unity's `UpdateBefore`/Flecs's phase branching
-  (architecture §11). Build it only if a real future system's ordering need actually falls
-  outside the two-tier model — nothing in #76–#80's own scope needs it yet.
-- **Follow-up owed elsewhere, not here:** the architecture's §7 documentation-correction pointer
-  edits (the eight anchors across five stale docs) are the planner's own docs-only-PR
-  responsibility, landing alongside these five plan documents — not part of this implementation
-  unit's own commits.
-- `com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` is never deleted, even after #79
-  strips every use of it from this unit's own surface — it remains live for whatever the next
-  Experimental seam in the library turns out to be (architecture §4.7, D3's `EventBus` extraction
-  named as one candidate).
+- Lands first in the five-unit decomposition; `zone-world-system` (#77) is cut only after this
+  branch's PR merges to `master` (no stacking).
+- **F1 (carried from architecture §12).** `website/index.html:206,259`'s `World` description
+  should gain a line on installed systems once the mechanism is Stable Core — owed to #79, not
+  this unit.
+- **F2 (carried from architecture §12).** Re-verify `docs/zone-world-system-plan.md`,
+  `docs/experience-system-plan.md`, `docs/world-system-graduation-plan.md`, and
+  `docs/physics-world-system-plan.md` against this unit's actual landed shape and its R1–R9
+  refinements once this branch merges — in particular, confirm none of them assumed
+  `stepSystems()` "rejects nothing" literally, or relied on an unguarded re-entrant
+  `installSystem`.
+- **F3 (carried from architecture §12).** The #76 GitHub issue body still lists the annotation
+  types as out of scope, superseded by C1. Recommend the user update the issue body; not done by
+  this plan (no issue-editing from a planning pass).
+- **F4 (carried from architecture §12).** `docs/world-systems-implementation-architecture.md`'s
+  own Cross-plan alignment section should gain a one-line pointer to
+  `docs/world-system-core-architecture.md` once the docs-only PR carrying both lands — out of
+  scope for this plan to edit (it plans `world-system-core` only, not the grand design document).
+  Its Cross-plan alignment section's item 4 (the fix list for an earlier #76 pass) should be
+  annotated at the same time: its `TreeMap` storage and `import java.util.TreeMap` are superseded
+  (R6); its unique-`order` test and KDoc invariant survive, re-justified by R5 (§2 above).
+- **F5 (found in this re-plan's alignment pass).** `docs/experience-system-plan.md:451` cites
+  "`docs/world-system-core-plan.md` §3.5" for `World.installSystem` logging at `INFO`. The fact
+  still holds, but it now lives in this plan's §4.5 (logging table). Re-point the citation in the
+  same docs-only PR, or when #78 is next touched.
+- No release is cut by this plan; this unit's commits add to `CHANGELOG.md`'s `[Unreleased]`
+  heading like everything else currently in flight (grand design §12 OD3).
