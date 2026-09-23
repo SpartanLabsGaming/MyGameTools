@@ -1,5 +1,37 @@
 # Architecture: Phase 1 physics — motion integration + collision resolution
 
+> **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** The physics
+> design itself (`Shape`, `PhysicsBody`, `Contact`, `CollisionResolver`,
+> `PositionalCorrectionResolver`, `TerrainCollisionIndex`, `PhysicsSystem`) is untouched by that
+> work and stays the reference for #49's re-plan. Three things in this document are superseded:
+>
+> 1. **The closed `WorldSystems` aggregator** — §1.2 constraint 1, §4.1's `WorldSystems` row,
+>    §4.9, §8's `WorldSystems` row, §9's first bullet (the rejected registry), §10 row 6, §12 Open
+>    Decision 1. It was never built. It is replaced by an opt-in `WorldSystem` registry on `World`
+>    (`gametools-core`, #76), a `ZoneWorldSystem` adapter (#77), and a thin `PhysicsWorldSystem`
+>    adapter (#80) — see `docs/world-systems-implementation-architecture.md`. What survives
+>    unchanged is the **physics → zone ordering requirement** (§4.9, Open Decision 1): it is now
+>    enforced by library-reserved tier-1 slots, `CoreWorldSystemSlot.PHYSICS` (order 0) before
+>    `CoreWorldSystemSlot.ZONE` (order 1), whatever order a game installs them in. Retiring the
+>    aggregator is not a verdict that its closure was wrong — `ZoneIndex` and `PhysicsSystem` were
+>    always fine as self-contained, extensible pieces. Specifically, the aggregator's fixed
+>    two-slot cardinality baked "today there are only two cases" into a constructor signature,
+>    which the open-by-default rule warns against, and it had no place for a third system
+>    (`ExperienceSystem`, #78).
+> 2. **`@SupportedExtension`'s origin** — §1.2 constraint 4, §4.1's first row, §4.2, §10 row 1. The
+>    annotation is now created by #76, beside its Experimental sibling `@ExperimentalGameToolsApi`
+>    in `com.spartanlabs.gaming.annotation`, in the parameterless shape
+>    `docs/physics-core-seams-plan.md` §2.2 settled — not §4.2's `note: String = ""` variant.
+>    `CollisionResolver` (unit 4) simply applies it.
+> 3. **Unit 6's other duties are NOT covered by #80.** The row-6 unit also owned the §7
+>    documentation/roadmap corrections (including Open Decision C's false `DirectionalProjectile`
+>    sweep claim) and the README's physics-as-a-whole prose. `PhysicsWorldSystem` (#80) is only the
+>    adapter plus its regression test, so #49's re-plan must assign both duties to one of its own
+>    units (`docs/world-systems-implementation-architecture.md` §7, §10, §11).
+>
+> The unit plans written against this document predate the change; see the callouts at the top of
+> `docs/physics-core-seams-plan.md` and `docs/physics-system-plan.md`.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)

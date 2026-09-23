@@ -1,5 +1,18 @@
 # Plan: `physics-system` — the `PhysicsSystem` orchestrator (unit 5 of 6)
 
+> **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** This plan's
+> `PhysicsSystem` design is untouched and stays the reference shape for #49's re-plan, but it
+> predates #49's reopening and is now provisional. What changed around it: the retired
+> `WorldSystems` aggregator (unit 6) that this plan names as `PhysicsSystem`'s driver — §3.1's class
+> KDoc ("see `WorldSystems`, `com.spartanlabs.gaming.world.system`"), the Level 3/4b/5 notes in the
+> test plan, §8 "Provides to unit 6", §10 "Follow-up owed to unit 6" — is replaced by the
+> `WorldSystem` registry on `World` (#76) plus a thin `PhysicsWorldSystem` adapter (#80,
+> `docs/physics-world-system-plan.md`). The adapter occupies the library-reserved
+> `CoreWorldSystemSlot.PHYSICS` slot and, on every `World.stepSystems()`, calls
+> `world.reconcileSpatialIndex()` then `physicsSystem.step(world)`. #80 treats `step(world: World)`
+> as a provisional contract and adapts if #49's re-plan changes it. Architecture:
+> `docs/world-systems-implementation-architecture.md`.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)
