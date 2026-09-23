@@ -1,5 +1,21 @@
 # Plan: `physics-core-seams` — the `gametools-core` seams Phase 1 physics builds on
 
+> **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** This unit had
+> two halves.
+>
+> - **The `@SupportedExtension` half is superseded.** #76 (`docs/world-system-core-plan.md`) now
+>   creates `com.spartanlabs.gaming.annotation.SupportedExtension` in exactly the parameterless
+>   shape §2.2/§3.1 below settled, beside an Experimental opt-in marker, `@ExperimentalGameToolsApi`,
+>   in the same package. Its first user is `WorldSystem`, at #79. Do not re-create it: §3.1, its
+>   component test, and its CHANGELOG/README/CONTRIBUTING items are #76's.
+> - **The `World.reconcileSpatialIndex()` widening half stands** and stays #49's to re-plan, but its
+>   named caller changes. It is no longer the retired `WorldSystems.step()` (§1.2 point 2, §2.3,
+>   §2.4's diagram, §3.2's KDoc draft, §9 "Provides to unit 6"). It is now `PhysicsWorldSystem.step()`
+>   (#80, `docs/physics-world-system-plan.md`), which calls it immediately before
+>   `physicsSystem.step(world)` from inside `World.stepSystems()`.
+>
+> Architecture: `docs/world-systems-implementation-architecture.md`.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)

@@ -1,5 +1,28 @@
 # Plan: GameTools Phase 1 — Map & Space
 
+> **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** §9 Open
+> Decision 3 ("How per-frame world systems run") is now **resolved**, by a hybrid of its third
+> option. `World` gains an opt-in systems registry (`installSystem`/`uninstallSystem`/
+> `installedSystems`/`stepSystems`, `gametools-core`, #76) but does *not* tick it itself: a driver
+> calls `world.stepSystems()` once per frame after `World.tick()` (e.g. from `SimulationLoop`'s
+> `onTick`), so "the loop is opt-in" still holds. `core` stays unaware of `world`: `World` references
+> only the core `WorldSystem` interface, and the `world` adapters import it.
+>
+> Everything below that names `WorldSystems` or `world.system` is superseded:
+>
+> - the §1 `SimulationLoop` note;
+> - §2.1's `world.system` package row;
+> - §2.3's "via `WorldSystems.step()`";
+> - §2.5's "run from `WorldSystems.step()`" and its ordering bullet;
+> - §3's `world/system/WorldSystems.kt` entry;
+> - §4's `WorldSystemsIntegrationTest`.
+>
+> Zones run as `ZoneWorldSystem` (#77, `world.zone`) and physics as `PhysicsWorldSystem` (#80,
+> `world.physics`); no `world.system` package exists. The physics-before-zone order is enforced by
+> library-reserved slots. It reverses §2.5's zone-then-physics lean, as
+> `docs/issue-49-physics-architecture.md` §4.9 already had. Architecture:
+> `docs/world-systems-implementation-architecture.md`.
+
 ## Header / Association
 
 - **Covers:** Phase 1 of `docs/framework-vision-and-roadmap.md` §3. Instruction from Spartak

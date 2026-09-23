@@ -1,5 +1,20 @@
 # API Openness Decisions — closed surfaces reviewed for `6.0.0`
 
+> **Note — 2026-09-22, World Systems Implementation (issues #76–#80).** Three rulings below are
+> touched by that work; none is reversed.
+>
+> - **D1 / D3.** The tier annotations these rulings assume now have a concrete home, created by #76
+>   in `com.spartanlabs.gaming.annotation`: `@SupportedExtension` (parameterless; D1's `Movement`
+>   applies it in `6.0.0`), and the library-wide Experimental marker `@ExperimentalGameToolsApi`
+>   (`@RequiresOptIn(level = ERROR)`), the marker D3's "Experimental (`@RequiresOptIn`)" tier would
+>   use.
+> - **D4.** Its compositional answer to "run my own systems each frame" named Phase 1's
+>   `WorldSystems.step()`, which was never built. The need is now met by `World`'s own opt-in
+>   registry (`installSystem`/`stepSystems`, #76). That is composition, not subclassing, so D4's
+>   ruling to keep `World` `final` is unaffected, if anything reinforced.
+>
+> Architecture: `docs/world-systems-implementation-architecture.md`.
+
 ## Header / Association
 
 - **Covers:** a per-surface ruling on each already-closed (`sealed` / `final`) public type in

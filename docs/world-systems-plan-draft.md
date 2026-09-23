@@ -1,5 +1,68 @@
 # Plan: `world-systems` — the fixed-order per-frame aggregator + Phase 1 physics documentation corrections
 
+> **Superseded — resolved 2026-09-21, in the design discussion for issue #71 (Combat Package,
+> Experience/Level).** This plan's central design — a closed, non-`open` `WorldSystems` class
+> with two named, typed constructor slots (`zoneIndex`, `physicsSystem`), and constraint 1's
+> explicit rejection of a registry (§1.2 point 1, §2.4) — was never built (confirmed: no
+> `WorldSystems.kt`, no `SupportedExtension.kt` anywhere in source as of this note) and is now
+> superseded before implementation.
+>
+> **What replaced it.** Issue #71 needed a general, opt-in way for a `World` to host add-on
+> systems (starting with `ExperienceSystem`, a pure event-reactor with no per-frame work at all)
+> without hardcoding each one into `World`. That need generalizes cleanly to this plan's own
+> deferred question (§8, "Provides to #50": "neither is decided here") — so rather than build
+> `WorldSystems` as specified below and separately decide #50's shape later, the project now
+> resolves both at once with one mechanism:
+>
+> ```kotlin
+> interface WorldSystem {
+>     fun installOn(world: World)   // one-time wiring, e.g. subscribing to World.events
+>     fun step(world: World) {}     // per-tick work; no-op default
+> }
+> ```
+>
+> `World` owns an ordered list of installed systems. `world.installSystem(system)` calls
+> `installOn` then appends; a per-frame driver calls `world.stepSystems()` (from
+> `SimulationLoop`'s `onTick`, or a hand-rolled loop — the same opt-in wiring this plan's own
+> `WorldSystems.step()` was meant to have, §1.2 point/§3.1 KDoc "no dependency on
+> `com.spartanlabs.gaming.simulation`"), which calls `step(world)` on every installed system **in
+> installation order**.
+>
+> **This deliberately reverses constraint 1.** Ordering (e.g. a future physics system must step
+> before a future zone system, for the same push-out/zone-transition-same-frame reason this plan
+> gives in §1.2 point 2) is now a *documented installation-order contract*, not a compiler-enforced
+> pair of named slots — a caller who installs a zone system before a physics system gets a silent
+> one-frame-late transition instead of a type error. This tradeoff was made deliberately in favor
+> of genuine extensibility (arbitrary future opt-in systems, not just physics and zones) once a
+> second real use case (`ExperienceSystem`) proved the fixed two-slot shape didn't generalize.
+>
+> **Disposition of this document.** Kept below verbatim as the historical record of the two-slot
+> design, constraint 1's original reasoning, and the physics→zone regression test design — still
+> useful content for whoever builds the physics/zone `WorldSystem` adapters, since the *ordering
+> requirement* (physics then zone) is unchanged, only *how* it's enforced. Nothing below should be
+> implemented as written; a `WorldSystem`-conforming `PhysicsSystem`/`ZoneIndex` adapter pair,
+> installed physics-first, replaces it. `ExperienceSystem` (`gametools-core`,
+> `com.spartanlabs.gaming.gameobjects.combat`) is the first concrete `WorldSystem`, landing under
+> issue #71.
+>
+> **Refined 2026-09-22: ordering is two-tier, not plain install order.** The replacement described
+> above was itself refined before implementation. The revised plan this callout forward-references
+> is `docs/world-systems-implementation-architecture.md` plus its five unit plans (#76–#80).
+>
+> - Systems still install into an ordered registry on `World` and are stepped by
+>   `world.stepSystems()`.
+> - Library-shipped systems with a hard ordering requirement occupy **reserved tier-1 slots**:
+>   `CoreWorldSystemSlot.PHYSICS` (order 0) before `CoreWorldSystemSlot.ZONE` (order 1). These step
+>   first, in slot order, *regardless of install order*.
+> - Every other system (tier 2, including `ExperienceSystem`) steps afterwards, in install order.
+>
+> So the physics → zone requirement above is library-enforced again, not a caller-kept convention:
+> installing the zone system before the physics system no longer produces a one-frame-late
+> transition. `World` also gains `uninstallSystem` (paired with a `WorldSystem.uninstallFrom` hook)
+> and a read-only `installedSystems`. The two tier annotations the design needs
+> (`@ExperimentalGameToolsApi`, `@SupportedExtension`) are created by #76 rather than by #49.
+> `ExperienceSystem` lands under #78, after #71's package move merges.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)
@@ -24,7 +87,18 @@
   physics as a whole. Every other unit (1–5) owns its own `CHANGELOG.md` entry for the surface it
   lands (architecture §10); this unit adds `WorldSystems`'s own entry plus one summary line naming
   the full Phase 1 physics feature set.
-- **Status:** planning only. No source, test, or build file has been modified by this document.
+- **Status:** **Draft — superseded, revision pending.** This document's original design (the
+  closed, two-slot `WorldSystems` class) is superseded per the callout above; it is kept as a
+  draft/historical reference only. The binding staging is now tracked as five issues -
+  [#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76) (Stage 1, `WorldSystem` core),
+  [#77](https://github.com/SpartanLabsGaming/MyGameTools/issues/77) (Stage 2, `ZoneIndex` wrap),
+  [#78](https://github.com/SpartanLabsGaming/MyGameTools/issues/78) (Stage 3, `ExperienceSystem`),
+  [#79](https://github.com/SpartanLabsGaming/MyGameTools/issues/79) (Stage 4, graduate to
+  `@SupportedExtension`), [#80](https://github.com/SpartanLabsGaming/MyGameTools/issues/80)
+  (Stage 5, physics adapter, blocked on reopened
+  [#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)) - and a revised
+  "World Systems Implementation" plan document covering all five is being produced separately via
+  the planner agent. No source, test, or build file has been modified by this document.
 - **Target release:** `5.3.0`. **`5.2.0` has not been cut yet** — all four published coordinates
   still read `5.1.0` and #42/#46/#47/#48 sit under `CHANGELOG.md`'s `[Unreleased]` heading.
   `5.2.0` must release before `5.3.0`'s branches are cut, per `docs/phase-1-map-and-space-plan.md`'s
@@ -742,7 +816,7 @@ project decide to start that tier.
   starts (after units 1-5 land), not off the current dirty working tree.
 - **Commit sequence** (each a coherent, independently-reviewable unit):
   1. `feat(world): add WorldSystems, the fixed physics-then-zone per-frame order` — adds
-     `docs/world-systems-plan.md` (this document) and `WorldSystems.kt` (§3.1) plus its component,
+     `docs/world-systems-plan-draft.md` (this document) and `WorldSystems.kt` (§3.1) plus its component,
      integration, deterministic, and e2e tests (§5). Body: cites the flipped ordering
      (`docs/issue-49-physics-architecture.md` §4.9, §12 Open Decision 1) and names the headline
      push-out/zone regression test.

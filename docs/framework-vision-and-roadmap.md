@@ -147,6 +147,16 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
 5. Kill-credit resolution + XP / leveling hooks (event-driven; curve pluggable —
    Open Decision E).
 
+   > **Note — 2026-09-22 (planned, issues #71/#78).** The *XP hook* half is being delivered ahead
+   > of Phase 2. `ExperienceSystem` (#78, `docs/experience-system-plan.md`) reacts to every
+   > `GameEvent.EntityDied` and hands it to the dead entity's `ExperienceGrantor`, which owns the
+   > credit policy; the shipped default is the MOBA-style `AOEGrantor`. It lives in `gametools-core`'s
+   > `gameobjects.combat` package (#71), not in a new `gametools-combat` module. The
+   > *kill-credit resolution* half is not delivered. `EntityDied.killer` is still the last
+   > `takeDamage` source, and projectile damage bypasses `takeDamage` entirely, so a projectile kill
+   > reports a null or stale killer. Last-hit/assist/owner attribution remains this item's work.
+   > See `docs/world-systems-implementation-architecture.md` §4.6 and §12 OD4.
+
 *Ships as a Major release (import paths move, combat API reshaped).*
 
 ### Phase 3 — Authoritative networking *(`gametools-net` + `gametools-session`)*
@@ -246,7 +256,7 @@ until there is a large open-terrain zone that actually needs it.
 | B | **Does `Alive` move to `gametools-combat`?** | Clean layering says yes; it is a breaking import change for existing consumers. Batched into the Phase 2 Major release either way. |
 | C | **Discrete vs continuous collision.** | At 10–20 Hz a fast projectile can tunnel through a thin wall. `DirectionalProjectile` already sweeps along a line; a swept-shape check for fast movers may be enough without full continuous physics. |
 | D | **Binary codec: hand-rolled or a library?** | `kotlinx-serialization-protobuf`, FlatBuffers, or bespoke. Affects the dependency surface and the client project. |
-| E | **How opinionated is XP / leveling?** | Pluggable curve function vs a fixed formula with parameters. Recommend a `LevelCurve` interface with a sensible default. |
+| E | **How opinionated is XP / leveling?** | Pluggable curve function vs a fixed formula with parameters. Recommend a `LevelCurve` interface with a sensible default. **Partly answered (2026-09-22, planned under #78):** the *credit* policy (who receives XP on a death, and how it is split) becomes pluggable through `ExperienceGrantor`, with `AOEGrantor` as the open, hook-based default. The *level curve* is replaceable only by overriding `nextLevelXPRequired` in an own `ExperienceReceiver` (or a subclass of the shipped `DefaultExperienceReceiver`, whose default is `10 + level²`). No dedicated `LevelCurve` strategy exists, and whether to add one is still open. |
 | F | **In-process sharding model (Phase 7).** | Thread-per-zone, coroutine dispatcher per zone, or single-threaded with per-zone time budgeting. Defer until Phase 1 zones exist. |
 | G | **Team / alliance model.** | Current `Faction` on `Alive` — extend to teams, alliances, friendly-fire rules, and shared vision (ties into Phase 1 vision + Phase 2 combat). |
 
