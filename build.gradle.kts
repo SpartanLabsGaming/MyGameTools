@@ -23,4 +23,13 @@ dependencies {
 
 dokka {
     moduleName.set("GameTools")
+
+    pluginsConfiguration.html {
+        // Paths to your custom styling assets
+        customStyleSheets.from(file("docs/dokka/styles/dokka-styles.css"))
+        customAssets.from(file("docs/dokka/images/spartan-gaming-logo.svg"))
+
+        // Custom branding modifications
+        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories")
+    }
 }

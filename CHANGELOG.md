@@ -99,6 +99,10 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 - `Quadtree`'s KDoc now describes its `+y`-as-north field naming as an internal labelling
   convention, not a claim about the engine's own coordinate system (the engine is y-down).
   No behavioural change. (#48)
+- The Dokka API reference — on the project website and in every module's javadoc jar — now
+  uses a Spartan Gaming theme: a custom stylesheet, logo and footer, kept under `docs/dokka/`
+  and applied both to the aggregate index (root `build.gradle.kts`) and to each module's pages
+  (the `gametools.published-library` convention plugin). Documentation only; no API change.
 
 ### Deprecated
 - `World.quadtree` — use `World.spatialIndex` instead; see the `Added` entry above. (#48)

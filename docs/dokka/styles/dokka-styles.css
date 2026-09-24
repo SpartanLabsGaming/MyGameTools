@@ -1,0 +1,173 @@
+/*
+ * Spartan Gaming theme for the GameTools Dokka API reference.
+ *
+ * Loaded by the root build.gradle.kts via `pluginsConfiguration.html.customStyleSheets`, which
+ * Dokka links AFTER its own style.css / main.css / ui-kit.min.css - so a same-specificity rule
+ * here wins. Almost everything in Dokka 2.x is driven by CSS custom properties, so the theme is
+ * mostly token overrides; the handful of element rules below cover what the tokens don't reach.
+ *
+ * Palette: Spartan crimson + bronze on a warm near-black (dark) / parchment (light).
+ * Dokka toggles dark mode by adding `.theme-dark` to <html>; both blocks are needed because
+ * ui-kit and style.css each redefine their tokens there.
+ */
+
+/* region tokens - light (default) */
+:root {
+    /* brand */
+    --sg-crimson: #a3182a;
+    --sg-crimson-hover: #bd2436;
+    --sg-crimson-50: rgba(163, 24, 42, 0.5);
+    --sg-bronze: #b87333;
+    --sg-bronze-soft: #d4a15c;
+    --sg-ink: #140b0d;
+    --sg-ink-raised: #1f1416;
+
+    /* ui-kit key colour: active sidebar row, focus rings, tabs, search highlights */
+    --color-key-blue: var(--sg-crimson);
+    --color-key-blue-hover: var(--sg-crimson-hover);
+    --color-key-blue-50: var(--sg-crimson-50);
+
+    /* chrome */
+    --color-background-nav: var(--sg-ink);
+    --color-background-nav-dt: var(--sg-ink);
+    --color-background-page: #fbf7f0;
+    --color-background-page-dt: #161113;
+    --color-background-footer: #efe5d4;
+    --color-background-footer-dt: var(--sg-ink-raised);
+    --background-color: var(--color-background-page);
+    --color-text: #1d1416;
+    --default-font-color: #1d1416;
+    --color-text-light: rgba(29, 20, 22, 0.72);
+
+    /* style.css accents */
+    --hover-link-color: var(--sg-crimson);
+    --active-section-color: var(--sg-crimson);
+    --sidemenu-section-active-color: var(--sg-crimson);
+    --active-tab-border-color: var(--sg-crimson);
+    --border-color: rgba(120, 72, 40, 0.22);
+    --navigation-highlight-color: rgba(184, 115, 51, 0.10);
+    --blockquote-background: rgba(184, 115, 51, 0.08);
+    --color-background-inline-code: rgba(163, 24, 42, 0.07);
+    --color-background-code-block: rgba(120, 72, 40, 0.06);
+    --toc-hover-color: rgba(184, 115, 51, 0.12);
+
+    /* code tokens (light) */
+    --color-cd-keyword: #a3182a;
+    --color-cd-builtin: #2f6f3e;
+    --color-cd-function: #8a4b12;
+    --color-cd-number: #6b2fa0;
+    --color-cd-operator: #7a5a3a;
+
+    /* logo: Dokka copies customAssets into images/, stylesheets into styles/ */
+    --dokka-logo-image-url: url('../images/spartan-gaming-logo.svg');
+    --dokka-logo-height: 30px;
+    --dokka-logo-width: 30px;
+}
+/* endregion */
+
+/* region tokens - dark */
+.theme-dark {
+    --background-color: var(--color-background-page-dt);
+    --color-background: var(--color-background-page-dt);
+    --default-font-color: #efe6e2;
+    --color-text-dt: #efe6e2;
+    --color-text-light-dt: rgba(239, 230, 226, 0.68);
+
+    --hover-link-color: var(--sg-bronze-soft);
+    --active-section-color: var(--sg-bronze-soft);
+    --sidemenu-section-active-color: var(--sg-bronze-soft);
+    --border-color: rgba(212, 161, 92, 0.18);
+    --navigation-highlight-color: rgba(212, 161, 92, 0.08);
+    --blockquote-background: rgba(212, 161, 92, 0.06);
+    --color-background-inline-code: rgba(212, 161, 92, 0.12);
+    --color-background-code-block: #1c1517;
+    --toc-hover-color: rgba(212, 161, 92, 0.10);
+
+    /* code tokens (dark) - Dokka reads the *-alternative set in dark mode */
+    --color-cd-keyword-alternative: #e8687a;
+    --color-cd-builtin-alternative: #e6b872;
+    --color-cd-function-alternative: #f2cf8a;
+    --color-cd-operator-alternative: #c9b7a6;
+    --color-cd-number-alternative: #c49bf0;
+}
+/* endregion */
+
+/* region chrome */
+
+/* Top bar: bronze rule under the crimson-black header. */
+.navigation {
+    border-bottom: 2px solid var(--sg-bronze);
+    box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.8);
+}
+
+.library-name--link {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.library-name--link:hover {
+    color: var(--sg-bronze-soft);
+}
+
+/* Sidebar: bronze edge instead of Dokka's grey hairline. */
+.sidebar {
+    border-right: 1px solid var(--border-color);
+}
+
+.toc--part[data-active] > .toc--row .toc--link,
+.toc--part[data-active] > .toc--row .toc--button {
+    box-shadow: inset 3px 0 0 var(--sg-bronze);
+}
+
+/* Footer: bronze top rule so the copyright line reads as a deliberate sign-off. */
+.footer {
+    border-top: 2px solid var(--sg-bronze);
+}
+
+/* endregion */
+
+/* region content */
+
+.main-content :is(h1, h2),
+h1.cover {
+    color: var(--sg-crimson);
+}
+
+.theme-dark .main-content :is(h1, h2),
+.theme-dark h1.cover {
+    color: var(--sg-bronze-soft);
+}
+
+/* Content links. Matches ui-kit's `.main-content a:not([data-name])` so the specificity ties
+   and this later sheet wins; that rule otherwise paints links in plain body text colour. */
+.main-content a:not([data-name]) {
+    color: var(--sg-crimson);
+    border-bottom-color: rgba(163, 24, 42, 0.3);
+}
+
+.main-content a:not([data-name]):hover {
+    color: var(--sg-crimson-hover);
+    border-bottom-color: var(--sg-crimson-hover);
+}
+
+.theme-dark .main-content a:not([data-name]) {
+    color: #ec8a96;
+    border-bottom-color: rgba(236, 138, 150, 0.3);
+}
+
+.theme-dark .main-content a:not([data-name]):hover {
+    color: var(--sg-bronze-soft);
+    border-bottom-color: var(--sg-bronze-soft);
+}
+
+blockquote {
+    border-left: 4px solid var(--sg-bronze);
+}
+
+/* Code blocks: a thin bronze edge sets them apart from prose in both themes. */
+.sample-container,
+code.block.monospace {
+    border-left: 3px solid var(--sg-bronze);
+}
+
+/* endregion */
