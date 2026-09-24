@@ -76,11 +76,19 @@ those issues. GitHub offers three tools here, each with one job:
 
 **Roadmap Project fields**
 
-| Field | Values | Replaces |
-| --- | --- | --- |
-| `Status` | Todo · Planned · In progress · Blocked · Done | the `status: blocked` label |
-| `Initiative` | Phase 1 · World Systems · Combat · … (one value per tracking issue) | — |
-| `Phase` | Roadmap phase 0–7 | — |
+All three are **single-select** fields, so a view can group, slice or make board columns by
+any of them.
+
+| Field | Answers | Values | Replaces |
+| --- | --- | --- | --- |
+| `Status` | Where is the item? | Todo · Planned · In progress · Blocked · Done | the `status: blocked` label |
+| `Initiative` | Which tracking issue owns it? | Map & space · World Systems · Combat · … (one per tracking issue, named after the work) | — |
+| `Phase` | Which roadmap phase does it deliver? | Phase 0 — Foundations · Phase 1 — Map & space · Phase 2 — Rich combat · Phase 3 — Authoritative networking · Phase 4 — AI & pathfinding · Phase 5 — Persistence & persistent world · Phase 6 — Abilities & items · Phase 7 — Scale hardening | — |
+
+`Initiative` and `Phase` are independent. Stages of one initiative can deliver different
+phases: World Systems' #78 is the Phase 2 XP hook delivered early, while its other stages are
+Phase 1. Leave `Phase` empty on work outside the roadmap, such as bug fixes; the Project groups
+those under "No Phase".
 
 Enable the Project's built-in workflows: *auto-add* for new issues in this repository, *item
 closed → Done*, and *PR merged → Done*. The Project may include issues from other
@@ -88,10 +96,10 @@ closed → Done*, and *PR merged → Done*. The Project may include issues from 
 
 **Current tracking issues**
 
-| Initiative | Tracking issue | Sub-issues |
-| --- | --- | --- |
-| Phase 1 — Map & space | #86 | #46, #47, #48, #49, #50 |
-| World Systems | #87 | #76, #77, #78, #79, #80 |
+| Initiative | Tracking issue | Sub-issues | Phase |
+| --- | --- | --- | --- |
+| Map & space | #86 | #46, #47, #48, #49, #50 | Phase 1 |
+| World Systems | #87 | #76, #77, #78, #79, #80 | Phase 1, except #78: Phase 2 |
 
 ## Branching model
 
