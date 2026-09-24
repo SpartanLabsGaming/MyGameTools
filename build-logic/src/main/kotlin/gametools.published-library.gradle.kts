@@ -44,5 +44,18 @@ mavenPublishing {
     }
 }
 
+// Spartan Gaming theme for every module's API pages (and so its javadoc jar). In a Dokka V2
+// multi-module build each module renders its own pages with its OWN html plugin config - the
+// root build.gradle.kts block only styles the aggregate index page - so the same assets are
+// applied here. Paths resolve against the root project, where the theme lives.
+dokka {
+    pluginsConfiguration.html {
+        val root = isolated.rootProject.projectDirectory
+        customStyleSheets.from(root.file("docs/dokka/styles/dokka-styles.css"))
+        customAssets.from(root.file("docs/dokka/images/spartan-gaming-logo.svg"))
+        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories")
+    }
+}
+
 // Dokka "view source" links are configured per module (each has a different path on GitHub,
 // and a source-less module like the umbrella has no `main` source set to configure).
