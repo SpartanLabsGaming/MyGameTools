@@ -48,4 +48,6 @@ bin/
 # The Pages workflow mounts the Dokka publication at /api/; a local preview copy of it
 # under website/ is generated output, never committed.
 /website/api/
+# Likewise the brand assets: docs/brand is the one source, copied in by the workflow.
+/website/assets/brand/
 /_site/

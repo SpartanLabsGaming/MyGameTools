@@ -43,6 +43,11 @@ jobs:
           cp -R website/. _site/
           rm -f _site/README.md   # notes for maintainers, not part of the published site
 
+          # Brand assets (the Spartan Gaming logo) live once in docs/brand and are shared with
+          # the Dokka theme; the page references them under assets/brand/.
+          mkdir -p _site/assets/brand
+          cp -R docs/brand/. _site/assets/brand/
+
           # Dokka's V2 plugin writes the aggregated publication to build/dokka/html; fall back
           # to a search so a future output-directory change fails loudly rather than silently
           # shipping a site with no API reference.

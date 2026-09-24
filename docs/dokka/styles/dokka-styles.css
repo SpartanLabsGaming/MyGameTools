@@ -59,9 +59,9 @@
     --color-cd-operator: #7a5a3a;
 
     /* logo: Dokka copies customAssets into images/, stylesheets into styles/ */
-    --dokka-logo-image-url: url('../images/spartan-gaming-logo.svg');
-    --dokka-logo-height: 30px;
-    --dokka-logo-width: 30px;
+    --dokka-logo-image-url: url('../images/spartan-gaming-logo.png');
+    --dokka-logo-height: 56px;
+    --dokka-logo-width: 56px;
 }
 /* endregion */
 
@@ -105,6 +105,23 @@
     text-transform: uppercase;
 }
 
+/* ui-kit caps the logo at 36px tall / 120px wide and sizes it with min(); lift the cap so the
+   --dokka-logo-* tokens above are honoured as-is. */
+.library-name--link:before {
+    max-height: none;
+    max-width: none;
+    background-size: var(--dokka-logo-width) var(--dokka-logo-height);
+}
+
+/* Desktop only: trim ui-kit's 12px vertical padding so the 56px logo doesn't grow the bar past
+   its usual ~64px height. Below 900px ui-kit already zeroes the padding and wraps the bar. */
+@media (min-width: 900px) {
+    .navigation {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
 .library-name--link:hover {
     color: var(--sg-bronze-soft);
 }
@@ -122,6 +139,36 @@
 /* Footer: bronze top rule so the copyright line reads as a deliberate sign-off. */
 .footer {
     border-top: 2px solid var(--sg-bronze);
+}
+
+/* Parent-company credit (Spartan Laboratories) inside footerMessage. The logo is drawn here
+   rather than as an <img> in the message, because this sheet always sits at styles/ while
+   pages sit at any depth - a url() here resolves the same from every page. */
+.sg-parent-credit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.sg-parent-credit:before {
+    content: "";
+    width: 28px;
+    height: 28px;
+    flex: none;
+    /* Soft bronze glow keeps the Labs logo's navy lettering legible in dark mode. */
+    background: url('../images/spartan-laboratories-logo.png') center / contain no-repeat,
+                var(--sg-logo-glow) center / 100% 100% no-repeat;
+}
+
+.sg-parent-credit:hover {
+    color: var(--sg-crimson);
+}
+
+.theme-dark .sg-parent-credit:hover {
+    color: var(--sg-bronze-soft);
 }
 
 /* endregion */
@@ -168,6 +215,56 @@ blockquote {
 .sample-container,
 code.block.monospace {
     border-left: 3px solid var(--sg-bronze);
+}
+
+/* endregion */
+
+/* region backgrounds
+ * One calm treatment per surface, distinct but from the same crimson/bronze family:
+ *   header  - slow horizontal wash, ink into a deep crimson tint
+ *   logo    - soft bronze glow so the dark logo lifts off the header
+ *   sidebar - faint Greek-key (meander) texture over a slightly deeper tone
+ *   content - gentle vertical gradient, fixed while the page scrolls
+ * Every layer stays low-contrast so text and code keep their normal legibility.
+ */
+:root {
+    --sg-header-bg: linear-gradient(90deg, #140b0d 0%, #1c0e11 55%, #2a1015 100%);
+    --sg-logo-glow: radial-gradient(circle closest-side, rgba(212, 161, 92, 0.38), rgba(212, 161, 92, 0.12) 60%, transparent 100%);
+    --sg-sidebar-tone: #f4ecdf;
+    --sg-meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 36H36V4H8V28H28V12H16V20' fill='none' stroke='%23b87333' stroke-opacity='0.10' stroke-width='2'/%3E%3C/svg%3E");
+    --sg-content-bg: linear-gradient(180deg, #fbf7f0 0%, #f8f1e6 55%, #f4e9da 100%);
+}
+
+.theme-dark {
+    --sg-header-bg: linear-gradient(90deg, #0f0809 0%, #170b0e 55%, #230c12 100%);
+    --sg-logo-glow: radial-gradient(circle closest-side, rgba(212, 161, 92, 0.30), rgba(212, 161, 92, 0.08) 60%, transparent 100%);
+    --sg-sidebar-tone: #120e0f;
+    --sg-meander: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 36H36V4H8V28H28V12H16V20' fill='none' stroke='%23d4a15c' stroke-opacity='0.07' stroke-width='2'/%3E%3C/svg%3E");
+    --sg-content-bg: linear-gradient(180deg, #161113 0%, #1a1214 55%, #1f1216 100%);
+}
+
+.navigation {
+    background-image: var(--sg-header-bg);
+}
+
+/* The glow is painted behind the logo image itself: the logo's own background layer comes
+   first (on top), the glow second. */
+.library-name--link:before {
+    background: var(--dokka-logo-image-url) center / var(--dokka-logo-width) var(--dokka-logo-height) no-repeat,
+                var(--sg-logo-glow) center / 100% 100% no-repeat;
+    /* No border-radius: it would clip the logo's corners. The glow already fades out
+       before the box edge, so the square box never shows. */
+    border-radius: 0;
+}
+
+.sidebar {
+    background-color: var(--sg-sidebar-tone);
+    background-image: var(--sg-meander);
+}
+
+#main {
+    background-image: var(--sg-content-bg);
+    background-attachment: fixed;
 }
 
 /* endregion */

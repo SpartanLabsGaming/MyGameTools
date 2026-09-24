@@ -27,9 +27,12 @@ dokka {
     pluginsConfiguration.html {
         // Paths to your custom styling assets
         customStyleSheets.from(file("docs/dokka/styles/dokka-styles.css"))
-        customAssets.from(file("docs/dokka/images/spartan-gaming-logo.svg"))
+        customAssets.from(file("docs/brand/spartan-gaming-logo.png"))
+        customAssets.from(file("docs/brand/spartan-laboratories-logo.png"))
 
         // Custom branding modifications
-        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories")
+        // The footer is raw HTML; the parent-company credit's logo comes from the stylesheet
+        // (.sg-parent-credit), so it resolves on pages at any depth.
+        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories<br><a class=\"sg-parent-credit\" href=\"https://github.com/SpartanLaboratories\">Spartan Gaming is a Spartan Laboratories company</a>")
     }
 }

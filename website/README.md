@@ -10,6 +10,7 @@ directory are published as they are.
 | `assets/styles.css` | One stylesheet. Colours are CSS custom properties on `:root`, redefined for `[data-theme="light"]` |
 | `assets/site.js` | Theme toggle, mobile nav, install tabs, copy buttons, scroll-spy, and a ~60-line syntax highlighter. The page stays readable if it never loads |
 | `assets/favicon.svg` | Favicon |
+| `assets/brand/` | **Not committed here.** The header logo, copied from [`docs/brand/`](../docs/brand/) at publish time. That folder is the one home of the Spartan Gaming brand assets, shared with the Dokka theme |
 | `404.html` | Not-found page (absolute `/MyGameTools/…` paths, because GitHub serves it from any depth) |
 | `.nojekyll` | Stops GitHub Pages running the published output through Jekyll, which would drop Dokka's `_`-prefixed files |
 | `robots.txt`, `sitemap.xml` | Crawler hints |
@@ -18,7 +19,8 @@ directory are published as they are.
 
 [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) runs on every push to `master`.
 It generates the Dokka publication (`./gradlew dokkaGeneratePublicationHtml`), copies this
-directory to the site root and the Dokka output to `api/`, then deploys with
+directory to the site root, `docs/brand/` to `assets/brand/` and the Dokka output to `api/`,
+then deploys with
 `actions/deploy-pages`. So `/` is this page and `/api/` is the full API reference.
 
 Enabling it once, in the repository settings: **Settings → Pages → Build and deployment →
@@ -26,9 +28,11 @@ Source → GitHub Actions**.
 
 ## Working on it locally
 
-Any static file server will do — the page uses relative paths:
+Any static file server will do — the page uses relative paths. Copy the brand assets in
+first, or the header logo will be missing (`website/assets/brand/` is git-ignored):
 
 ```bash
+mkdir -p website/assets/brand && cp -r docs/brand/. website/assets/brand/
 python3 -m http.server 8000 --directory website
 # then open http://localhost:8000/
 ```

@@ -52,8 +52,9 @@ dokka {
     pluginsConfiguration.html {
         val root = isolated.rootProject.projectDirectory
         customStyleSheets.from(root.file("docs/dokka/styles/dokka-styles.css"))
-        customAssets.from(root.file("docs/dokka/images/spartan-gaming-logo.svg"))
-        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories")
+        customAssets.from(root.file("docs/brand/spartan-gaming-logo.png"))
+        customAssets.from(root.file("docs/brand/spartan-laboratories-logo.png"))
+        footerMessage.set("© 2026 Spartan Gaming  - Spartan Laboratories<br><a class=\"sg-parent-credit\" href=\"https://github.com/SpartanLaboratories\">Spartan Gaming is a Spartan Laboratories company</a>")
     }
 }
 
