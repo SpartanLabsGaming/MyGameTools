@@ -103,6 +103,13 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   uses a Spartan Gaming theme: a custom stylesheet, logo and footer, kept under `docs/dokka/`
   and applied both to the aggregate index (root `build.gradle.kts`) and to each module's pages
   (the `gametools.published-library` convention plugin). Documentation only; no API change.
+- Spartan Gaming branding across the project's docs: the logo now lives once in `docs/brand/`
+  (a square Spartan Gaming PNG, replacing the Dokka theme's SVG) alongside the Spartan
+  Laboratories logo. The Dokka theme shows the logo larger and gains calm backgrounds; the
+  Pages website moves to the same crimson/bronze palette with the logo in its header (the Pages
+  workflow copies `docs/brand/` into the site); the README carries the logo and brand badge
+  colours; and the Dokka footer, website footer and README credit Spartan Laboratories as the
+  parent company. Documentation only; no API change.
 
 ### Deprecated
 - `World.quadtree` — use `World.spatialIndex` instead; see the `Added` entry above. (#48)

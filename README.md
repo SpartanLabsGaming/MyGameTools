@@ -1,15 +1,17 @@
 <div align="center">
 
-# 🎮 GameTools
+<img src="docs/brand/spartan-gaming-logo.png" alt="Spartan Gaming" width="140">
+
+# GameTools
 
 **A batteries-included Kotlin engine layer for 2D multiplayer games — game objects, stats, spatial indexing, and UDP networking, out of the box.**
 
 [![CI](https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml/badge.svg)](https://github.com/SpartanLabsGaming/MyGameTools/actions/workflows/ci.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/gametools?label=Maven%20Central&color=blue)](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.spartanlabsgaming/gametools?label=Maven%20Central&color=a3182a)](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
-[![Docs](https://img.shields.io/badge/docs-Dokka-orange)](https://spartanlabsgaming.github.io/MyGameTools/api/)
-[![Website](https://img.shields.io/badge/website-GitHub%20Pages-7F52FF)](https://spartanlabsgaming.github.io/MyGameTools/)
+[![Docs](https://img.shields.io/badge/docs-Dokka-b87333)](https://spartanlabsgaming.github.io/MyGameTools/api/)
+[![Website](https://img.shields.io/badge/website-GitHub%20Pages-a3182a)](https://spartanlabsgaming.github.io/MyGameTools/)
 
 </div>
 
@@ -379,3 +381,8 @@ Licensed under the **Apache License, Version 2.0**. See [LICENSE](LICENSE) for d
 ## 👤 Author
 
 Built by **[Spartak Singh](https://github.com/SpaSinghOut)** under [Spartan Laboratories](https://github.com/SpartanLaboratories).
+
+<p align="center">
+  <a href="https://github.com/SpartanLaboratories"><img src="docs/brand/spartan-laboratories-logo.png" alt="Spartan Laboratories" width="56"></a><br>
+  <sub>Spartan Gaming is a Spartan Laboratories company</sub>
+</p>
