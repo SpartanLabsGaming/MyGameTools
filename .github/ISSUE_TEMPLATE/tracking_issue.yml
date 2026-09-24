@@ -1,0 +1,40 @@
+name: Tracking issue
+description: A roadmap phase or multi-issue initiative, broken down into sub-issues
+title: "<Initiative name> (tracking)"
+labels: ["type: tracking"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when one design spans more than one PR. After creating the issue,
+        add each stage under **Sub-issues**, add the issue to the *GameTools Roadmap* Project,
+        and set its `Initiative` field. See CONTRIBUTING.md → *Planning large work*.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What the initiative delivers, and links to its roadmap section and architecture / plan docs.
+    validations:
+      required: true
+  - type: textarea
+    id: stages
+    attributes:
+      label: Stages
+      description: The sub-issues in intended order, each with a one-line summary and what it depends on.
+      placeholder: |
+        1. #N: …
+        2. #N: … (depends on #N)
+    validations:
+      required: true
+  - type: textarea
+    id: cross
+    attributes:
+      label: Cross-initiative dependencies
+      description: Optional — sub-issues of other tracking issues that this one blocks or is blocked by.
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: The exit criterion. Every sub-issue must be closed by the PR that implements it, not by a planning PR.
+    validations:
+      required: true

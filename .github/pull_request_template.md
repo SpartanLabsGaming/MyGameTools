@@ -5,7 +5,9 @@ e.g.  feat(gameobjects): add Alive.cancelAttack()
 
 ## What & why
 
-<!-- What does this change and why. Link the issue. -->
+<!-- What does this change and why. Link the issue.
+     Implementation PR: `Closes #N`. Planning / doc-only PR: `Refs #N` — a merged plan does not
+     close its issue. Name the tracking issue too if the issue is a sub-issue of one. -->
 
 Closes #
 
