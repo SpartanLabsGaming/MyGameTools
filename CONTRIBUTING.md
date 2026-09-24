@@ -6,6 +6,7 @@ when the second contributor arrives.
 
 - [Coding rules](#coding-rules)
 - [Module layout](#module-layout)
+- [Planning large work](#planning-large-work)
 - [Branching model](#branching-model)
 - [Commit messages](#commit-messages)
 - [Pull requests](#pull-requests)
@@ -45,6 +46,53 @@ The per-level Gradle tasks (`componentTest`, `integrationTest`, `deterministicTe
 `e2eTest`, `nonfunctionalTest`) and `./gradlew build` span every module; the four CI check
 names are unchanged by the split.
 
+## Planning large work
+
+Every unit of work starts as an issue. When one design spans **more than one PR** (a roadmap
+phase, or a system of systems like World Systems), it also gets a **tracking issue** above
+those issues. GitHub offers three tools here, each with one job:
+
+| Tool | Job | Rule |
+| --- | --- | --- |
+| **Tracking issue + sub-issues** | Structure: what the work is and how it breaks down | One tracking issue per initiative (label `type: tracking`, template *Tracking issue*). Each stage is a sub-issue of it. A stage that grows its own stages becomes a tracking issue in turn. |
+| **Milestones** | When: which release ships it | Set a milestone on a sub-issue once it is scheduled for a release (`5.3.0`). Tracking issues can span releases and carry none. |
+| **The roadmap Project** | Status: one board across every initiative | A single *GameTools Roadmap* Project, not one per system. Its `Initiative` field groups items, with one saved view per initiative. |
+
+**Rules**
+
+1. **Planning and doc PRs use `Refs #N`, never `Closes #N`.** Only the PR that implements an
+   issue closes it. A merged plan is not a delivered feature (issues #49 and #76 were each
+   closed by their plan PR and had to be reopened).
+2. **Record dependencies as links, not prose.** Use the sub-issue hierarchy and GitHub's
+   *blocked by* relationship. Write "Depends on #76" in a body only in addition to the link,
+   and never leave a placeholder such as `#-tbd` once the issue exists.
+3. **An issue has one parent.** When a stage belongs to two initiatives, put it under the one
+   that owns its delivery and cross-reference it from the other tracking issue's
+   *Cross-initiative dependencies* section.
+4. **The tracking issue is the source of truth for scope and order.** Reorder, add or drop
+   stages there, with a comment saying why, before the change lands in a plan doc.
+5. **Branches stay per issue.** Name a branch after the sub-issue being implemented
+   (`feature/77-zone-world-system`), never after the tracking issue.
+
+**Roadmap Project fields**
+
+| Field | Values | Replaces |
+| --- | --- | --- |
+| `Status` | Todo · Planned · In progress · Blocked · Done | the `status: blocked` label |
+| `Initiative` | Phase 1 · World Systems · Combat · … (one value per tracking issue) | — |
+| `Phase` | Roadmap phase 0–7 | — |
+
+Enable the Project's built-in workflows: *auto-add* for new issues in this repository, *item
+closed → Done*, and *PR merged → Done*. The Project may include issues from other
+`SpartanLabsGaming` repositories when an initiative depends on them.
+
+**Current tracking issues**
+
+| Initiative | Tracking issue | Sub-issues |
+| --- | --- | --- |
+| Phase 1 — Map & space | #86 | #46, #47, #48, #49, #50 |
+| World Systems | #87 | #76, #77, #78, #79, #80 |
+
 ## Branching model
 
 Trunk-based development. `master` is always releasable and never receives direct commits —
@@ -77,7 +125,9 @@ is no `develop` branch and there are no per-environment branches.
 - **Types:** `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`
 - **Scopes:** `gameobjects`, `networking`, `spatial`, `serialization`, `build`, …
 - **Breaking changes:** `feat(x)!:` in the subject **and** a `BREAKING CHANGE:` footer
-- Reference issues in the body (`Refs #2`); the PR closes them (`Closes #2`)
+- Reference issues in the body (`Refs #2`); the PR that implements an issue closes it
+  (`Closes #2`). Planning and doc PRs only reference it — see
+  [Planning large work](#planning-large-work)
 
 Commits on your own branch may be rough — tidy them with `git rebase -i` before the PR is
 ready for review.
