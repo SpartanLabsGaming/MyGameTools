@@ -13,7 +13,7 @@ plugins {
 dependencies {
     // Plugin marker artifacts, so the convention plugins can apply these by id with no
     // version. Kotlin and its serialization plugin stay in lockstep on one version.
-    implementation("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.2.0")
+    implementation("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.4.20")
     implementation("org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:2.2.0")
     implementation("com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.36.0")
     implementation("org.jetbrains.dokka:org.jetbrains.dokka.gradle.plugin:2.2.0")
