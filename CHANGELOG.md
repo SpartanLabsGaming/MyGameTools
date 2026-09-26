@@ -115,6 +115,11 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
 - `World.quadtree` — use `World.spatialIndex` instead; see the `Added` entry above. (#48)
 
 ### Fixed
+- `gametools-core` and `gametools-world` no longer transitively pull in WebTools. The
+  dependency was declared `api` in the shared `gametools.kotlin-library` convention plugin,
+  even though only `gametools-net` (`GameServer`, `Connection`) actually uses it; it now lives
+  in `gametools-net`'s own `build.gradle.kts`. No behavioural change for `gametools-net`
+  consumers; a smaller transitive dependency set for everyone else.
 - Applying a movement command through `ClientCommand.applyTo` no longer needs a hard-coded
   `cancelAttack()` call (the interim fix from #39) — it now falls out generally from issuing
   any intent clearing the previous one. (#42)
