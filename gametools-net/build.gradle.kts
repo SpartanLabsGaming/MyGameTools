@@ -4,6 +4,9 @@ plugins {
 
 dependencies {
     api(project(":gametools-core"))
+    // The UDP transport this module wraps; scoped here, not the shared convention plugin, so
+    // gametools-core and gametools-world consumers don't pull in networking they don't use.
+    api("io.github.spartanlaboratories:WebTools:2.0.0c")
 }
 
 mavenPublishing {

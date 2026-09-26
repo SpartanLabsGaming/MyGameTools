@@ -13,9 +13,8 @@ kotlin {
 }
 
 dependencies {
-    // Spartan Laboratories Tools
-    api("io.github.spartanlaboratories:WebTools:2.0.0c")
-    // Direct dependency for the Color class; WebTools already brings the same version.
+    // Spartan Laboratories Tools - GeneralTools' Color class is used across every module;
+    // WebTools is networking-only and belongs on gametools-net specifically.
     api("io.github.spartanlaboratories:GeneralTools:2.2.0")
 
     // Serialization
