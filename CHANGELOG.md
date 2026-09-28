@@ -72,6 +72,23 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   with the aggregated Dokka API reference mounted at `/api/`. The page source is `website/`
   (plain HTML/CSS/JS, no site generator); the new `.github/workflows/pages.yml` regenerates
   the docs and redeploys both on every push to `master`.
+- `com.spartanlabs.gaming.annotation` — the library's API-stability tier markers.
+  `ExperimentalGameToolsApi` is an `@RequiresOptIn(level = ERROR)` gate for a seam whose shape is
+  not yet proven by a real consumer and may change incompatibly in a Feature release until it
+  graduates; opt in with `@OptIn(ExperimentalGameToolsApi::class)` or
+  `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi`. `SupportedExtension` is
+  purely documentary (no compiler gate, `BINARY` retention): it marks a likely-but-non-core seam
+  that carries the same semver guarantee as Stable Core. Nothing carries `SupportedExtension` yet.
+  (#76)
+- `WorldSystem` — an opt-in, per-frame or event-driven add-on contract for a `World`, with
+  `installOn`/`uninstallFrom`/`step` hooks and an optional `coreSlot` claim on a library-reserved
+  `CoreWorldSystemSlot` (`PHYSICS`, then `ZONE`), which steps in that relative order whatever order
+  the systems were installed in; every other system steps afterwards, in install order. `World`
+  gains `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems` to host it;
+  `World.tick()` is unchanged and never calls `stepSystems()` — a driver does, e.g. from a
+  `SimulationLoop`'s `onTick`. Ships Experimental: implementing `WorldSystem`, or using `World`'s
+  new members, the slot types or `coreSlot`, requires opting in to `ExperimentalGameToolsApi`.
+  (#76)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
