@@ -186,6 +186,16 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
    alive briefly and rebinds on a valid resume token.
 7. **`GameServer` rework** to sit on all of the above.
 
+> **Pending addition — client event feed (draft, 2026-09-26).** Decision #11's "client event
+> feed" has no item above yet. Settled so far: a shared `MessageCodec<T>` abstraction that
+> `COMMAND`, a new `EVENT` verb, **and `STATE`** all move onto (the inline `STATE` encoding
+> is removed); a `WireEvent` wire form produced by a `(GameEvent) -> WireEvent?` projection
+> (the projection is the client-relevance filter); a buffered `ClientEventFeed` relay in
+> `gametools-net` that the consumer flushes; and a client-side `onEvent` dispatcher. Not to be
+> planned until the WebTools update above has been adopted. It interlocks with items 1, 2 and
+> 5 and WebTools #9/#14. See
+> [`client-event-feed-plan-draft.md`](client-event-feed-plan-draft.md).
+
 *Ships as a Major release (wire protocol replaced; coordinate with the client project and WebTools).*
 
 ### Phase 4 — AI & pathfinding *(new `gametools-ai` module)*
