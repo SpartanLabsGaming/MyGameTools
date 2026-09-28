@@ -20,7 +20,9 @@ All code, tests, and documentation follow [`.aiassistant/rules/CLAUDE.md`](.aias
 Kotlin idioms blended OO/FP, `Result` instead of thrown exceptions for expected failures,
 structured slf4j logging, KDoc on every public declaration, region-grouped imports, one test
 class per file. Tests are organised by the five-level hierarchy into
-`com.spartanlabs.gaming.testing.<level>` packages.
+`com.spartanlabs.gaming.testing.<level>` packages. Public surface is tiered: Stable Core is
+untagged, a likely-but-non-core seam carries `@SupportedExtension` (the same semver guarantee as
+Stable Core), and an unproven seam is gated `@ExperimentalGameToolsApi` until it graduates.
 
 ## Module layout
 
@@ -29,7 +31,7 @@ bootstrap (issue #48) it is published as four Maven coordinates:
 
 | Module | Coordinate | Contents | Depends on |
 | --- | --- | --- | --- |
-| `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
+| `gametools-core` | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation,annotation}.*`, `com.spartanlabs.geometry.serializations.*` | — |
 | `gametools-net` | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` (`GameServer`, `MouseAction`) | `api(project(":gametools-core"))` |
 | `gametools-world` | `io.github.spartanlabsgaming:gametools-world` | Phase 1 map/zone/physics/vision systems (issues #46–#50); `com.spartanlabs.gaming.world.map.*` — `TiledMap`, `TerrainLayer`, `TerrainType`, `StaticGeometry`, `SpawnPoint`, `MapDefinition`, `MapLoader` (#46); `com.spartanlabs.gaming.world.zone.*` — `Zone`, `ZoneGrid`, `ZoneIndex`, `EntityChangedZone` (#47) | `api(project(":gametools-core"))` |
 | `gametools` (umbrella) | `io.github.spartanlabsgaming:gametools` | no source — `api` re-export of every module above | all three |
@@ -98,6 +100,11 @@ The scheme and bump table are in the [organization guide](https://github.com/Spa
 version lives only in the `coordinates(...)` call in each published module's
 `build.gradle.kts` (`gametools-core`, `gametools-net`, `gametools-world`, `gametools`) — every
 module releases together on one version, so the release branch bumps them all.
+
+One GameTools-specific addition to the bump table: an incompatible change limited to
+`@ExperimentalGameToolsApi` surface is a **Feature release, not a Major** — commit it without
+`!` or a `BREAKING CHANGE:` footer (`1.9.0` → `1.10.0`). Graduation out of Experimental is
+recorded in `CHANGELOG.md`.
 
 ## Releasing
 
