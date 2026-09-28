@@ -2,6 +2,7 @@ package com.spartanlabs.gaming.gameobjects
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
 import com.spartanlabs.gaming.event.EventBus
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.simulation.RandomSource
@@ -39,8 +40,15 @@ import kotlin.random.Random
  * 5. everything queued in [removeList] is dropped and a [GameEvent.EntityRemoved] fires for each.
  *
  * [GameEvent]s are delivered synchronously as they are published, not batched at the end.
- * Given the same [seed] and the same sequence of external calls, two worlds produce the same
- * result.
+ * Given the same [seed] and the same sequence of external calls - including [installSystem],
+ * [uninstallSystem], and [stepSystems] - two worlds produce the same result.
+ *
+ * ### Installed systems
+ * A [World] can also host opt-in [WorldSystem]s ([installSystem], [uninstallSystem],
+ * [installedSystems]). [tick] never steps them: a driver calls [stepSystems] once per frame after
+ * [tick], e.g. `SimulationLoop(world, onTick = { world.stepSystems() })`. Systems that claim a
+ * [CoreSystemSlot] step first, in slot order; the rest follow in install order. A [World] with
+ * nothing installed pays nothing for this. Experimental - see [ExperimentalGameToolsApi].
  *
  * @param seed the seed for [random]; defaults to a fresh value, logged on construction so a
  *   run can be reproduced by pinning it
@@ -214,6 +222,7 @@ class World(val seed: Long = Random.nextLong()) {
 
     /**
      * Advances the world by one frame. See the class doc for the exact order of operations.
+     * Never steps an installed [WorldSystem] - see [stepSystems].
      */
     fun tick() {
         tickCount++
@@ -282,4 +291,193 @@ class World(val seed: Long = Random.nextLong()) {
             obj.lastIndexedLocation = IndexedPosition(obj.location.x, obj.location.y)
         }
     }
+
+    //region INSTALLED SYSTEMS
+    /**
+     * One successful [installSystem] call for a [WorldSystem]. Two records for the same
+     * [WorldSystem] instance (e.g. uninstalled then reinstalled) are distinct - what lets a step
+     * pass tell "this installation was removed after my snapshot was taken" apart from "this
+     * instance was reinstalled", without ever calling [equals] on a consumer's [WorldSystem]
+     * (which may itself be a `data class`).
+     */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private class InstalledSystemRecord(val system: WorldSystem, val slot: CoreSystemSlot?) {
+        /** Cleared by [uninstallSystem] at removal; [stepSystems] skips a record whose [active] is false. */
+        var active: Boolean = true
+    }
+
+    /** An [installSystem] call still inside [WorldSystem.installOn], not yet recorded. */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private class Reservation(val system: WorldSystem, val slot: CoreSystemSlot?)
+
+    /**
+     * Every installed system's [InstalledSystemRecord], kept in step order at insert time: tier 1
+     * ([InstalledSystemRecord.slot] non-null) by [CoreSystemSlot.order], then tier 2 (`slot ==
+     * null`) in install order. The only backing structure for [installedSystems], slot occupancy,
+     * and [stepSystems]'s own order - never a hash- or tree-keyed collection, so iteration order
+     * never depends on a [CoreWorldSystemSlot] constant's (identity-based, per-run) hash code.
+     */
+    private val installedRecords: MutableList<InstalledSystemRecord> = mutableListOf()
+
+    /**
+     * In-flight [installSystem] calls, most recently pushed last. Consulted by both `require`s in
+     * [installSystem] so a re-entrant call sees every installation still in progress up the call
+     * stack, not just [installedRecords].
+     */
+    private val installReservations: ArrayDeque<Reservation> = ArrayDeque()
+
+    /** `true` for the duration of one [stepSystems] call, so a re-entrant call is rejected. */
+    private var stepping: Boolean = false
+
+    /**
+     * Inserts [record] at its step-order position: immediately before the first record that is
+     * tier 2 or whose slot has a greater [CoreSystemSlot.order] than [record]'s (tier 1), or at
+     * the end (tier 2).
+     */
+    @OptIn(ExperimentalGameToolsApi::class)
+    private fun insertInStepOrder(record: InstalledSystemRecord) {
+        val slot = record.slot
+        if (slot == null) {
+            installedRecords.add(record)
+            return
+        }
+        // A tier-1 record goes before the first record that is tier 2 or has a strictly greater
+        // order. "Strictly" means an equal order (library slots never share one) lands after the
+        // existing record, so install order breaks the tie deterministically.
+        val insertAt = installedRecords.indexOfFirst { it.slot == null || it.slot.order > slot.order }
+        installedRecords.add(if (insertAt == -1) installedRecords.size else insertAt, record)
+    }
+
+    /**
+     * Installs [system] onto this [World]: calls [WorldSystem.installOn] once, then - only if it
+     * returns normally - records [system] in step order so a later [stepSystems] call steps it.
+     *
+     * Checked, both as [IllegalArgumentException], before [WorldSystem.installOn] runs:
+     * - [system] must not already be installed on this [World], and must not itself be in the
+     *   middle of an [installSystem] call further up the call stack (a re-entrant self-install).
+     * - if [WorldSystem.coreSlot] (read exactly once, right here) is non-null, that slot must not
+     *   already be claimed by another installed or currently-installing system.
+     *
+     * [WorldSystem.installOn] must be failure-atomic: if it throws, this [World] records nothing
+     * for [system] and never calls [WorldSystem.uninstallFrom] for this attempt - any partial
+     * state [system] itself acquired (e.g. a helper [WorldSystem] it installed) is [system]'s own
+     * responsibility to undo. The exception propagates to the caller unchanged, and [system] may
+     * be installed again later.
+     *
+     * [installedSystems] never contains [system] while [WorldSystem.installOn] is still running.
+     * Single-threaded, like every other [World] member: call this only from the thread driving
+     * this [World]. This member, [uninstallSystem], [installedSystems], and [stepSystems] are
+     * gated [ExperimentalGameToolsApi] - their shape may still change incompatibly in a Feature
+     * release until they graduate.
+     *
+     * Legal to call from inside a [WorldSystem.step] running as part of an active [stepSystems]
+     * pass: [system] is not in that pass's snapshot, so it steps from the *next* [stepSystems]
+     * call, not the one already in progress.
+     *
+     * @param system the system to install
+     * @throws IllegalArgumentException if [system] is already installed, is already being
+     *   installed (a re-entrant call), or claims a [WorldSystem.coreSlot] another installed or
+     *   currently-installing system already holds
+     */
+    @ExperimentalGameToolsApi
+    fun installSystem(system: WorldSystem) {
+        require(installedRecords.none { it.system === system } && installReservations.none { it.system === system }) {
+            "system $system is already installed on, or is already being installed on, this World"
+        }
+        val slot = system.coreSlot
+        if (slot != null) {
+            val occupant = installedRecords.firstOrNull { it.slot == slot }?.system
+                ?: installReservations.firstOrNull { it.slot == slot }?.system
+            require(occupant == null) { "slot $slot is already claimed by $occupant" }
+        }
+        installReservations.addLast(Reservation(system, slot))
+        try {
+            system.installOn(this)
+        } finally {
+            installReservations.removeLast()
+        }
+        insertInStepOrder(InstalledSystemRecord(system, slot))
+        log.info("World installed a {} (slot={})", system::class.simpleName, slot)
+    }
+
+    /**
+     * Removes [system] from this [World]'s installed systems, then calls
+     * [WorldSystem.uninstallFrom] once. Idempotent: a [system] that is not currently installed is
+     * a no-op.
+     *
+     * [system] is removed - absent from [installedSystems] and from the next [stepSystems] pass -
+     * *before* [WorldSystem.uninstallFrom] runs, the mirror image of [installSystem]'s own
+     * ordering. If [WorldSystem.uninstallFrom] throws, [system] stays removed either way and the
+     * exception propagates to the caller unchanged.
+     *
+     * Single-threaded, like every other [World] member.
+     *
+     * Legal to call from inside a [WorldSystem.step] running as part of an active [stepSystems]
+     * pass: [system] is skipped for the remainder of that pass, whether it is [system] itself or
+     * another system's [WorldSystem.step] making the call.
+     *
+     * Experimental - may change incompatibly in a Feature release until it graduates; see
+     * [ExperimentalGameToolsApi].
+     *
+     * @param system the system to uninstall
+     */
+    @ExperimentalGameToolsApi
+    fun uninstallSystem(system: WorldSystem) {
+        val index = installedRecords.indexOfFirst { it.system === system }
+        if (index == -1) {
+            log.debug("World received an uninstallSystem call for a {} that was not installed - no-op", system::class.simpleName)
+            return
+        }
+        val record = installedRecords.removeAt(index)
+        record.active = false
+        log.info("World uninstalled a {} (slot={})", system::class.simpleName, record.slot)
+        system.uninstallFrom(this)
+    }
+
+    /**
+     * The [WorldSystem]s currently installed on this [World], tier 1 (by [CoreSystemSlot.order])
+     * then tier 2 (in [installSystem] order) - the exact order [stepSystems] steps them in. A
+     * fresh copy on every read; mutating it does not affect this [World]'s registry. Never
+     * contains a system that is still inside its own [WorldSystem.installOn] call. Empty for a
+     * [World] with nothing installed.
+     *
+     * Experimental - may change incompatibly in a Feature release until it graduates; see
+     * [ExperimentalGameToolsApi].
+     */
+    @ExperimentalGameToolsApi
+    val installedSystems: List<WorldSystem>
+        get() = installedRecords.map { it.system }
+
+    /**
+     * Steps every currently-installed [WorldSystem] once, tier 1 (by [CoreSystemSlot.order]) then
+     * tier 2 (in [installSystem] order), over a snapshot taken at the start of this call - not
+     * [installedSystems] recomputed mid-pass. Never called by [tick]; a driver (typically
+     * [com.spartanlabs.gaming.simulation.SimulationLoop]'s `onTick`) calls it once per frame, e.g.
+     * `SimulationLoop(world, onTick = { world.stepSystems() })`.
+     *
+     * A system [uninstallSystem]-ed earlier in this same pass is skipped for the rest of the pass.
+     * A system [installSystem]-ed during this pass steps from the *next* [stepSystems] call, not
+     * this one. If a [WorldSystem.step] throws, the exception propagates to the caller, no system
+     * after it steps this pass, and this [World]'s registry is left exactly as [WorldSystem.step]
+     * left it - the next [stepSystems] call runs normally.
+     *
+     * Experimental - may change incompatibly in a Feature release until it graduates; see
+     * [ExperimentalGameToolsApi].
+     *
+     * @throws IllegalStateException if called re-entrantly - from inside a [WorldSystem.step] this
+     *   same call is already running, directly or indirectly
+     */
+    @ExperimentalGameToolsApi
+    fun stepSystems() {
+        check(!stepping) { "World.stepSystems() was called re-entrantly, from inside a WorldSystem.step() this same call is already running" }
+        stepping = true
+        try {
+            val snapshot = installedRecords.toList()
+            log.debug("World stepping {} system(s)", snapshot.size)
+            snapshot.forEach { record -> if (record.active) record.system.step(this) }
+        } finally {
+            stepping = false
+        }
+    }
+    //endregion
 }
