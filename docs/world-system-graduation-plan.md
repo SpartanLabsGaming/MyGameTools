@@ -26,7 +26,7 @@
   landed code. §2.1 below is the mandatory gate that reconciles the two once they are real.
 - **Target release:** inherited from the architecture's own open decision (§12 OD3, not
   re-litigated here): `#78`/`#79` can only ship in the first release containing `#71`
-  (`refactor(gameobjects)!:`, a Major trigger per `CONTRIBUTING.md`'s versioning table), so this
+  (`refactor(gameobjects)!:`, a Major trigger per the organization guide's versioning bump table, which `CONTRIBUTING.md`'s `## Versioning` links to), so this
   unit's commits land on `master` under `[Unreleased]` and ride whatever Major release `#71`
   lands in. This plan does not bump any version number or cut a release.
 - **Dependencies:** `#76` (`world-system-core`), `#77` (`zone-world-system`), `#78`
@@ -530,7 +530,7 @@ produces no observable behaviour for a human or AI evaluator to assess — there
 - **Branch:** `feature/79-world-system-graduation` (`CONTRIBUTING.md`'s `feature/<issue#>-<slug>`
   convention, per architecture §10's assigned slug), opened only after `#77` and `#78` merge to
   `master` — **Step 0 is §1.2's review checkpoint, run before the first commit below.**
-- **Commit type: `feat`, not `refactor`.** `CONTRIBUTING.md`'s versioning table treats `refactor`
+- **Commit type: `feat`, not `refactor`.** The organization guide's versioning bump table (linked from `CONTRIBUTING.md`'s `## Versioning`) treats `refactor`
   (no `!`) as "no product change... rides the next release," reserved for internal-only changes
   with no consumer-visible effect. This unit is consumer-visible: a `gametools-core`/`gametools-world`
   consumer who could not previously implement `WorldSystem` or call its registry members without
