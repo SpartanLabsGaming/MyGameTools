@@ -80,6 +80,13 @@ classDiagram
         +SpatialIndex spatialIndex
         +tick()
     }
+    class WorldSystem {
+        <<interface>>
+        +CoreSystemSlot coreSlot
+        +installOn(world)
+        +uninstallFrom(world)
+        +step(world)
+    }
     class Space {
         <<interface>>
         +Square bounds
@@ -115,6 +122,7 @@ classDiagram
     World "1" o-- "*" GameObject
     World "1" *-- "1" SpatialIndex
     World "1" o-- "0..1" Space
+    World "1" o-- "*" WorldSystem
     TiledMap ..|> Space
     Quadtree ..|> SpatialIndex : (via QuadtreeSpatialIndex)
     Player "1" o-- "*" Alive
@@ -131,9 +139,10 @@ classDiagram
 | `Alive` | open | Adds combat: health, damage, attack timing/range/speed, evasion, faction, and `Player` ownership |
 | `Projectile` / `HomingProjectile` / `DirectionalProjectile` | open/final | Travel-and-hit entities: home in on one target, or pierce in a straight line |
 | `Player` | final | Owns a roster of `Alive` actors and tracks which are still living |
-| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
+| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, publishes lifecycle/combat `GameEvent`s on its `EventBus`, and hosts opt-in installed `WorldSystem`s (Experimental) |
 | `EventBus` | final | Synchronous, single-threaded `GameEvent` publish/subscribe, delivered in order with per-listener fault isolation |
 | `SimulationLoop` | final | Opt-in fixed-timestep driver for a `World` — a daemon thread calling `tick()` at a live-tunable rate; nothing depends on it |
+| `WorldSystem` | interface | Opt-in, per-frame or event-driven add-on behaviour for a `World` (Experimental): installed via `World.installSystem`, stepped by a driver via `World.stepSystems`; built-in systems claim a library-reserved `CoreSystemSlot` and step first, everything else steps after them in install order |
 | `SpatialIndex<E>` | interface | Broad-phase index over positioned elements, maintained incrementally as elements move, join, or leave |
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
 | `UniformGrid<E>` | generic | `SpatialIndex` backed by a uniform grid of fixed-size cells — `O(1)` amortised update, suited to a roughly uniform-density field |
@@ -147,7 +156,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 
 | Module | Coordinate | Contains | Depends on |
 |---|---|---|---|
-| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation,annotation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `WorldSystem` (Experimental), `EventBus`, `SimulationLoop`, and the `@SupportedExtension` / `@ExperimentalGameToolsApi` API-stability markers — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 | **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
 | **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — `com.spartanlabs.gaming.world.map.*`: `TiledMap` (the `Space` implementation), `TerrainLayer`/`TerrainType`, `StaticGeometry`, `SpawnPoint`, and the `MapDefinition`/`MapLoader` JSON file format (#46); `com.spartanlabs.gaming.world.zone.*`: `Zone`, `ZoneGrid`, `ZoneIndex`, `EntityChangedZone` (#47); physics and vision are still to come | `gametools-core` |
 | **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports every module via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net`, `gametools-world` |
@@ -168,6 +177,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 - **Typed event bus** — `World.events` publishes a `GameEvent` stream (`EntitySpawned`, `EntityRemoved`, `AttackIssued`, `AttackLanded`, `DamageDealt`, `EntityDied`, …) so networking, scoring, or AI can react to what the simulation does without being wired into the code that does it. Synchronous, in-order, single-threaded; a throwing listener is isolated.
 - **Deterministic tick** — every random choice the engine makes goes through a seeded `RandomSource` (`World(seed)` / `World.rng`), so a fixed seed and a fixed input sequence reproduce the run exactly. `World.tickCount` counts frames. The seed is logged on construction; pin it to replay a failure.
 - **Opt-in fixed-timestep loop** — `SimulationLoop` drives `World.tick()` on a daemon thread at a live-tunable `LoopSettings.tickRateHz`, with a bounded catch-up after a stall. Purely a convenience: nothing in the engine depends on it, `World.tick()` stays callable directly, and `SimulationLoop.advance()` lets you drive the timestep from your own loop.
+- **Opt-in installed systems** (Experimental) — a `WorldSystem` adds per-frame or event-driven behaviour to a `World` without subclassing it: implement `installOn` (and `step` / `uninstallFrom` as needed), `World.installSystem(it)`, then call `World.stepSystems()` once per frame from your own driver, e.g. `SimulationLoop(world, onTick = { world.stepSystems() })` — `World.tick()` never calls it. `uninstallSystem` tears a system down symmetrically. Built-in systems claim a library-reserved `CoreSystemSlot` (`CoreWorldSystemSlot.PHYSICS`, then `ZONE`) and always step first, in that order, whatever order they were installed in; your own systems step after them, in install order. Experimental: opt in with `@OptIn(ExperimentalGameToolsApi::class)` or the `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` compiler flag — the shape may change incompatibly in a Feature release until it graduates.
 - **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, each tagged with its `EntityId`, ready to JSON-encode and ship to clients.
 
 ### 📊 Stat System
