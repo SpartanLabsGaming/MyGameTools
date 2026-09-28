@@ -632,6 +632,10 @@ Never steps an installed [WorldSystem] - see [stepSystems].`
      * gated [ExperimentalGameToolsApi] - their shape may still change incompatibly in a Feature
      * release until they graduate.
      *
+     * Legal to call from inside a [WorldSystem.step] running as part of an active [stepSystems]
+     * pass: [system] is not in that pass's snapshot, so it steps from the *next* [stepSystems]
+     * call, not the one already in progress.
+     *
      * @param system the system to install
      * @throws IllegalArgumentException if [system] is already installed, is already being
      *   installed (a re-entrant call), or claims a [WorldSystem.coreSlot] another installed or
@@ -669,6 +673,10 @@ Never steps an installed [WorldSystem] - see [stepSystems].`
      * exception propagates to the caller unchanged.
      *
      * Single-threaded, like every other [World] member.
+     *
+     * Legal to call from inside a [WorldSystem.step] running as part of an active [stepSystems]
+     * pass: [system] is skipped for the remainder of that pass, whether it is [system] itself or
+     * another system's [WorldSystem.step] making the call.
      *
      * @param system the system to uninstall
      */
@@ -865,6 +873,10 @@ After (append): `` Public surface is tiered: Stable Core is untagged, a likely-b
 
 **3. Versioning table (`CONTRIBUTING.md:139-144`)** — one new row, immediately after the `feat!:`
 row (`CONTRIBUTING.md:143`):
+
+> **As built (2026-09-28):** #125 moved the bump table to the org-wide guide before this unit
+> landed, so the rule below was written as a prose paragraph under `## Versioning`
+> (`CONTRIBUTING.md:104-107`) instead of a table row — same content.
 
 Before/after context:
 ```
