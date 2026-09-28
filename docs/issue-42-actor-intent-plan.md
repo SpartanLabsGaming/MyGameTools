@@ -591,7 +591,8 @@ itself takes.
 - **Branch:** `feature/42-actor-intent`, off `master`.
 - **Release shape:** Strategy B is additive on `Actor`/`Alive` (new `intent`/`issue`/
   `clearIntent`/`world`-promotion; no existing public signature removed or narrowed) and
-  `ActorSnapshot` gains a defaulted field. Per `CONTRIBUTING.md`'s versioning table this is a
+  `ActorSnapshot` gains a defaulted field. Per the organization guide's versioning bump table (linked from `CONTRIBUTING.md`'s
+  `## Versioning`) this is a
   **Feature release** (`feat:` → e.g. `5.1.0` → `5.2.0`), not Major — nothing here breaks
   `4.x`/`5.x` consumer source or wire compatibility.
 - **Suggested commit sequence** (squash further only if the whole PR is small enough to

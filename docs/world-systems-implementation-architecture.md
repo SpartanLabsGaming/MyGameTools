@@ -266,7 +266,7 @@ not re-summarised.
   depends on core via `api(project(":gametools-core"))` — the dependency edge runs one way, so
   `WorldSystem`'s built-in slot types being defined in `core` (C5) is the only placement that lets
   a `gametools-world` adapter (`ZoneWorldSystem`, `PhysicsWorldSystem`) reference them.
-  `CONTRIBUTING.md:139-144`'s versioning table lists `feat!:`/`BREAKING CHANGE:` → Major and
+  The organization guide's versioning bump table (linked from `CONTRIBUTING.md`'s `## Versioning`) lists `feat!:`/`BREAKING CHANGE:` → Major and
   `refactor` (no `!`) → "none — rides the next release"; it does not spell out `refactor!:`
   verbatim, but `dcb396e`'s own subject line (`refactor(gameobjects)!: move combat classes...`)
   already uses the `!`-suffix convention the table's Major row is keyed on, so #71 riding a Major
@@ -917,8 +917,8 @@ absorbs both, or they go permanently unowned — carried forward as a gap risk i
 3. **OD3 — release targeting. RESOLVED 2026-09-22: do not block #76/#77 on #71.** #76/#77 are
    additive `feat:` changes and can ship Experimental in the next Feature release without waiting
    on #71. #78/#79 can only ship in the first release containing #71, and #71 is a
-   `refactor(gameobjects)!:` commit — per `CONTRIBUTING.md`'s versioning table
-   (`CONTRIBUTING.md:139-144`), a `!`-suffixed type is a Major trigger (the table names
+   `refactor(gameobjects)!:` commit — per the organization guide's versioning bump table
+   (linked from `CONTRIBUTING.md`'s `## Versioning`), a `!`-suffixed type is a Major trigger (the table names
    `feat!:`/`BREAKING CHANGE:` explicitly; it does not spell out `refactor!:` verbatim, but #71's
    own commit already uses that exact convention, so treating it as a Major-triggering breaking
    change is consistent with, not a stretch of, the table's stated rule). #76/#77 ship as their own
