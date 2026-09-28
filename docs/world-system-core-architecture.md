@@ -382,7 +382,8 @@ tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compile
    *"Public surface is tiered: Stable Core is untagged, a likely-but-non-core seam carries
    `@SupportedExtension`, and an unproven seam is gated `@ExperimentalGameToolsApi` until it
    graduates."* (illustrative wording; the implementer finalises the exact sentence).
-3. Versioning table (`CONTRIBUTING.md:139-144`): one new row — an incompatible change limited to
+3. Versioning rule (`CONTRIBUTING.md`'s `## Versioning`; as built a prose paragraph, since #125
+   moved the bump table to the organization guide): an incompatible change limited to
    `@ExperimentalGameToolsApi`-tagged surface bumps **Feature**, not Major; graduation recorded in
    `CHANGELOG.md`.
 

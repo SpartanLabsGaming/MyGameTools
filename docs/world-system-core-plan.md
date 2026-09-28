@@ -302,7 +302,7 @@ Reused verbatim from `docs/physics-core-seams-plan.md` §2.2/§3.1 (its `@Suppor
 is explicitly superseded onto this unit — see that document's own top-of-file callout), with one
 correction: its KDoc's mention of the Experimental tier is now a link to the sibling marker that
 did not exist when that plan was drafted, and "a minor release" is corrected to "a Feature
-release" to match this repo's actual `Major.Feature.MinorChange` scheme (`CONTRIBUTING.md:139-144`)
+release" to match this repo's actual `Major.Feature.MinorChange` scheme (defined in the organization guide, linked from `CONTRIBUTING.md`'s `## Versioning`)
 rather than generic semver terminology. Its em dashes are also normalised to ` - `: no `.kt` file on
 `master` contains an em dash (verified by `git grep`), and every existing KDoc in the repo uses the
 ASCII form. The declaration itself is copied verbatim.
@@ -871,8 +871,8 @@ Before (ends): `` ...structured slf4j logging, KDoc on every public declaration,
 
 After (append): `` Public surface is tiered: Stable Core is untagged, a likely-but-non-core seam carries `@SupportedExtension` (the same semver guarantee as Stable Core), and an unproven seam is gated `@ExperimentalGameToolsApi` until it graduates. ``
 
-**3. Versioning table (`CONTRIBUTING.md:139-144`)** — one new row, immediately after the `feat!:`
-row (`CONTRIBUTING.md:143`):
+**3. Versioning rule (`CONTRIBUTING.md`'s `## Versioning`)** — planned as one new row in the then-local
+bump table, immediately after the `feat!:` row:
 
 > **As built (2026-09-28):** #125 moved the bump table to the org-wide guide before this unit
 > landed, so the rule below was written as a prose paragraph under `## Versioning`
