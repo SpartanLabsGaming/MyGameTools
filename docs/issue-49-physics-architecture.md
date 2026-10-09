@@ -3,7 +3,7 @@
 > **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** The physics
 > design itself (`Shape`, `PhysicsBody`, `Contact`, `CollisionResolver`,
 > `PositionalCorrectionResolver`, `TerrainCollisionIndex`, `PhysicsSystem`) is untouched by that
-> work and stays the reference for #49's re-plan. Three things in this document are superseded:
+> work and stays the reference for #49's re-plan. Four things in this document are superseded:
 >
 > 1. **The closed `WorldSystems` aggregator** — §1.2 constraint 1, §4.1's `WorldSystems` row,
 >    §4.9, §8's `WorldSystems` row, §9's first bullet (the rejected registry), §10 row 6, §12 Open
@@ -28,6 +28,26 @@
 >    sweep claim) and the README's physics-as-a-whole prose. `PhysicsWorldSystem` (#80) is only the
 >    adapter plus its regression test, so #49's re-plan must assign both duties to one of its own
 >    units (`docs/world-systems-implementation-architecture.md` §7, §10, §11).
+> 4. **The adapters and the `refresh` call — 2026-09-30, issue #77's design pass
+>    (`docs/world-system-binding-architecture.md`).** Item 1's "`ZoneWorldSystem` adapter (#77)"
+>    and "thin `PhysicsWorldSystem` adapter (#80)" were never built and no longer exist as
+>    planned. `ZoneIndex` is itself the zone `WorldSystem`: it extends `AbstractWorldSystem`,
+>    claims `CoreWorldSystemSlot.ZONE`, has a public constructor and **no `refresh` method** —
+>    a consumer installs it with `World.installSystem` and `World.stepSystems()` drives it; code
+>    holding only a `World` gets it from `world.systemOf<ZoneIndex>()` (a `Result`). `PhysicsSystem`
+>    is likewise itself the physics `WorldSystem` (it extends `AbstractWorldSystem` and claims
+>    `CoreWorldSystemSlot.PHYSICS`), so no `PhysicsWorldSystem` type exists and #80 is resolved by
+>    #49. Every statement below that `ZoneIndex.refresh(world)` exists, is directly callable, is
+>    called by `WorldSystems`, or is "meant to be called once per frame" (§3's `ZoneIndex.refresh`
+>    bullet; §4.1's `WorldSystems` row; §4.7 hazards 3 and 8; §4.9's sketch and order list; §5's
+>    flowchart, boundary note and `ZoneIndex` ↔ `WorldSystems` bullet; §6's `ZoneIndex`/`ZoneGrid`
+>    row; §12 decision 1) describes #47's API as merged-but-unreleased on 2026-09-22 and is historical;
+>    the physics → zone ordering requirement is unchanged (item 1). `PhysicsSystem`'s own
+>    signatures shown below (`step(world)`, `attach`/`detach`) predate the parameterless-hook
+>    contract and are #49's re-plan to revise — not corrected here. The unit plans written
+>    against this document carry matching 2026-10-01 callouts: `docs/physics-system-plan.md`,
+>    `docs/physics-core-seams-plan.md`, `docs/physics-resolution-plan.md` and
+>    `docs/physics-world-system-plan.md` (the last wholly superseded).
 >
 > The unit plans written against this document predate the change; see the callouts at the top of
 > `docs/physics-core-seams-plan.md` and `docs/physics-system-plan.md`.
@@ -603,7 +623,7 @@ flowchart TB
   idiom every existing mover already uses; no new field added to `VisibleObject`/`GameObject`.
 - **`PhysicsSystem` ↔ `CollisionResolver`:** call, constructor-injected dependency, the one
   substitutable seam.
-- **`ZoneIndex` ↔ `WorldSystems`:** call; no change to `ZoneIndex`'s own public contract.
+- **`ZoneIndex` ↔ `WorldSystems`:** call; no change to `ZoneIndex`'s own public contract. *(Superseded 2026-09-30: `ZoneIndex` is itself the `WorldSystem` and has no `refresh` to call — see item 4 of the header callout.)*
 
 ---
 
@@ -615,7 +635,7 @@ flowchart TB
 | **`VisibleObject`/`GameObject`** | `attach`/`detach` take a `VisibleObject`; `PhysicsSystem` mutates `.location` in place. | **In scope now: none.** `location` is already public and already mutated this way by every existing mover; nothing to adopt. |
 | **`Actor`/`Movement`** | `PhysicsSystem` displaces an `Actor`'s position; the `destination`-reassignment trick (§4.7 hazard 2) reads `Actor.destination`, which is public. | **Not in scope now**, by design: `Movement` stays `sealed`/closed through `5.3.0` per D1's `6.0.0` deferral. **Named follow-up:** the `6.0.0` `Movement` delta refactor (already tracked as Phase 1 Open Decision 4 + D1) must re-verify or replace the `hasSettled`-reset workaround against `Movement`'s new shape. |
 | **`DirectionalProjectile` / `HomingProjectile` / `Projectile`** (`DirectionalProjectile.kt`, `HomingProjectile.kt`, `Projectile.kt`) | None, structurally — constraint 7. A consumer *can* already opt a projectile into swept physics today, with zero core change, by calling `physicsSystem.attach(myProjectile, ...)` (a `Projectile` **is** a `VisibleObject`) alongside its existing discrete damage test. | **Not in scope now.** **Named follow-up:** if projectile tunnelling through a thin wall at low tick rate becomes a real problem, a dedicated issue should decide whether to (a) document the opt-in `attach` path above as the answer, or (b) give `DirectionalProjectile`/`HomingProjectile` a first-class swept mode. Roadmap correction, §7. |
-| **`ZoneIndex`/`ZoneGrid`** (`ZoneIndex.kt`, `ZoneGrid.kt`) | `WorldSystems` calls `zoneIndex.refresh(world)` first in the fixed order. | **In scope now: none required.** `ZoneIndex.refresh` remains directly callable exactly as before (`WorldSystems` is an additive convenience, not a replacement); a consumer not using `WorldSystems` loses nothing. |
+| **`ZoneIndex`/`ZoneGrid`** (`ZoneIndex.kt`, `ZoneGrid.kt`) | `WorldSystems` calls `zoneIndex.refresh(world)` first in the fixed order. | **In scope now: none required.** `ZoneIndex.refresh` remains directly callable exactly as before (`WorldSystems` is an additive convenience, not a replacement); a consumer not using `WorldSystems` loses nothing. **[Superseded 2026-09-30 — see item 4 of the header callout: there is no `ZoneIndex.refresh`; `ZoneIndex` is itself the zone `WorldSystem`, installed with `World.installSystem` and driven by `stepSystems()`.]** |
 | **`SpatialIndex`/`QuadtreeSpatialIndex`/`UniformGrid`** (#48) | `PhysicsSystem`'s broad phase is the first real consumer of `world.spatialIndex.queryBox` as intended by #48's own follow-up note (`docs/issue-48-spatial-index-rework-plan.md:665`). | **In scope now: none required** to these files themselves. **Outstanding, unrelated to #49:** `Actor.nearby`, `DirectionalProjectile`, `HomingProjectile` remain hardcoded to `Quadtree` (not `SpatialIndex`) — already a named #48 follow-up, not fixed here, repeated for completeness of this ledger. |
 | **`TiledMap`/`TerrainLayer`/`StaticGeometry`/`Space`** (#46) | `PhysicsSystem` reads `world.space`, casts to `TiledMap` for `staticGeometry`/`terrain`. | **In scope now: none.** `TiledMap`'s own KDoc already names this issue as the intended consumer (`TiledMap.kt:29-31`) — this design fulfils that promise without changing `TiledMap`/`TerrainLayer`/`StaticGeometry`/`Space` at all. |
 | **`SimulationLoop`/`LoopSettings`** | Natural place to call `worldSystems.step()` from `onTick`. | **In scope now: none.** No `dt` is threaded through (§4.8); `SimulationLoop` needs no change. |
