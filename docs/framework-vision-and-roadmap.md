@@ -63,6 +63,9 @@ gametools-combat       Alive, projectiles, damage types + resistances, crit, thr
 gametools-ai           NavProvider (grid A* + flow fields), path following, aggro / target
                        selection helpers built on the threat table + vision, and a
                        wandering `Creep` archetype.
+gametools-protocol     Client-safe wire layer with no server dependencies: the shared protocol /
+                       DTO types and codecs both ends compile against, plus GameClient - the
+                       client half of the protocol (#132; Open Decision A, resolved 2026-10-08).
 gametools-net          Authoritative server, SnapshotCodec (JSON + binary), stable-ID delta
                        protocol, per-player vision/zone/distance interest filtering,
                        action-map input decoding, tick + input sequence numbers, GameServer.
@@ -79,8 +82,9 @@ gametools              Umbrella — re-exports every module above for consumers 
 
 Dependency direction: `core` depends on nothing internal; `world`, `session` depend on
 `core`; `combat` depends on `core` + `world`; `ai` depends on `world` + `combat`;
-`abilities`/`items` depend on `combat`; `net` depends on `world` + `combat` + `session`
-(+ the protocol types — see Open Decision A); `persistence` depends on `core` + `world` +
+`abilities`/`items` depend on `combat`; `net` depends on `world` + `combat` + `session` +
+`protocol`; `protocol` depends on no server-side module, so a client project can depend on it
+alone (Open Decision A); `persistence` depends on `core` + `world` +
 `session`. No cycles.
 
 ### 2.2 Cross-cutting principles
@@ -168,6 +172,16 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
 > [#10](https://github.com/SpartanLaboratories/WebTools/issues/10) (liveness timeout +
 > disconnect event) and [#11](https://github.com/SpartanLaboratories/WebTools/issues/11)
 > (handshake reject + credential). Phase 3 planning starts only once those are released.
+
+> **Client-half prerequisite — `GameClient` (#132, decided 2026-10-08).** Scope decision #1
+> now puts client networking in scope. A minimal `GameClient` v1, in the new
+> `gametools-protocol` module (Open Decision A), ships in the same Major release as the
+> webtools-udp 2.0.0 adoption (#124) and ahead of this phase. It covers the handshake and
+> keepalive through webtools-udp 2.0, decoding `STATE`, typed `ClientCommand` sending, and
+> `start()`/`stop()` returning `Result`. From then on, every protocol item in this phase (the
+> codec, deltas, `INPUT`, session resume tokens, and the client event feed) updates
+> `GameClient` in the same PR as its server half, so the client project never mirrors a
+> protocol change by hand.
 
 
 1. **`SnapshotCodec` seam.** JSON impl (current behavior, kept for debug/handshake) +
@@ -262,7 +276,7 @@ until there is a large open-terrain zone that actually needs it.
 
 | ID | Decision | Notes |
 |----|----------|-------|
-| A | **Where do the shared protocol / DTO types live?** A tiny client-safe `gametools-protocol` module with no server dependencies, or inside `gametools-net`? | The separate client project must depend on whatever holds them. A `gametools-protocol` module keeps the client off the server tree. Leaning toward the separate module. |
+| A | **Where do the shared protocol / DTO types live?** A tiny client-safe `gametools-protocol` module with no server dependencies, or inside `gametools-net`? | The separate client project must depend on whatever holds them. A `gametools-protocol` module keeps the client off the server tree. **Resolved 2026-10-08: a separate `gametools-protocol` module**, which also hosts `GameClient` (#132). |
 | B | **Does `Alive` move to `gametools-combat`?** | Clean layering says yes; it is a breaking import change for existing consumers. Batched into the Phase 2 Major release either way. |
 | C | **Discrete vs continuous collision.** | At 10–20 Hz a fast projectile can tunnel through a thin wall. `DirectionalProjectile` already sweeps along a line; a swept-shape check for fast movers may be enough without full continuous physics. |
 | D | **Binary codec: hand-rolled or a library?** | `kotlinx-serialization-protobuf`, FlatBuffers, or bespoke. Affects the dependency surface and the client project. |
