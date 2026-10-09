@@ -18,8 +18,8 @@
 > header's "a plain method a consumer calls", §3.4's KDoc ("call [refresh] once per frame"), and
 > §3.5's `SimulationLoop`/hand-rolled-loop wiring — describes #47 as merged: a public
 > `refresh(world)` that a consumer called once per frame, never in a release, so removing it is not
-> a breaking change. Plan: `docs/zone-world-system-plan.md`; architecture:
-> `docs/world-system-binding-architecture.md`.
+> a breaking change. Plan: `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`; architecture:
+> `docs/plans/87-world-systems/77-zone-world-system/architecture.md`.
 >
 > **Added 2026-10-02 (#77).** `zoneOf` now returns `Result<Zone>` — `Result.success(zone)` for a
 > placed entity, otherwise `Result.failure(UnzonedEntityException(entityId))`, a new, stackless
@@ -31,14 +31,14 @@
 > `UnzonedPointException` — a stackless `IndexOutOfBoundsException` carrying a copy of the point —
 > instead of a stack-traced `IndexOutOfBoundsException`, so §3.3's `ZoneGrid` sketch (its `@return`)
 > and its resolution bullet, §3.6's rejected alternative and §6's Level 2 `ZoneGridTest` bullet
-> describe #47 as merged (binding architecture C30; plan `docs/tiled-map-result-lookups-plan.md`).
+> describe #47 as merged (binding architecture C30; plan `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`).
 
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#47](https://github.com/SpartanLabsGaming/MyGameTools/issues/47)
   — *"Phase 1: zones / chunks — map partition + entity↔zone index"* (`type: feature`,
   `area: world`; item 2 of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1; item 2 of
-  the `5.2.0` series in `docs/phase-1-map-and-space-plan.md` §8).
+  the `5.2.0` series in `docs/plans/86-phase-1-map-and-space/plan.md` §8).
 - **Branch:** `feature/47-zones`, cut from current `master` (`e9e7501`).
 - **Commit:** TBD
 - **PR:** TBD — this plan document is to be committed together with the first commit of its
@@ -58,9 +58,9 @@
   `5.1.0` in `coordinates(...)`; the bump happens at `release/5.2.0` time. Issues #49 (physics)
   and #50 (vision) are the other two open Phase 1 items, both unstarted, no PRs open. Target
   release: `5.2.0`.
-- **Related docs:** `docs/framework-vision-and-roadmap.md` (§3 Phase 1); `docs/phase-1-map-and-space-plan.md`
+- **Related docs:** `docs/framework-vision-and-roadmap.md` (§3 Phase 1); `docs/plans/86-phase-1-map-and-space/plan.md`
   (§2.3 zones design sketch, §9 Open Decision 11 — uniform grid v1; several of its
-  "current-state facts" in §1.3 are now stale, see §1.2 below); `docs/module-split-plan.md`.
+  "current-state facts" in §1.3 are now stale, see §1.2 below); `docs/plans/32-module-split/plan.md`.
 
 ---
 
@@ -122,7 +122,7 @@ hand-off, irregular (non-grid) zones — all later phases.
 - **No `Zone`, `ZoneGrid`, `ZoneIndex`, or `WorldSystems` exists anywhere** (grep across
   `gametools-core`, `gametools-net`, `gametools-world` confirms — no `zone`/`chunk`/`region`/
   `AOI` concept beyond source-organization `//region` fold markers and the one forward-reference
-  already in `GameEvent`'s KDoc). `docs/phase-1-map-and-space-plan.md` §9 Open Decision 3 ("how
+  already in `GameEvent`'s KDoc). `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 3 ("how
   do per-frame world systems run — `WorldSystems.step()`, a `SimulationLoop.onTick` hook, or an
   opt-in `World.systems` list") is genuinely unresolved project-wide; the issue text's own
   *"Refreshed from `WorldSystems.step()` (see the physics/vision items — plan Open Decision 3)"*
@@ -161,7 +161,7 @@ hand-off, irregular (non-grid) zones — all later phases.
    package, each with full KDoc per the Component-Ring standard.
 2. `ZoneGrid` partitions a `Space`'s bounds into a static, uniform `columns × rows` grid of
    named, non-overlapping `Zone`s covering the full extent (roadmap's own lean: uniform grid
-   only in Phase 1, per `docs/phase-1-map-and-space-plan.md` §9 Open Decision 11).
+   only in Phase 1, per `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 11).
 3. `ZoneIndex.refresh(world)` recomputes `EntityId → Zone` and `Zone → Set<EntityId>` against
    the entity positions in `world.gameObjects`; `zoneOf`/`entitiesIn` answer correctly.
 4. A zone transition — entering, leaving the grid, crossing between zones, or the owning entity
@@ -188,7 +188,7 @@ server-architecture pattern, not something to design from first principles:
   Games, ["Interest management for multiplayer online
   games"](https://www.dynetisgames.com/2017/04/05/interest-management-mog/index.html). This
   directly supports the roadmap's own lean (uniform grid v1, irregular deferred,
-  `docs/phase-1-map-and-space-plan.md` §9 Open Decision 11) rather than reopening it.
+  `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 11) rather than reopening it.
 - **Track each entity's current cell/zone id and update it incrementally as it moves,
   publishing transitions rather than requiring pollers.** The same source describes this shape
   server-side almost exactly ("game objects store at all time the ID of the AOI they are
@@ -268,7 +268,7 @@ have been safe to key a hash-based collection on (§3.4).
  * A static, uniform `columns × rows` partition of a [Space]'s [Space.bounds] into named
  * rectangular [Zone]s, covering the space's full extent with no gaps or overlaps. Phase 1 ships
  * this uniform-grid partition only; irregular zones are a later addition behind [zoneAt]'s
- * existing contract (`docs/phase-1-map-and-space-plan.md` Open Decision 11).
+ * existing contract (`docs/plans/86-phase-1-map-and-space/plan.md` Open Decision 11).
  *
  * @param space the playfield to partition; only [Space.bounds] is read at construction time -
  *   the grid does not track subsequent changes to [space] (see the class's risk note)
@@ -449,7 +449,7 @@ Key design points:
 ### 3.5 How `refresh` gets called each frame — no `WorldSystems` built here
 
 The issue's own sketch says zones are *"Refreshed from `WorldSystems.step()`,"* but no such
-aggregator exists on `master` (§1.2), and `docs/phase-1-map-and-space-plan.md` §9 Open Decision
+aggregator exists on `master` (§1.2), and `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision
 3 ("how per-frame world systems run") is still genuinely unresolved project-wide. Resolving it
 well needs to account for physics (#49) and vision (#50) too, both of which have real
 *inter-system ordering* requirements (zone index → physics → vision, per the roadmap's own lean)
@@ -723,7 +723,7 @@ decisions:
 
 | ID | Item | Recommendation |
 |----|------|-----------------|
-| 1 | **`docs/phase-1-map-and-space-plan.md` §9 Open Decision 3** ("how per-frame world systems run") stays open project-wide after this issue. This plan narrows it only for #47's own scope (§3.5) — a plain `refresh(world)` method — without resolving it for #49/#50. | No action needed to land #47. Flagged so #49 (physics) is understood as the issue that actually has to settle this, since physics has real inter-system ordering requirements zones alone don't exercise. |
+| 1 | **`docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 3** ("how per-frame world systems run") stays open project-wide after this issue. This plan narrows it only for #47's own scope (§3.5) — a plain `refresh(world)` method — without resolving it for #49/#50. | No action needed to land #47. Flagged so #49 (physics) is understood as the issue that actually has to settle this, since physics has real inter-system ordering requirements zones alone don't exercise. |
 | 2 | **Whether to reuse `world.map`'s `fixture-map.json`** for the e2e test (§6) or add a second, zone-shaped fixture (e.g. one whose dimensions aren't evenly divisible by a reasonable `columns × rows`, to exercise the non-uniform-cell edge case in a realistic map context rather than only in the unit-level `ZoneGridTest`). | Lean: reuse `fixture-map.json` for `ZoneDrivenSimulationE2ETest` (keeps the e2e test aligned with `world.map`'s existing pattern); cover the non-evenly-divisible case at the component level in `ZoneGridTest` instead, which does not need a full map fixture. Low-stakes either way — flagging only because it is a testing-fixture choice the executor might otherwise make silently. |
 
 ---

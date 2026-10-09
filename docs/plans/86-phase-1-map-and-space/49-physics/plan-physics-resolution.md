@@ -1,7 +1,7 @@
 # Plan: `physics-resolution` — the `CollisionResolver` seam and its default `PositionalCorrectionResolver`
 
 > **Partly superseded — 2026-10-01, issue #77's design
-> (`docs/world-system-binding-architecture.md`).** `PhysicsSystem` (unit 5) is itself the physics
+> (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).** `PhysicsSystem` (unit 5) is itself the physics
 > `WorldSystem`: it extends the new `AbstractWorldSystem`, claims `CoreWorldSystemSlot.PHYSICS`,
 > declares `uniqueRole = PhysicsSystem::class`, and its `step()` takes no `World`; there is no
 > `PhysicsWorldSystem` adapter (#80 is resolved by #49). `ZoneIndex(grid)` is itself the zone
@@ -14,7 +14,7 @@
   — *"Phase 1: physics — motion integration + collision resolution (push-out / slide)"* (item 4
   of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1). This plan covers **unit 4 of 6**
   only.
-- **Architecture:** `docs/issue-49-physics-architecture.md`, unit slug `physics-resolution`
+- **Architecture:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, unit slug `physics-resolution`
   (§10 decomposition table, row 4; design in §4.5, hazard table entry §4.7 row 5, stability in
   §8, dependency/landing order in §10, algorithm requirements handed down from the caller's
   task brief and cited throughout this plan).
@@ -38,8 +38,8 @@
   (`physics-narrow-phase`) — see §3.5 for why that is load-bearing for this unit's design, not
   incidental. Lands fourth in the stated sequence; units 5 (`physics-system`) and 6
   (`world-systems`) depend on it.
-- **Related docs:** `docs/issue-49-physics-architecture.md` (§4.1, §4.5, §4.7 row 5, §8, §9, §10,
-  §12 Open Decision 4); `docs/physics-core-seams-plan.md` (unit 1, already written — this plan
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (§4.1, §4.5, §4.7 row 5, §8, §9, §10,
+  §12 Open Decision 4); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (unit 1, already written — this plan
   imports its `SupportedExtension` without redeclaring or relocating it); `docs/api-openness-
   decisions-6.0.0.md` D1 (the other planned consumer of the same annotation).
 
@@ -61,7 +61,7 @@ unit's default implementation must be written to be read as the tier's worked ex
 
 - `com.spartanlabs.gaming.annotation.SupportedExtension` — **assumed landed by unit 1**,
   parameterless, `@MustBeDocumented @Retention(BINARY) @Target(CLASS, FUNCTION, PROPERTY,
-  CONSTRUCTOR, TYPEALIAS)`, in `gametools-core` (`docs/physics-core-seams-plan.md` §2.2, §3.1).
+  CONSTRUCTOR, TYPEALIAS)`, in `gametools-core` (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2, §3.1).
   This plan imports it verbatim; it does not redeclare or relocate it, per the caller's binding
   instruction.
 - `com.spartanlabs.gaming.world.physics.{Shape, PhysicsBody, Contact}` — **assumed landed by
@@ -627,7 +627,7 @@ it.
   own `CollisionResolver` has a complete worked reference to read, not just a class to copy.
 - **Boundary Ring (protocol/integration):** not touched - no wire format, no `ClientCommand`, no
   cross-service concern in this unit.
-- **Architectural Outer Layer:** `docs/issue-49-physics-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` already documents this
   unit's design; no update owed to it by this unit specifically. The one cross-cutting
   architectural note this unit surfaces - the internal defensive sort going beyond §4.5's literal
   text (§2.2) - is reported to the caller in this plan's handback, not silently absorbed into the
@@ -663,7 +663,7 @@ Package: `com.spartanlabs.gaming.testing.component.world.physics`.
 - **`CollisionResolverContractTest.kt`** - one test class.
   - `CollisionResolver carries @SupportedExtension` - reflection check,
     `CollisionResolver::class.java.isAnnotationPresent(SupportedExtension::class.java)`, mirroring
-    unit 1's own `SupportedExtensionTest` pattern (`docs/physics-core-seams-plan.md` §5).
+    unit 1's own `SupportedExtensionTest` pattern (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §5).
   - `a minimal custom CollisionResolver compiles and is substitutable` - a tiny test-local
     `object NoOpResolver : CollisionResolver { override fun resolve(contacts: List<Contact>) {} }`,
     referenced once so it is not flagged as dead code. This is a deliberately small "does the
@@ -848,15 +848,15 @@ this one.
   the CHANGELOG entry below - nothing from that refactor. If that refactor is meant to land, it
   does so as its own, separately planned commit(s) on its own branch.
 - **Target release `5.3.0`; `5.2.0` has not been cut yet.** All four published coordinates still
-  read `5.1.0` (verified, matching `docs/physics-core-seams-plan.md`'s own citation); #42/#46/
+  read `5.1.0` (verified, matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`'s own citation); #42/#46/
   #47/#48/#63/#68/#69 and this issue's earlier-landed units all sit under `CHANGELOG.md`'s
   `[Unreleased]` heading. This unit's commits land there too, exactly like every other in-flight
-  unit today - `5.2.0` must be released before `5.3.0` per `docs/phase-1-map-and-space-plan.md`'s
+  unit today - `5.2.0` must be released before `5.3.0` per `docs/plans/86-phase-1-map-and-space/plan.md`'s
   own sequencing note (restated in the architecture header). This plan does not bump any version
   number or cut a release.
 - **Commit sequence** (each a coherent, independently-reviewable unit):
   1. `feat(world): add CollisionResolver seam with PositionalCorrectionResolver default` - adds
-     `docs/physics-resolution-plan.md` (this document),
+     `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-resolution.md` (this document),
      `gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/physics/CollisionResolver.kt`,
      `gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/physics/
      PositionalCorrectionResolver.kt`, and every test in §5 (levels 2, 4a, 4c). Interface and

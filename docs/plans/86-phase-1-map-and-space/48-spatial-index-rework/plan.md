@@ -29,10 +29,10 @@
   the `Quadtree.kt` fix and its accompanying test update.)
 - **Baseline:** GameTools `master` at `d096847` (PR #61 merged; three modules published today
   — `gametools-core`, `gametools-net`, `gametools`; `gametools-world` bootstrapped empty).
-  Target release: `5.2.0` per `docs/phase-1-map-and-space-plan.md` §7.
-- **Related docs:** `docs/phase-1-map-and-space-plan.md` (§1.3 current-state facts, §2.1 the
+  Target release: `5.2.0` per `docs/plans/86-phase-1-map-and-space/plan.md` §7.
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/plan.md` (§1.3 current-state facts, §2.1 the
   `core` ports, §2.4 spatial-index rework design, §3 file list, §4 test plan, §5 risks, §9
-  Open Decision 2); `docs/module-split-plan.md` (why `Quadtree` stays in `core`).
+  Open Decision 2); `docs/plans/32-module-split/plan.md` (why `Quadtree` stays in `core`).
 
 ---
 
@@ -145,7 +145,7 @@ pass today and needed no fix.
   (`healthBar.location.setTo(...)`). The same `Point` instance lives for the object's whole
   life; it is never reassigned. This matters directly for `lastIndexedLocation` (§2.3).
 
-### 1.3 Acceptance criteria (from `docs/phase-1-map-and-space-plan.md` §1.4, items 4–5)
+### 1.3 Acceptance criteria (from `docs/plans/86-phase-1-map-and-space/plan.md` §1.4, items 4–5)
 
 1. `World.spatialIndex` is pluggable and incrementally maintained; a `nonfunctional` test shows
    the reconcile step doing materially less work than a full rebuild for a mostly-static field.
@@ -186,7 +186,7 @@ against the query shape, not just "which cell is it in".
 - **Box-edge convention:** `UniformGrid` documents and implements the **same half-open box**
   `Quadtree` already uses — `minX < x <= maxX && minY < y <= maxY` — rather than an inclusive
   box. `SpatialIndex`'s own KDoc leaves this unspecified, so nothing forces this choice, but it
-  is the right one here: `docs/phase-1-map-and-space-plan.md` §4 requires a `WorldSpatialIndexTest`
+  is the right one here: `docs/plans/86-phase-1-map-and-space/plan.md` §4 requires a `WorldSpatialIndexTest`
   where swapping in `UniformGrid` produces results identical to `QuadtreeSpatialIndex` for the
   same input — matching `Quadtree`'s existing, released (`5.1.0`) box semantics exactly is what
   makes that an exact-equality test instead of one that has to dodge edge coordinates.
@@ -233,7 +233,7 @@ adopts `Quadtree`'s existing half-open box convention and both use a true Euclid
 radius queries, `queryBox`/`queryRadius` return **exactly the same set** for the same inputs
 regardless of which `SpatialIndex` backs a `World` — not just "close enough away from edges".
 That is what lets `WorldSpatialIndexTest` (§4) assert exact equality, and it directly
-mitigates `docs/phase-1-map-and-space-plan.md` §5's risk: *"Incremental spatial index diverges
+mitigates `docs/plans/86-phase-1-map-and-space/plan.md` §5's risk: *"Incremental spatial index diverges
 from the full-rebuild semantics `5.1.0` callers rely on."*
 
 ### 2.3 `VisibleObject.lastIndexedLocation` — why it cannot just store a `Point`
@@ -598,7 +598,7 @@ this issue.
     right after construction (plus one `reindexSpatial()` call, per the new field's own KDoc),
     asserting **identical** `queryBox` results to an equivalent `QuadtreeSpatialIndex`-backed
     `World` driven through the same scripted moves — the parity test
-    `docs/phase-1-map-and-space-plan.md` §4 calls for.
+    `docs/plans/86-phase-1-map-and-space/plan.md` §4 calls for.
   - removing a `VisibleObject` mid-tick (via `removeList`, after it moved during its own
     `onUpdate`) leaves no trace of it at either its old or its new position — this is what
     exercises the `lastIndexedLocation`-at-removal-time logic in §2.4's `removeList` drain.
@@ -629,7 +629,7 @@ level for this change.
   (they share query semantics per §2.2, so one oracle applies to both): insert N random points,
   then for many random boxes and many random circles assert `queryBox`/`queryRadius` return
   exactly the set a linear scan of the same points would (using the half-open box rule and true
-  Euclidean circle as the oracle's own rule) — this is `docs/phase-1-map-and-space-plan.md`
+  Euclidean circle as the oracle's own rule) — this is `docs/plans/86-phase-1-map-and-space/plan.md`
   §4's `SpatialIndexQueryLawsTest`. A second scenario drives a sequence of seeded random
   `move`s (simulating ticks) and re-asserts the law after each one, to catch any
   incremental-update bug a static insert-only scenario would miss — **this is, concretely, the
@@ -644,7 +644,7 @@ level for this change.
   new `reconcileSpatialIndex()` complete materially faster than N calls to `reindexSpatial()`
   (the old full-rebuild behaviour, kept available specifically so this comparison has a
   same-process baseline) — the acceptance-criterion-4 evidence
-  `docs/phase-1-map-and-space-plan.md` calls for.
+  `docs/plans/86-phase-1-map-and-space/plan.md` calls for.
 
 ### What can't be automated
 
@@ -662,10 +662,10 @@ beyond what the existing wall-clock-comparison pattern already accepts as this r
 | Dropping dead-slot reuse means a removed node's slot is never reclaimed — a long-running `World` whose objects move via `spatialIndex.move()` accumulates permanent dead nodes, growing `Quadtree`'s node count (and potentially depth) over the `World`'s lifetime | Documented as a known trade-off in `Quadtree`'s KDoc (§2.5); `World.reindexSpatial()` (already planned, §2.4) is the existing compaction escape hatch — a `clear()` + full re-`insert()` from current positions. No automatic periodic compaction added in this issue (Open Decision, §9); revisit if a `SpatialIndexScalabilityTest`-style long-run measurement later shows it matters in practice. |
 | `UniformGrid` / `QuadtreeSpatialIndex` disagreeing on box-edge inclusivity, making the `UniformGrid`-vs-`Quadtree` parity test flaky or edge-dependent | Both implement the identical half-open convention `Quadtree` already ships (§2.2) — parity is exact, not just "away from edges". |
 | `Quadtree.retrieveBox` cannot recover an element's position, blocking an accurate `queryRadius` on `QuadtreeSpatialIndex` | An internal `IdentityHashMap` position cache inside `QuadtreeSpatialIndex` only (no `Quadtree` change), updated on every `insert`/`move`/`remove`/`clear`. |
-| `Actor.nearby`, `DirectionalProjectile`, `HomingProjectile` all hard-code `Quadtree<Double, VisibleObject>` (§1.2), not `SpatialIndex` — a consumer that switches `World.spatialIndex` to `UniformGrid` gets **no** speed-up for code going through these three, only through the deprecated `quadtree`'s `O(n)`-per-access fallback | Explicitly out of scope for this issue (not listed in `docs/phase-1-map-and-space-plan.md` §3's file list either); documented in `World.quadtree`'s own KDoc and called out again here. §7 recommends a follow-up issue to add `SpatialIndex`-typed overloads (additive, non-breaking) once the Phase 1 physics/vision systems (#49/#50) need real broad-phase queries against a pluggable index anyway. |
+| `Actor.nearby`, `DirectionalProjectile`, `HomingProjectile` all hard-code `Quadtree<Double, VisibleObject>` (§1.2), not `SpatialIndex` — a consumer that switches `World.spatialIndex` to `UniformGrid` gets **no** speed-up for code going through these three, only through the deprecated `quadtree`'s `O(n)`-per-access fallback | Explicitly out of scope for this issue (not listed in `docs/plans/86-phase-1-map-and-space/plan.md` §3's file list either); documented in `World.quadtree`'s own KDoc and called out again here. §7 recommends a follow-up issue to add `SpatialIndex`-typed overloads (additive, non-breaking) once the Phase 1 physics/vision systems (#49/#50) need real broad-phase queries against a pluggable index anyway. |
 | Default-index regression — any change to `QuadtreeSpatialIndex`'s delegation accidentally alters `5.1.0` query results | `queryBox` delegates to `tree.retrieveBox` verbatim, no reimplementation; every existing `Quadtree`-level test (`QuadtreeTest`, `QuadtreeScalabilityTest`) stays unmodified and green; `WorldSpatialIndexTest` locks in that `World`'s default `quadtree` accessor is the same live instance. |
 | Deprecation-warning noise failing a warnings-as-errors build | Checked: no `allWarningsAsErrors`/`-Werror` in any `build.gradle.kts` or the convention plugins — deprecation is a warning only. `@Suppress("DEPRECATION")` added at the two existing test call sites anyway, for a clean build log. |
-| `UniformGrid` sized with an inappropriately small `cellSize` relative to query radii/box sizes causing many empty-cell iterations | Documented as the caller's sizing responsibility in `UniformGrid`'s KDoc (mirrors `docs/phase-1-map-and-space-plan.md`'s own framing: "sized for the medium target"); no default `cellSize` is offered, forcing a deliberate choice. |
+| `UniformGrid` sized with an inappropriately small `cellSize` relative to query radii/box sizes causing many empty-cell iterations | Documented as the caller's sizing responsibility in `UniformGrid`'s KDoc (mirrors `docs/plans/86-phase-1-map-and-space/plan.md`'s own framing: "sized for the medium target"); no default `cellSize` is offered, forcing a deliberate choice. |
 | Cross-repo impact | None. No wire format, no `GameServer`/`ClientCommand` change. `MyGameServer` (consumer) is unaffected unless it opts into the new surface (no issue filed there, per standing "no downstream consumer issues" guidance). |
 
 ---
@@ -695,7 +695,7 @@ beyond what the existing wall-clock-comparison pattern already accepts as this r
   issue adds no module.
 - `docs/framework-vision-and-roadmap.md` — no change needed yet; Phase 1 item 3 isn't marked
   done until the whole issue (this PR) merges, which is a release-PR-time edit per
-  `docs/phase-1-map-and-space-plan.md` §8, not this feature PR's job.
+  `docs/plans/86-phase-1-map-and-space/plan.md` §8, not this feature PR's job.
 
 ---
 
@@ -729,7 +729,7 @@ beyond what the existing wall-clock-comparison pattern already accepts as this r
   still behave as today, still only work against a literal `Quadtree` (§5's documented
   limitation, not a regression).
 
-⇒ This lands as part of the `5.2.0` Feature release per `docs/phase-1-map-and-space-plan.md`
+⇒ This lands as part of the `5.2.0` Feature release per `docs/plans/86-phase-1-map-and-space/plan.md`
 §7 — no Major-version bump required for this slice.
 
 ---
@@ -816,7 +816,7 @@ re-implementation without waiting on this section.
   equivalent of `reindexSpatial()`) to bound the dead-node growth §2.5 accepts as a trade-off,
   or is documenting `reindexSpatial()` as a manual escape hatch enough for this issue?**
   Recommendation: **document only, do not add auto-compaction here.** Nothing in issue #48 or
-  `docs/phase-1-map-and-space-plan.md`'s acceptance criteria asks for bounded memory under
+  `docs/plans/86-phase-1-map-and-space/plan.md`'s acceptance criteria asks for bounded memory under
   sustained movement, `reindexSpatial()` already gives a caller who needs it a one-line fix,
   and auto-compaction raises its own design questions (compact on a node-count threshold? a
   tick-count cadence? does a caller providing a custom `SpatialIndex` want this at all?) that
@@ -825,7 +825,7 @@ re-implementation without waiting on this section.
   if it does.
 
 Everything else in this plan either follows directly from what's already merged (the
-`SpatialIndex<E>` interface, `docs/phase-1-map-and-space-plan.md`'s Open Decision 2 lean of
+`SpatialIndex<E>` interface, `docs/plans/86-phase-1-map-and-space/plan.md`'s Open Decision 2 lean of
 keeping `QuadtreeSpatialIndex` as `World`'s default in `5.2.0`) or is an implementation detail
 with a single defensible answer given the existing code's constraints (the `Point`-aliasing
 hazard in §2.3, `Quadtree`'s lack of position recovery forcing the `IdentityHashMap` in §2.1,
@@ -840,7 +840,7 @@ decision.
 
 ## 10. Sequencing & follow-ups
 
-1. Land this issue's PR into `master` as part of the `5.2.0` series (`docs/phase-1-map-and-space-plan.md`
+1. Land this issue's PR into `master` as part of the `5.2.0` series (`docs/plans/86-phase-1-map-and-space/plan.md`
    §8 lists it as the second `feature/48-*` branch, after the already-merged bootstrap PR #61).
 2. Recommend a follow-up issue (against `SpartanLabsGaming/MyGameTools`, filed only on
    confirmation per the global "surface issues" guidance) to add `SpatialIndex<VisibleObject>`-typed
@@ -850,7 +850,7 @@ decision.
    both are building `SpatialIndex`-consuming systems anyway.
 3. `docs/framework-vision-and-roadmap.md` §3 Phase 1 item 3 gets marked done at `5.2.0`
    release time, alongside items 1–2 (#46, #47) if they've landed by then — a release-PR edit,
-   not part of this feature PR (`docs/phase-1-map-and-space-plan.md` §8).
+   not part of this feature PR (`docs/plans/86-phase-1-map-and-space/plan.md` §8).
 4. Items 4–5 (physics, vision — #49, #50) are the next Phase 1 work and are the actual
    consumers of `spatialIndex.queryBox`/`queryRadius` as a genuine broad phase; nothing here
    blocks them starting once `SpatialIndex`, `UniformGrid`, and `QuadtreeSpatialIndex` exist.

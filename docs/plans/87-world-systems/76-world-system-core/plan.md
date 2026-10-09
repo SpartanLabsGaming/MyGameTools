@@ -1,9 +1,9 @@
 # Plan: `world-system-core` — `WorldSystem` core mechanism (opt-in per-`World` system registry)
 
 > **Reworked in part — 2026-10-01, by issue #77's design.** The `WorldSystem` core this plan
-> describes (landed as PR #130) is reworked in #77's PR. `docs/world-system-binding-plan.md` plans
-> the rework and `docs/world-system-binding-architecture.md` designs it (its §1.2 C1–C39 are the
-> binding decisions); the revision callout atop `docs/world-system-core-architecture.md` lists the
+> describes (landed as PR #130) is reworked in #77's PR. `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` plans
+> the rework and `docs/plans/87-world-systems/77-zone-world-system/architecture.md` designs it (its §1.2 C1–C39 are the
+> binding decisions); the revision callout atop `docs/plans/87-world-systems/76-world-system-core/architecture.md` lists the
 > superseded parts of the architecture note this plan implements. Superseded in this plan:
 >
 > 1. **Hooks** (§3.1, §3.2, §4.3, §4.5, §4.7, §4.9, §6, §9). `installOn(world)`,
@@ -34,13 +34,13 @@
   — *"World Systems Stage 1: `WorldSystem` core mechanism (opt-in per-`World` system registry)"*.
   The issue body's own "annotation types are out of scope" line is superseded by C1 (both
   architecture documents below); see Follow-ups F3.
-- **Architecture:** `docs/world-system-core-architecture.md` (unit slug `world-system-core`,
+- **Architecture:** `docs/plans/87-world-systems/76-world-system-core/architecture.md` (unit slug `world-system-core`,
   the systems-level design this plan makes concrete — §4 internal state model, §6 marker matrix,
   §7 R1–R9 refinements/deviations, §9 decomposition), subordinate to
-  `docs/world-systems-implementation-architecture.md` (the grand design; §1.2 C1/C4/C5, §10
+  `docs/plans/87-world-systems/architecture.md` (the grand design; §1.2 C1/C4/C5, §10
   decomposition row 1, Cross-plan alignment). Where the two disagree on the registry's internal
   shape (they do, on tier-1 storage — see "Deviations" below), the newer, more specific
-  `world-system-core-architecture.md` governs; that document is itself the source of truth cited
+  `docs/plans/87-world-systems/76-world-system-core/architecture.md` governs; that document is itself the source of truth cited
   throughout this plan.
 - **Supersedes:** this plan replaces the older draft at this same path in place — re-planned from
   scratch at the user's request against the newer architecture note, not layered on top of the
@@ -117,8 +117,8 @@ diff to `World.kt`).
 
 ## 2. Deviations from the grand design
 
-`docs/world-system-core-architecture.md` §7 records nine refinements/deviations (R1–R9) against
-`docs/world-systems-implementation-architecture.md`'s own literal text; this plan implements all
+`docs/plans/87-world-systems/76-world-system-core/architecture.md` §7 records nine refinements/deviations (R1–R9) against
+`docs/plans/87-world-systems/architecture.md`'s own literal text; this plan implements all
 nine. The two worth calling out explicitly:
 
 - **R2 — the one literal contradiction.** The grand design states `stepSystems()` "rejects
@@ -187,7 +187,7 @@ classDiagram
 
 The full sequence diagrams (normal install, re-entrant self-install rejection, legitimate
 re-entrant helper install, uninstall, and one step pass with a mid-pass uninstall) are already
-drawn precisely in `docs/world-system-core-architecture.md` §4.2–§4.4 and are not redrawn here;
+drawn precisely in `docs/plans/87-world-systems/76-world-system-core/architecture.md` §4.2–§4.4 and are not redrawn here;
 this plan implements them literally. The single diagram below is the composite happy path, for
 orientation:
 
@@ -215,7 +215,7 @@ sequenceDiagram
     World->>Sys: uninstallFrom(world)
 ```
 
-### 3.3 Internal state model (per `docs/world-system-core-architecture.md` §4.1)
+### 3.3 Internal state model (per `docs/plans/87-world-systems/76-world-system-core/architecture.md` §4.1)
 
 Everything below lives as private state inside `World`, in the new region. Exact declarations,
 not an illustrative sketch — the implementer follows this literally:
@@ -326,7 +326,7 @@ annotation class ExperimentalGameToolsApi
 
 ### 4.2 New: `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/SupportedExtension.kt`
 
-Reused verbatim from `docs/physics-core-seams-plan.md` §2.2/§3.1 (its `@SupportedExtension` half
+Reused verbatim from `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2/§3.1 (its `@SupportedExtension` half
 is explicitly superseded onto this unit — see that document's own top-of-file callout), with one
 correction: its KDoc's mention of the Experimental tier is now a link to the sibling marker that
 did not exist when that plan was drafted, and "a minor release" is corrected to "a Feature
@@ -809,7 +809,7 @@ tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compile
 }
 ```
 
-Identical shape to #77's own `gametools-world` copy (`docs/zone-world-system-plan.md` §3.4);
+Identical shape to #77's own `gametools-world` copy (`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` §3.4);
 #79 removes both. No main-source-set opt-in, ever.
 
 ### 4.7 Changed: `README.md`
@@ -944,7 +944,7 @@ matching the file's existing register (backticked type — dash — prose — `(
   (#76)
 ```
 
-Note: the annotation bullet is credited `(#76)`, not `(#49)`. `docs/physics-core-seams-plan.md`
+Note: the annotation bullet is credited `(#76)`, not `(#49)`. `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`
 §3.6's own draft bullet cited `(#49)` and named `CollisionResolver` as the reason
 `SupportedExtension` exists; that half of that plan is superseded onto this unit, and the
 annotation has no user until #79 applies it to `WorldSystem`.
@@ -967,7 +967,7 @@ annotation has no user until #79 applies it to `WorldSystem`.
   #71 moves into `gameobjects.combat`.
 - **Boundary Ring (protocol/integration):** not touched — no wire format, no cross-service
   concern.
-- **Architectural Outer Layer:** `docs/world-system-core-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/87-world-systems/76-world-system-core/architecture.md` already documents this
   unit's design; no update owed to it by this plan. `docs/world-systems-implementation-
   architecture.md`'s own Cross-plan alignment section needs a one-line pointer to the newer
   architecture note once this docs-only PR lands — named as Follow-up F4 (§11), not this plan's to
@@ -981,7 +981,7 @@ imports may reference `Alive`, `Buff`, `Capability`, `CoreCapability`, `Combined
 `ModularStat`, or `StatMod` — all of which `#71` (`dcb396e`) moves into `gameobjects.combat`, and
 whose real package differs depending on merge order relative to #71. None of this unit's KDoc
 names `Capability`/`CoreCapability` at all (the precedent is recorded in the architecture note
-instead), so the constraint in `docs/world-system-core-architecture.md` §5 is met trivially. Test fixtures use
+instead), so the constraint in `docs/plans/87-world-systems/76-world-system-core/architecture.md` §5 is met trivially. Test fixtures use
 `Actor`/`VisibleObject`/`GameObject` (not moved by #71) or no game object at all, matching the
 existing `WorldLifecycleEventsTest`/`WorldTest` precedent (`Actor(location = Point(x, 0.0))`).
 
@@ -1041,7 +1041,7 @@ as a test file:
     `RequiresOptIn` is itself `BINARY`-retained, so it is invisible to `isAnnotationPresent` at
     runtime; the ERROR-level opt-in gate is a compile-time fact, verified at Level 1 above, not
     here.
-- **`SupportedExtensionTest.kt`** — the same shape as `physics-core-seams-plan.md` §5's own design
+- **`SupportedExtensionTest.kt`** — the same shape as `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §5's own design
   for this class (compile fixture across the five targets; `@MustBeDocumented`
   usage-invisibility), with the same correction as above: assert `@MustBeDocumented` via
   `java.lang.annotation.Documented`, not by attempting to reflect on `MustBeDocumented` itself; and
@@ -1327,7 +1327,7 @@ against their own plan documents:
   source**, beyond the grand design's §8 list: the marker on `WorldSystem.coreSlot` (R3), and
   `@OptIn(ExperimentalGameToolsApi::class)` on `World`'s two private record classes and on
   `insertInStepOrder` (§4.5). All of them surface in #79's own completeness gate
-  (`docs/world-system-graduation-plan.md` §2.4, a repo-wide `grep` for `ExperimentalGameToolsApi`),
+  (`docs/plans/87-world-systems/79-world-system-graduation/plan.md` §2.4, a repo-wide `grep` for `ExperimentalGameToolsApi`),
   and its §6 already names the leftover-marker risk (with `CoreWorldSystemSlot` as its example);
   #79's §3.1 edit to `WorldSystem.kt` should add removing `coreSlot`'s marker explicitly. The `@OptIn`s become inert once
   the markers go, so removing them is tidiness, not correctness. The `coreSlot` marker is the
@@ -1341,7 +1341,7 @@ against their own plan documents:
 
 ## 10. Open decisions
 
-None. Every choice in this plan is directly dictated by `docs/world-system-core-architecture.md`
+None. Every choice in this plan is directly dictated by `docs/plans/87-world-systems/76-world-system-core/architecture.md`
 (itself confidently resolved, per its own §11) or by this brief's binding settled requirement
 (C1/C4/C5/OD1, I1–I3). The one genuinely unconfirmed point — whether the module-wide test opt-in
 flag alone satisfies `@SubclassOptInRequired` for a test fake — is a compile-time fact, not a
@@ -1358,24 +1358,24 @@ an open decision requiring the user's input.
   should gain a line on installed systems. **Revised 2026-09-28 (user decision):** not owed to
   #79 — every World Systems website update, this one and #77's zone cards alike, waits for Phase
   1's close (tracking issue #86). Not this unit either.
-- **F2 (carried from architecture §12).** Re-verify `docs/zone-world-system-plan.md`,
-  `docs/experience-system-plan.md`, `docs/world-system-graduation-plan.md`, and
-  `docs/physics-world-system-plan.md` against this unit's actual landed shape and its R1–R9
+- **F2 (carried from architecture §12).** Re-verify `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`,
+  `docs/plans/87-world-systems/78-experience-system/plan.md`, `docs/plans/87-world-systems/79-world-system-graduation/plan.md`, and
+  `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` against this unit's actual landed shape and its R1–R9
   refinements once this branch merges — in particular, confirm none of them assumed
   `stepSystems()` "rejects nothing" literally, or relied on an unguarded re-entrant
   `installSystem`.
 - **F3 (carried from architecture §12).** The #76 GitHub issue body still lists the annotation
   types as out of scope, superseded by C1. Recommend the user update the issue body; not done by
   this plan (no issue-editing from a planning pass).
-- **F4 (carried from architecture §12).** `docs/world-systems-implementation-architecture.md`'s
+- **F4 (carried from architecture §12).** `docs/plans/87-world-systems/architecture.md`'s
   own Cross-plan alignment section should gain a one-line pointer to
-  `docs/world-system-core-architecture.md` once the docs-only PR carrying both lands — out of
+  `docs/plans/87-world-systems/76-world-system-core/architecture.md` once the docs-only PR carrying both lands — out of
   scope for this plan to edit (it plans `world-system-core` only, not the grand design document).
   Its Cross-plan alignment section's item 4 (the fix list for an earlier #76 pass) should be
   annotated at the same time: its `TreeMap` storage and `import java.util.TreeMap` are superseded
   (R6); its unique-`order` test and KDoc invariant survive, re-justified by R5 (§2 above).
-- **F5 (found in this re-plan's alignment pass).** `docs/experience-system-plan.md:451` cites
-  "`docs/world-system-core-plan.md` §3.5" for `World.installSystem` logging at `INFO`. The fact
+- **F5 (found in this re-plan's alignment pass).** `docs/plans/87-world-systems/78-experience-system/plan.md:451` cites
+  "`docs/plans/87-world-systems/76-world-system-core/plan.md` §3.5" for `World.installSystem` logging at `INFO`. The fact
   still holds, but it now lives in this plan's §4.5 (logging table). Re-point the citation in the
   same docs-only PR, or when #78 is next touched.
 - No release is cut by this plan; this unit's commits add to `CHANGELOG.md`'s `[Unreleased]`

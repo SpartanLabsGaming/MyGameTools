@@ -1,9 +1,9 @@
 # Plan: `world-system-graduation` — promote `WorldSystem` from Experimental to `@SupportedExtension`
 
 > **Revise before implementing — 2026-10-01, issue #77's design
-> (`docs/world-system-binding-architecture.md`).** That document ("the binding architecture"
+> (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).** That document ("the binding architecture"
 > below; this plan's own "architecture" is still
-> `docs/world-systems-implementation-architecture.md`) reworks the seam this plan graduates: the
+> `docs/plans/87-world-systems/architecture.md`) reworks the seam this plan graduates: the
 > `WorldSystem` hooks lose their `World` parameter (`onInstalled()`, `onUninstalled()`, `step()`,
 > with `val world: World`); a new `abstract class AbstractWorldSystem` holds a write-once binding;
 > `WorldSystem` gains `uniqueRole`, and `World` gains `systemOf(role: KClass<T>): Result<T>` plus a
@@ -13,7 +13,7 @@
 > (`:61`, `:82-85`, `:392-395`, `:429-438`, `:591-595`, `:597-599`), which keep the #86 website
 > deferral and the `ZoneFixtures.kt` reuse. #79's own planning must revise the items below before
 > this unit is implemented. Line numbers are this file's before the callout was added. Unit plans:
-> `docs/world-system-binding-plan.md` and `docs/zone-world-system-plan.md`.
+> `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` and `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`.
 >
 > 1. **§1.1, the inventory (`:52-63`).** `:54` still quotes the `installOn`/`uninstallFrom`/
 >    `step(world)` hooks; `:61` was rewritten as the `ZoneIndex` row. Add `AbstractWorldSystem`
@@ -84,7 +84,7 @@
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#79](https://github.com/SpartanLabsGaming/MyGameTools/issues/79)
   — *"World Systems Stage 4: graduate `WorldSystem` from Experimental to `@SupportedExtension`"*.
-- **Architecture:** `docs/world-systems-implementation-architecture.md`, unit slug
+- **Architecture:** `docs/plans/87-world-systems/architecture.md`, unit slug
   `world-system-graduation` (§10 decomposition table, row 4; scope defined in §4.7, §7's
   per-stage documentation table, §8 tier table, §12).
 - **Branch:** `feature/79-world-system-graduation`, off `master`, opened only after `#77`
@@ -112,9 +112,9 @@
 - **Dependencies:** `#76` (`world-system-core`), `#77` (`zone-world-system`), `#78`
   (`experience-system`) — all three merged. `#80` (`physics-world-system`) depends on this unit
   having landed but is out of scope here.
-- **Related docs:** `docs/world-systems-implementation-architecture.md` (the binding architecture
-  for all five stages); `docs/world-systems-plan-draft.md` (superseded aggregator, carries a
-  "fully landed" addendum from this unit, §4.6); `docs/physics-core-seams-plan.md` (the
+- **Related docs:** `docs/plans/87-world-systems/architecture.md` (the binding architecture
+  for all five stages); `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md` (superseded aggregator, carries a
+  "fully landed" addendum from this unit, §4.6); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (the
   `@SupportedExtension` declaration this plan reuses verbatim, §2.2/§3.1); `docs/api-openness-decisions-6.0.0.md`
   D1 (`Movement`) and D3 (`EventBus`) — D1 already uses `@SupportedExtension`, and D3 is tiered
   `Experimental (@RequiresOptIn)` for a future `6.0.0` seam, confirming `ExperimentalGameToolsApi`
@@ -145,7 +145,7 @@ every one of them gated behind the shared, library-wide `@RequiresOptIn(level = 
 Also already built by `#76` and **not modified by this unit** (architecture §1.2 C1):
 `com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` (the marker itself) and
 `com.spartanlabs.gaming.annotation.SupportedExtension` (parameterless, `@MustBeDocumented`,
-`BINARY` retention — verbatim from `docs/physics-core-seams-plan.md` §2.2, already built one
+`BINARY` retention — verbatim from `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2, already built one
 stage before it originally expected to be).
 
 ### 1.2 Mandatory review checkpoint — before any edit in §3
@@ -203,8 +203,8 @@ before they are applied — do not apply them as-is against a materially differe
 - A `gametools-core` consumer can implement `WorldSystem` and call all four `World` registry
   members with zero `@OptIn` anywhere in their code. A `gametools-world` consumer can construct
   `ZoneWorldSystem`/reference `CoreWorldSystemSlot` with zero `@OptIn`.
-- CHANGELOG, README, CONTRIBUTING, `docs/world-systems-plan-draft.md`'s callout, and
-  `docs/world-systems-implementation-architecture.md`'s header Status line all record the
+- CHANGELOG, README, CONTRIBUTING, `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s callout, and
+  `docs/plans/87-world-systems/architecture.md`'s header Status line all record the
   promotion in this unit's own commits (architecture §7's per-stage table, row `#79`).
 
 ---
@@ -234,12 +234,12 @@ infrastructure and worked examples*, not separate seams a consumer picks between
 to plain, untagged Stable Core (architecture §8's tier table, confirmed unchanged by this plan).
 This mirrors the two existing tier rulings in this repo's docs. In both, the interface is tagged
 and its shipped default implementations are left untagged:
-- `docs/issue-49-physics-architecture.md` §8: `CollisionResolver` is `@SupportedExtension`;
+- `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §8: `CollisionResolver` is `@SupportedExtension`;
   `PositionalCorrectionResolver` is untagged Stable Core.
 - `docs/api-openness-decisions-6.0.0.md` D1: `Movement` is `@SupportedExtension`; `Targeting`,
   `Persistent`, `Directional` and `Homing` are its worked examples.
 
-`SupportedExtension` itself is deliberately *not* tagged with itself (`docs/physics-core-seams-plan.md`
+`SupportedExtension` itself is deliberately *not* tagged with itself (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`
 §3.1).
 
 ### 2.3 Flow — before and after this unit, for one consumer call site
@@ -383,16 +383,16 @@ code this unit's whole job is to remove.
 
 ### 3.10 Changed: `README.md`, `CONTRIBUTING.md` — see §4
 
-### 3.11 Changed: `docs/world-systems-plan-draft.md`
+### 3.11 Changed: `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`
 
 Append one line to the existing top-of-file callout (do not rewrite it) — architecture §7 item 8
 already assigns this unit the closing note:
 
 > **`#79` landed:** the two-tier `WorldSystem` model this callout forward-references is fully
 > implemented and graduated to `@SupportedExtension` as of this commit — see
-> `docs/world-systems-implementation-architecture.md`.
+> `docs/plans/87-world-systems/architecture.md`.
 
-### 3.12 Changed: `docs/world-systems-implementation-architecture.md`
+### 3.12 Changed: `docs/plans/87-world-systems/architecture.md`
 
 Update the header `**Status:**` line (currently "systems design — implementation plans to
 follow. No source, test, or build file has been modified by this document.") to record that all
@@ -416,8 +416,8 @@ five stages have landed, e.g.:
   that paragraph, removing it must not orphan the second link).
 - **Boundary Ring (protocol/integration):** not touched — no wire format, no `ClientCommand`, no
   cross-service concern.
-- **Architectural Outer Layer:** `docs/world-systems-plan-draft.md`'s callout addendum (§3.11) and
-  `docs/world-systems-implementation-architecture.md`'s header Status line (§3.12), both in this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s callout addendum (§3.11) and
+  `docs/plans/87-world-systems/architecture.md`'s header Status line (§3.12), both in this
   unit's own commit — architecture §7 item 8 and §7's per-stage table assign both explicitly to
   `#79`.
 - **CHANGELOG (Keep a Changelog, `[Unreleased]`):** exactly one of the two branches below applies
@@ -480,7 +480,7 @@ five stages have landed, e.g.:
 
 ### Level 1 — gating
 
-No `testing.gating` package exists in this repo (confirmed, matching `docs/physics-core-seams-plan.md`'s
+No `testing.gating` package exists in this repo (confirmed, matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`'s
 own finding). In practice: `./gradlew componentTest deterministicTest` before every push, **plus**
 the grep sweep (§2.4) run manually — not a checked-in artifact.
 
@@ -546,7 +546,7 @@ No new test. Annotations have zero runtime cost; no measurable performance effec
 
 No `testing.uat` package exists in this repo. Not invented here. A documentary annotation swap
 produces no observable behaviour for a human or AI evaluator to assess — there is nothing to
-"feel," matching `docs/physics-core-seams-plan.md`'s own finding for its analogous unit.
+"feel," matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`'s own finding for its analogous unit.
 
 ### What genuinely cannot be tested automatically
 
@@ -630,7 +630,7 @@ produces no observable behaviour for a human or AI evaluator to assess — there
   1. `feat(gameobjects): promote WorldSystem to @SupportedExtension` — the annotation swap and
      KDoc rewrite on `WorldSystem.kt` (§3.1). This plan document is not in this commit: it
      already landed in the docs-only planning PR. Body: cites `#79`, `#76`,
-     `docs/world-system-graduation-plan.md`, and the review checkpoint's outcome
+     `docs/plans/87-world-systems/79-world-system-graduation/plan.md`, and the review checkpoint's outcome
      (confirm-and-proceed, or a link to whatever follow-up it raised).
   2. `feat(gameobjects): drop ExperimentalGameToolsApi from CoreSystemSlot, World's registry, and the shipped adapters` —
      `CoreSystemSlot.kt`, `World.kt`, `ZoneWorldSystem.kt`, `ExperienceSystem.kt` (§3.2–§3.5).
@@ -641,7 +641,7 @@ produces no observable behaviour for a human or AI evaluator to assess — there
   4. `test(gameobjects): prove WorldSystem graduation requires no opt-in` — the two new
      component tests (§5) and any test-file edits from step 3 that were deferred here instead.
   5. `docs: mark WorldSystem graduation landed` — `CHANGELOG.md`, `README.md`, `CONTRIBUTING.md`,
-     `docs/world-systems-plan-draft.md`'s callout, `docs/world-systems-implementation-architecture.md`'s
+     `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s callout, `docs/plans/87-world-systems/architecture.md`'s
      header Status line (§4).
 - **PR title** (becomes the merge-commit subject): `feat(gameobjects): promote WorldSystem to @SupportedExtension`.
   Body: `Closes #79`, `Refs #76, #77, #78`. No `BREAKING CHANGE:` footer.

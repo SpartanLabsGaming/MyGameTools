@@ -23,8 +23,8 @@
   for the branch prefix (Open Decision E).
 - **Upstream dependency:** none. WebTools / GeneralTools coordinates are unchanged.
 - **Related docs:** `docs/framework-vision-and-roadmap.md` (§2.1 target module layout, §3
-  phase boundaries); `docs/phase-0-foundations-plan.md` (plan-doc format precedent, Open
-  Decision A which deferred this split); `docs/webtools-2.0.0c-upgrade-plan.md` (breaking-
+  phase boundaries); `docs/plans/90-phase-0-foundations/plan.md` (plan-doc format precedent, Open
+  Decision A which deferred this split); `docs/plans/18-webtools-2.0.0c-upgrade/plan.md` (breaking-
   release + cross-repo precedent).
 
 ---
@@ -202,7 +202,7 @@ verify.
   emits an empty sources/javadoc jar — Central accepts it). *(Both the `-sources.jar` and
   `-javadoc.jar` are populated since #40 — the umbrella folds in each module's
   `sourcesElements` and aggregates both modules' Dokka; the repo-wide Dokka `KotlinBasePlugin`
-  blocker was fixed in the same PR. See `docs/issue-40-umbrella-empty-sources-jar.md`. The
+  blocker was fixed in the same PR. See `docs/plans/40-umbrella-empty-sources-jar/plan.md`. The
   `.jar` (classes) stays deliberately empty.)*
 - Version stays `3.1.0` in every `coordinates(...)` on the feature branches; the bump to
   `4.0.0` happens only on `release/4.0.0` (per `CONTRIBUTING.md` §Releasing). One place per

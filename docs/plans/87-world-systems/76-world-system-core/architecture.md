@@ -1,9 +1,9 @@
 # Architecture: `WorldSystem` Core Mechanism (#76)
 
-> **Reworked in part — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`).**
+> **Reworked in part — 2026-10-01, issue #77's design (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).**
 > #77's design pass reworks the `WorldSystem` core this note designs (merged as PR #130). The
-> rework is planned in `docs/world-system-binding-plan.md` and `docs/zone-world-system-plan.md`;
-> its binding decisions are C1–C39 in §1.2 of `docs/world-system-binding-architecture.md`.
+> rework is planned in `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` and `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`;
+> its binding decisions are C1–C39 in §1.2 of `docs/plans/87-world-systems/77-zone-world-system/architecture.md`.
 > Throughout the body below, the hooks `installOn(world)`, `uninstallFrom(world)` and
 > `step(world)` become `onInstalled()`, `onUninstalled()` and `step()`, and `WorldSystem` gains
 > `val world: World`, the one `World` a system serves. Superseded, by section:
@@ -24,7 +24,7 @@
 >    "already installed" or "slot occupied". `stepSystems()` and self-uninstall from inside
 >    `onInstalled()` are legal but discouraged, with no guard. Helpers a failing hook installed
 >    still stay installed. §4.2's three diagrams are replaced by
->    `docs/world-system-binding-architecture.md` §5.1.
+>    `docs/plans/87-world-systems/77-zone-world-system/architecture.md` §5.1.
 > 4. **§4.5, lifecycle.** A system is also bound: bound to its `World` at its first install that
 >    passes the checks, it stays bound after an uninstall or a rolled-back install. Replaced by
 >    §5.2 of that architecture.
@@ -71,14 +71,14 @@
   points where this re-plan refines, completes, or (in one case) knowingly deviates from the
   grand design's literal text. This document does not restate what the grand design already says
   at the #76 level; it references it by section number throughout.
-- **Status:** systems design — implementation plan: `docs/world-system-core-plan.md`. No source,
+- **Status:** systems design — implementation plan: `docs/plans/87-world-systems/76-world-system-core/plan.md`. No source,
   test, or build file has been modified by this document.
 - **Baseline:** `master` @ `540513a` (PR #83 merged). Every `path:line` below is against that
   commit unless it names the `feature/71-combat-package` branch (`dcb396e`) explicitly.
-- **Subordinate to:** `docs/world-systems-implementation-architecture.md` (the grand design; all
+- **Subordinate to:** `docs/plans/87-world-systems/architecture.md` (the grand design; all
   five `#76`–`#80` stages, binding constraints C1–C5, research findings, and the resolved open
   decisions OD1–OD4 live there). Sections cited below as "grand design §N" refer to that document.
-- **Related docs:** `docs/physics-core-seams-plan.md` §2.2/§3.1 (the verbatim `SupportedExtension`
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2/§3.1 (the verbatim `SupportedExtension`
   shape this design reuses); `CONTRIBUTING.md` (module table, Coding rules, Versioning table —
   all three edited by this unit per I1, below); `docs/api-openness-decisions-6.0.0.md` D4 (`World`
   stays closed to subclassing — unaffected by this design, which touches only `World`'s own
@@ -105,7 +105,7 @@ install order) from an explicit driver call, never from `World.tick()`.
 
 - **C1** — both annotations live in a new `com.spartanlabs.gaming.annotation` package in
   `gametools-core`: `ExperimentalGameToolsApi` (`@RequiresOptIn(ERROR)`) and `SupportedExtension`
-  (verbatim from `docs/physics-core-seams-plan.md` §2.2, parameterless).
+  (verbatim from `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2, parameterless).
 - **C4** — `uninstallSystem` for symmetric teardown; read-only `installedSystems`.
 - **C5** — two-tier ordering via `sealed interface CoreSystemSlot { val order: Int }` and
   `enum class CoreWorldSystemSlot(override val order: Int) : CoreSystemSlot { PHYSICS(0), ZONE(1) }`;
@@ -460,7 +460,7 @@ description waits for Phase 1's close (#86) — §12 F1, revised 2026-09-28.
 | Declaration | Marker | Tier now | Tier after #79 |
 |---|---|---|---|
 | `ExperimentalGameToolsApi` (annotation class) | none (it *is* the marker) — `@MustBeDocumented`, `@Retention(BINARY)`, `@Target(CLASS, FUNCTION, PROPERTY, CONSTRUCTOR, TYPEALIAS)`, `@RequiresOptIn(level = ERROR, message = "...")` | N/A, permanent | unchanged, never deleted |
-| `SupportedExtension` (annotation class) | none — verbatim shape, `docs/physics-core-seams-plan.md` §2.2/§3.1 | Stable Core, untagged | unchanged |
+| `SupportedExtension` (annotation class) | none — verbatim shape, `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2/§3.1 | Stable Core, untagged | unchanged |
 | `WorldSystem` (interface) | `@SubclassOptInRequired(ExperimentalGameToolsApi::class)` | Experimental (implementing gated; calling members on a held reference is not) | `@SupportedExtension` (#79's edit, not #76's) |
 | `WorldSystem.installOn(world)` | none — no experimental type in its own signature | gated only via the interface's `@SubclassOptInRequired` | untagged |
 | `WorldSystem.uninstallFrom(world) {}` | none | same | untagged |
@@ -621,9 +621,9 @@ designed in the grand design, not here.
 ## 10. Risks at the systems level
 
 - **R1/R2 above change documented behaviour relative to the grand design's literal text.** Risk:
-  a sibling unit plan drafted against the grand design's exact wording (`docs/zone-world-system-plan.md`,
-  `docs/experience-system-plan.md`, `docs/world-system-graduation-plan.md`,
-  `docs/physics-world-system-plan.md` — all pre-date this re-plan) could still assert "`stepSystems()`
+  a sibling unit plan drafted against the grand design's exact wording (`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`,
+  `docs/plans/87-world-systems/78-experience-system/plan.md`, `docs/plans/87-world-systems/79-world-system-graduation/plan.md`,
+  `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` — all pre-date this re-plan) could still assert "`stepSystems()`
   rejects nothing" verbatim, or assume no reservation guard exists. Mitigation: neither #77's,
   #78's, nor #80's known design calls `stepSystems()` from inside a `step()`, or relies on an
   unguarded re-entrant `installSystem`, so no known consumer breaks — but each sibling plan should
@@ -662,17 +662,17 @@ and its blast radius against the other four units' known designs is already chec
 - **F1 (I2).** `website/index.html:206,259`'s `World` description should gain a line on installed
   systems — not in #76. **Revised 2026-09-28 (user decision):** not #79's either; every World
   Systems website update waits for Phase 1's close (tracking issue #86).
-- **F2.** Re-verify `docs/zone-world-system-plan.md`, `docs/experience-system-plan.md`,
-  `docs/world-system-graduation-plan.md`, and `docs/physics-world-system-plan.md` against this
+- **F2.** Re-verify `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`, `docs/plans/87-world-systems/78-experience-system/plan.md`,
+  `docs/plans/87-world-systems/79-world-system-graduation/plan.md`, and `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` against this
   document's §7 refinements (the reservation guard, `stepSystems()`'s one rejection case) once
   #76 lands, the same way the grand design's own Cross-plan alignment pass re-verifies siblings
   against each other.
 - **F3.** The #76 GitHub issue body still lists the annotation types as out of scope, superseded
   by C1 (grand design §1.2). Recommend the user update the issue body to match the settled scope;
   not done here (no issue-editing from this pass).
-- **F4.** `docs/world-systems-implementation-architecture.md`'s own Cross-plan alignment section
+- **F4.** `docs/plans/87-world-systems/architecture.md`'s own Cross-plan alignment section
   describes the earlier #76 planning pass. It should gain a one-line pointer to this document
-  (`docs/world-system-core-architecture.md`) once this docs-only PR lands — it cannot be edited
+  (`docs/plans/87-world-systems/76-world-system-core/architecture.md`) once this docs-only PR lands — it cannot be edited
   from this checkout (working tree is on `feature/71-combat-package`, and only this new file is in
   scope here).
 
@@ -681,7 +681,7 @@ and its blast radius against the other four units' known designs is already chec
 ## Cross-plan alignment
 
 Appended by the planner after stage 4. This design has one plannable unit, so the pass checked
-its one plan (`docs/world-system-core-plan.md`) against this note, against the grand design's
+its one plan (`docs/plans/87-world-systems/76-world-system-core/plan.md`) against this note, against the grand design's
 binding constraints, and against the #76 contract that the four already-landed downstream plans
 consume.
 
@@ -695,13 +695,13 @@ consume.
   - `IllegalArgumentException` for a duplicate instance or occupied slot, thrown before `installOn`;
   - nothing recorded if `installOn` throws;
   - `installedSystems` never containing the system mid-`installOn`, which #78's
-    second-`ExperienceSystem` guard depends on (`docs/experience-system-plan.md:444-451`);
+    second-`ExperienceSystem` guard depends on (`docs/plans/87-world-systems/78-experience-system/plan.md:444-451`);
   - remove-then-`uninstallFrom`;
   - tier 1 by `order` then tier 2 by install order, which #77's and #80's headline tests depend on;
   - `installSystem`/`uninstallSystem` at INFO, `stepSystems` at DEBUG;
   - `@SubclassOptInRequired` on `WorldSystem`, plain markers elsewhere;
   - the `gametools-core` test opt-in block, identical in shape to #77's
-    (`docs/zone-world-system-plan.md` §3.4).
+    (`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` §3.4).
 
   All hold. R1, R2 and R9 are additive: no downstream design installs re-entrantly, calls
   `stepSystems()` from a `step()`, or relies on a mid-pass uninstall-and-reinstall being stepped
@@ -709,7 +709,7 @@ consume.
 - **#79's removal list.** The markers this re-plan adds beyond the grand design's §8 table are the
   one on `WorldSystem.coreSlot` and the `@OptIn`s on `World`'s private declarations. All of them
   appear in #79's completeness gate, a repo-wide `grep` for `ExperimentalGameToolsApi`
-  (`docs/world-system-graduation-plan.md` §2.4). The plan's §9 names them explicitly.
+  (`docs/plans/87-world-systems/79-world-system-graduation/plan.md` §2.4). The plan's §9 names them explicitly.
 - **Binding constraints:**
   - C1: both annotations are present, and `SupportedExtension`'s declaration is verbatim.
   - C4 and C5/OD1 are satisfied.
@@ -767,7 +767,7 @@ In the plan:
 - **Tests added:** nested install then throw leaves the helper installed; an occupied-slot
   rejection never calls `installOn`.
 - **§9 and follow-ups:** §9 lists the markers #79 must remove. F4 was corrected, and F5 added
-  (`docs/experience-system-plan.md:451` cites the old plan's §3.5; the fact now lives in §4.5).
+  (`docs/plans/87-world-systems/78-experience-system/plan.md:451` cites the old plan's §3.5; the fact now lives in §4.5).
 
 ### Shared risks the pass could not resolve
 

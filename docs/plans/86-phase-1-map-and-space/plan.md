@@ -22,8 +22,8 @@
 > `ZoneWorldSystem` or `PhysicsWorldSystem` — zones run as `ZoneIndex` itself and physics as
 > `PhysicsSystem` itself; see the addendum below.)* The physics-before-zone order is enforced by
 > library-reserved slots. It reverses §2.5's zone-then-physics lean, as
-> `docs/issue-49-physics-architecture.md` §4.9 already had. Architecture:
-> `docs/world-systems-implementation-architecture.md`.
+> `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §4.9 already had. Architecture:
+> `docs/plans/87-world-systems/architecture.md`.
 >
 > **Addendum — 2026-10-01 (#77), correcting the callout above.** There is no `ZoneWorldSystem` and
 > no `PhysicsWorldSystem`; nothing wraps either class. `ZoneIndex(grid)` (`world.zone`) is itself
@@ -41,7 +41,7 @@
 > resolved by #49. The physics-before-zone order via library-reserved slots is unchanged, and no
 > `world.system` package exists. This reverses the 2026-09-29 decision that made `ZoneIndex`'s
 > constructor and `refresh` `internal`, with `ZoneWorldSystem` the only way to use zones; it never
-> reached a commit or a release. Architecture: `docs/world-system-binding-architecture.md`.
+> reached a commit or a release. Architecture: `docs/plans/87-world-systems/77-zone-world-system/architecture.md`.
 
 ## Header / Association
 
@@ -82,9 +82,9 @@
   (§10).
 - **Related docs:** `docs/framework-vision-and-roadmap.md` (§2 target architecture, §3 phases,
   §4 pathfinding recommendation, §5 open decisions C/G, §7 transport boundary);
-  `docs/module-split-plan.md` (how a module is added; why `Quadtree` was left in `core`);
-  `docs/phase-0-foundations-plan.md` (the `EntityId` index, event bus, seeded tick and
-  `SimulationLoop` this phase builds on); `docs/webtools-2.0.0c-upgrade-plan.md` (plan-doc
+  `docs/plans/32-module-split/plan.md` (how a module is added; why `Quadtree` was left in `core`);
+  `docs/plans/90-phase-0-foundations/plan.md` (the `EntityId` index, event bus, seeded tick and
+  `SimulationLoop` this phase builds on); `docs/plans/18-webtools-2.0.0c-upgrade/plan.md` (plan-doc
   format precedent); `docs/api-openness-decisions-6.0.0.md` (D1 unseals `Movement` in `6.0.0`
   — batched with this plan's Open Decision 4; see §2.5).
 
@@ -127,7 +127,7 @@ Three ways out, with the decision in §2.1:
 lists "spatial index" under `gametools-world`, but under Option A `World` needs its index at
 compile time, so the `SpatialIndex` interface, the adapted `Quadtree`, and the new
 `UniformGrid` **stay in `gametools-core`'s `spatial` package**. This is the same reasoning
-`docs/module-split-plan.md` §used to leave `Quadtree` in `core` ("`world → core` is the
+`docs/plans/32-module-split/plan.md` §used to leave `Quadtree` in `core` ("`world → core` is the
 roadmap's own direction — putting `Quadtree` in `world` now would invert it"), and that doc
 explicitly deferred the question to "Phase 1 decides". Phase 1 decides: it stays in `core`.
 The roadmap §2 architecture table is updated to match (§3 file list).
@@ -407,7 +407,7 @@ on Open Decision 5 (`GameEvent` stays `sealed` and these are declared in `core` 
 data-less carriers the `world` systems populate via a `core`-side factory; **or** `GameEvent`
 becomes an open interface so `world` declares its own). Lean: **open the interface**, matching
 how `ClientCommand` was deliberately left open for a cross-module hierarchy
-(`docs/client-command-protocol-plan.md`). That is a one-line `sealed` → `interface` change on
+(`docs/plans/96-phase-3-authoritative-networking/31-client-command-protocol/plan.md`). That is a one-line `sealed` → `interface` change on
 `GameEvent`, source-compatible for every existing `when` that stays exhaustive by adding an
 `else`, and Dokka-checked.
 
@@ -548,7 +548,7 @@ external calls at L2.
 - **Issue #42 (Actor intent layer)** — independent of Phase 1; its roadmap slot is Phase 2 /
   Phase 4. If it lands first, `Move` intent will want to compose with `PhysicsBody`
   (desired-velocity, §2.5) — noted for whichever ships second; no ordering constraint.
-- **`docs/module-split-plan.md`** — Phase 1 resolves that doc's deferred "does `Quadtree`
+- **`docs/plans/32-module-split/plan.md`** — Phase 1 resolves that doc's deferred "does `Quadtree`
   move to `world`" question (answer: no) and its "`Alive`-free spawn hook" note is **not**
   needed here (`World.add`'s `is Alive` check is untouched).
 

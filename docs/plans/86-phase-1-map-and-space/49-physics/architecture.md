@@ -9,7 +9,7 @@
 >    §4.9, §8's `WorldSystems` row, §9's first bullet (the rejected registry), §10 row 6, §12 Open
 >    Decision 1. It was never built. It is replaced by an opt-in `WorldSystem` registry on `World`
 >    (`gametools-core`, #76), a `ZoneWorldSystem` adapter (#77), and a thin `PhysicsWorldSystem`
->    adapter (#80) — see `docs/world-systems-implementation-architecture.md`. What survives
+>    adapter (#80) — see `docs/plans/87-world-systems/architecture.md`. What survives
 >    unchanged is the **physics → zone ordering requirement** (§4.9, Open Decision 1): it is now
 >    enforced by library-reserved tier-1 slots, `CoreWorldSystemSlot.PHYSICS` (order 0) before
 >    `CoreWorldSystemSlot.ZONE` (order 1), whatever order a game installs them in. Retiring the
@@ -21,15 +21,15 @@
 > 2. **`@SupportedExtension`'s origin** — §1.2 constraint 4, §4.1's first row, §4.2, §10 row 1. The
 >    annotation is now created by #76, beside its Experimental sibling `@ExperimentalGameToolsApi`
 >    in `com.spartanlabs.gaming.annotation`, in the parameterless shape
->    `docs/physics-core-seams-plan.md` §2.2 settled — not §4.2's `note: String = ""` variant.
+>    `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2 settled — not §4.2's `note: String = ""` variant.
 >    `CollisionResolver` (unit 4) simply applies it.
 > 3. **Unit 6's other duties are NOT covered by #80.** The row-6 unit also owned the §7
 >    documentation/roadmap corrections (including Open Decision C's false `DirectionalProjectile`
 >    sweep claim) and the README's physics-as-a-whole prose. `PhysicsWorldSystem` (#80) is only the
 >    adapter plus its regression test, so #49's re-plan must assign both duties to one of its own
->    units (`docs/world-systems-implementation-architecture.md` §7, §10, §11).
+>    units (`docs/plans/87-world-systems/architecture.md` §7, §10, §11).
 > 4. **The adapters and the `refresh` call — 2026-09-30, issue #77's design pass
->    (`docs/world-system-binding-architecture.md`).** Item 1's "`ZoneWorldSystem` adapter (#77)"
+>    (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).** Item 1's "`ZoneWorldSystem` adapter (#77)"
 >    and "thin `PhysicsWorldSystem` adapter (#80)" were never built and no longer exist as
 >    planned. `ZoneIndex` is itself the zone `WorldSystem`: it extends `AbstractWorldSystem`,
 >    claims `CoreWorldSystemSlot.ZONE`, has a public constructor and **no `refresh` method** —
@@ -45,12 +45,12 @@
 >    the physics → zone ordering requirement is unchanged (item 1). `PhysicsSystem`'s own
 >    signatures shown below (`step(world)`, `attach`/`detach`) predate the parameterless-hook
 >    contract and are #49's re-plan to revise — not corrected here. The unit plans written
->    against this document carry matching 2026-10-01 callouts: `docs/physics-system-plan.md`,
->    `docs/physics-core-seams-plan.md`, `docs/physics-resolution-plan.md` and
->    `docs/physics-world-system-plan.md` (the last wholly superseded).
+>    against this document carry matching 2026-10-01 callouts: `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`,
+>    `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`, `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-resolution.md` and
+>    `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` (the last wholly superseded).
 >
 > The unit plans written against this document predate the change; see the callouts at the top of
-> `docs/physics-core-seams-plan.md` and `docs/physics-system-plan.md`.
+> `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` and `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`.
 
 ## Header / Association
 
@@ -64,7 +64,7 @@
   `gametools-world`) still read `5.1.0` (`gametools-core/build.gradle.kts:6`,
   `gametools-world/build.gradle.kts:14`), and #42/#46/#47/#48 all sit under CHANGELOG
   `[Unreleased]` (`CHANGELOG.md:13`). `5.2.0` must be released first; `5.3.0` (this issue plus
-  #50) follows it, per `docs/phase-1-map-and-space-plan.md`'s own sequencing (§ "Sequencing &
+  #50) follows it, per `docs/plans/86-phase-1-map-and-space/plan.md`'s own sequencing (§ "Sequencing &
   follow-ups", item 4).
 - **Baseline:** `master` @ `56ae9bc`. **Citation note:** the working tree also carries an
   uncommitted, in-flight refactor that moves `Alive`/`Buff`/`Capability`/`Intent`/
@@ -74,10 +74,10 @@
   `gametools-core/build.gradle.kts`. Nothing in this design references or depends on that
   refactor landing — per standing instruction it does not ride in this work. Every `path:line`
   citation below is verified against the **committed `master` HEAD**, not the working tree.
-- **Related docs:** `docs/phase-1-map-and-space-plan.md` (§9 Open Decisions 3/4/6, the original
-  `world.physics`/`world.geometry`/`world.system` sketch); `docs/issue-46-map-model-plan.md`
-  (`TiledMap`/`TerrainLayer`/`StaticGeometry`); `docs/issue-47-zones-plan.md` (`ZoneIndex`);
-  `docs/issue-48-spatial-index-rework-plan.md` (`SpatialIndex`, `World.reconcileSpatialIndex`);
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/plan.md` (§9 Open Decisions 3/4/6, the original
+  `world.physics`/`world.geometry`/`world.system` sketch); `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`
+  (`TiledMap`/`TerrainLayer`/`StaticGeometry`); `docs/plans/86-phase-1-map-and-space/47-zones/plan.md` (`ZoneIndex`);
+  `docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md` (`SpatialIndex`, `World.reconcileSpatialIndex`);
   `docs/api-openness-decisions-6.0.0.md` (D1 — `Movement` opens in `6.0.0`, and explicitly
   defers to whoever plans #49); `docs/framework-vision-and-roadmap.md` (§3 Phase 1 item 4,
   Open Decision C).
@@ -95,7 +95,7 @@ Motion integration and collision resolution for `gametools-world` bodies: push-o
 ### 1.2 Binding constraints (the user's interview answers — not re-litigated here)
 
 1. `WorldSystems` is a **concrete** class with a **fixed internal ordering**, not a generic
-   registry — this document resolves `docs/phase-1-map-and-space-plan.md` §9 Open Decision 3
+   registry — this document resolves `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 3
    for real. #50 (vision) either extends `WorldSystems` additively or motivates a later
    generalisation; not decided here.
 2. Collision scope is exactly: other bodies, `StaticGeometry` AABBs, map bounds, non-walkable
@@ -140,10 +140,10 @@ re-summarised.
    resolving contacts one at a time in sequence) keeps the result **independent of contact
    order**. That matters here specifically because `SpatialIndex.queryBox`'s KDoc declares
    "unspecified order" (verified: `SpatialIndex.kt`, cited in
-   `docs/issue-48-spatial-index-rework-plan.md:118-120`) — a Gauss-Seidel solver would make
+   `docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md:118-120`) — a Gauss-Seidel solver would make
    physics output depend on whether `World.spatialIndex` is a `QuadtreeSpatialIndex` or a
    `UniformGrid`, undermining #48's own point that the two are interchangeable
-   (`docs/issue-48-spatial-index-rework-plan.md` §2.2). This drove §4.5's resolver contract and
+   (`docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md` §2.2). This drove §4.5's resolver contract and
    the requirement that `PhysicsSystem` sort contacts by a stable key before resolving.
 2. **Slab-test the Minkowski-expanded box directly; don't derive TOI from
    `rayIntersectsBox`.** GeneralTools 2.2.0's `rayIntersectsBox` merges the per-axis entry
@@ -177,7 +177,7 @@ re-summarised.
 - `World.spatialIndex: SpatialIndex<VisibleObject>` (`World.kt:85`) is populated only from
   `VisibleObject`s — a non-visible `GameObject` is invisible to the broad phase entirely.
   `queryBox`/`queryRadius` are documented as **unspecified order**
-  (`docs/issue-48-spatial-index-rework-plan.md:118`), and the index stores **points**, not
+  (`docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md:118`), and the index stores **points**, not
   extents.
 - `World.space: Space?` (`World.kt:123`) is purely descriptive — `tick()` never consults it.
   `Space` (`Space.kt:17-38`) exposes only `bounds: Square`, `contains(point)`,
@@ -493,7 +493,7 @@ already-per-tick units, adding a knob with no behavioural benefit.
 > real time into whole ticks and calls `world.tick()` with no arguments (`SimulationLoop.kt:112-119`),
 > and `onTick` receives a tick *count*, not a duration. Recorded for the record: the `dt` parameter
 > was never an independently considered choice — it rode along from the issue body's proposed API
-> sketch into `docs/phase-1-map-and-space-plan.md` §2.5 — so dropping it is a **correction of an
+> sketch into `docs/plans/86-phase-1-map-and-space/plan.md` §2.5 — so dropping it is a **correction of an
 > unexamined detail, not the reversal of a deliberate decision**. §7 carries the corresponding
 > correction to the phase-1 plan.
 
@@ -559,7 +559,7 @@ superseded position. Recorded here rather than quietly dropped.
 
 Physics consults no zone data (it uses `spatialIndex`, `StaticGeometry` and terrain), so running
 zones second deprives it of nothing, and nothing in Phase 1 consumes `EntityChangedZone` yet
-(`docs/issue-47-zones-plan.md` §2.3 — zones exist as a seam for Phase 3/5). #50 (vision) will
+(`docs/plans/86-phase-1-map-and-space/47-zones/plan.md` §2.3 — zones exist as a seam for Phase 3/5). #50 (vision) will
 also want post-physics positions, so it slots in after physics alongside the zone refresh, or —
 if by then a hardcoded order is too rigid — motivates generalising `WorldSystems`; neither is
 decided here.
@@ -636,7 +636,7 @@ flowchart TB
 | **`Actor`/`Movement`** | `PhysicsSystem` displaces an `Actor`'s position; the `destination`-reassignment trick (§4.7 hazard 2) reads `Actor.destination`, which is public. | **Not in scope now**, by design: `Movement` stays `sealed`/closed through `5.3.0` per D1's `6.0.0` deferral. **Named follow-up:** the `6.0.0` `Movement` delta refactor (already tracked as Phase 1 Open Decision 4 + D1) must re-verify or replace the `hasSettled`-reset workaround against `Movement`'s new shape. |
 | **`DirectionalProjectile` / `HomingProjectile` / `Projectile`** (`DirectionalProjectile.kt`, `HomingProjectile.kt`, `Projectile.kt`) | None, structurally — constraint 7. A consumer *can* already opt a projectile into swept physics today, with zero core change, by calling `physicsSystem.attach(myProjectile, ...)` (a `Projectile` **is** a `VisibleObject`) alongside its existing discrete damage test. | **Not in scope now.** **Named follow-up:** if projectile tunnelling through a thin wall at low tick rate becomes a real problem, a dedicated issue should decide whether to (a) document the opt-in `attach` path above as the answer, or (b) give `DirectionalProjectile`/`HomingProjectile` a first-class swept mode. Roadmap correction, §7. |
 | **`ZoneIndex`/`ZoneGrid`** (`ZoneIndex.kt`, `ZoneGrid.kt`) | `WorldSystems` calls `zoneIndex.refresh(world)` first in the fixed order. | **In scope now: none required.** `ZoneIndex.refresh` remains directly callable exactly as before (`WorldSystems` is an additive convenience, not a replacement); a consumer not using `WorldSystems` loses nothing. **[Superseded 2026-09-30 — see item 4 of the header callout: there is no `ZoneIndex.refresh`; `ZoneIndex` is itself the zone `WorldSystem`, installed with `World.installSystem` and driven by `stepSystems()`.]** |
-| **`SpatialIndex`/`QuadtreeSpatialIndex`/`UniformGrid`** (#48) | `PhysicsSystem`'s broad phase is the first real consumer of `world.spatialIndex.queryBox` as intended by #48's own follow-up note (`docs/issue-48-spatial-index-rework-plan.md:665`). | **In scope now: none required** to these files themselves. **Outstanding, unrelated to #49:** `Actor.nearby`, `DirectionalProjectile`, `HomingProjectile` remain hardcoded to `Quadtree` (not `SpatialIndex`) — already a named #48 follow-up, not fixed here, repeated for completeness of this ledger. |
+| **`SpatialIndex`/`QuadtreeSpatialIndex`/`UniformGrid`** (#48) | `PhysicsSystem`'s broad phase is the first real consumer of `world.spatialIndex.queryBox` as intended by #48's own follow-up note (`docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md:665`). | **In scope now: none required** to these files themselves. **Outstanding, unrelated to #49:** `Actor.nearby`, `DirectionalProjectile`, `HomingProjectile` remain hardcoded to `Quadtree` (not `SpatialIndex`) — already a named #48 follow-up, not fixed here, repeated for completeness of this ledger. |
 | **`TiledMap`/`TerrainLayer`/`StaticGeometry`/`Space`** (#46) | `PhysicsSystem` reads `world.space`, casts to `TiledMap` for `staticGeometry`/`terrain`. | **In scope now: none.** `TiledMap`'s own KDoc already names this issue as the intended consumer (`TiledMap.kt:29-31`) — this design fulfils that promise without changing `TiledMap`/`TerrainLayer`/`StaticGeometry`/`Space` at all. |
 | **`SimulationLoop`/`LoopSettings`** | Natural place to call `worldSystems.step()` from `onTick`. | **In scope now: none.** No `dt` is threaded through (§4.8); `SimulationLoop` needs no change. |
 | **`EventBus`/`GameEvent`** | Not used by this design. | **Not in scope.** A future `BodiesCollided`-style event is a plausible, non-required extension; not designed here since no hazard or constraint calls for it. |
@@ -652,19 +652,19 @@ flowchart TB
    (`DirectionalProjectile.kt:83-86`) — discrete, not swept. Correct the line, and mark Open
    Decision C **partly resolved**: `gametools-world` bodies now get real swept resolution
    (this issue); `core`'s projectiles are unchanged and are the named follow-up in §6.
-2. **`docs/phase-1-map-and-space-plan.md`**'s original `world.geometry` package sketch (internal
+2. **`docs/plans/86-phase-1-map-and-space/plan.md`**'s original `world.geometry` package sketch (internal
    `Segment`/`Ray`/`Aabb`/`Intersections`, "until GeneralTools ships them") is superseded —
    GeneralTools 2.2.0 now ships `Segment`/`Ray`/`AxisAlignedBox`/`CenteredBox` directly, and
    constraint 8 confirms no `world.geometry` package is created. Note the package list entry as
    superseded rather than deleting the historical record.
-3. **`docs/phase-1-map-and-space-plan.md` §9** — Open Decision 3 (world-systems ordering)
+3. **`docs/plans/86-phase-1-map-and-space/plan.md` §9** — Open Decision 3 (world-systems ordering)
    resolved by `WorldSystems` (§4.9), with the ordering **physics → zone** — note that §2.5's
    own "zone then physics" lean is superseded; Open Decision 4 (physics ↔ `Movement` glue)
    resolved as **no `Movement` change in `5.3.0` and no latch workaround** — the desired-position
    reading of an `Actor`'s post-`move()` location stands, and the `Targeting` displacement
    limitation is documented rather than worked around (§4.7 hazard 2); Open Decision 6
    (collision shape) resolved as both `Circle` and `Aabb` (§4.3), matching its own lean.
-6. **`docs/phase-1-map-and-space-plan.md` §2.5** — its `PhysicsSystem.step(dt)` sketch is
+6. **`docs/plans/86-phase-1-map-and-space/plan.md` §2.5** — its `PhysicsSystem.step(dt)` sketch is
    superseded by the no-`dt`, per-tick integrator (§4.8, Open Decision 4). Record that the `dt`
    parameter rode along from the issue body's proposed API and was never independently chosen, so
    this is a correction rather than a reversal. §2.5's five-step `step` outline is otherwise
@@ -758,7 +758,7 @@ deserves its own KDoc-as-worked-example care.
 | 6 | `world-systems` | `com.spartanlabs.gaming.world.system`: `WorldSystems` — fixed **physics → zone** order with the `reconcileSpatialIndex()` call preceding physics (§4.9), wiring to the existing `ZoneIndex`; the cross-cutting documentation/roadmap corrections of §7; the README Architecture/Features prose for physics as a whole. | 5 (and the already-landed #47 `ZoneIndex`) | 6 |
 
 **Documentation is per-unit, not concentrated in unit 6.** `CONTRIBUTING.md` and
-`docs/phase-1-map-and-space-plan.md` §8 establish that *each* feature PR updates `README.md` and
+`docs/plans/86-phase-1-map-and-space/plan.md` §8 establish that *each* feature PR updates `README.md` and
 `CHANGELOG.md` for the surface it adds, and the global README rule says the same. Unit 6 owns only
 the **cross-cutting** items: the §7 roadmap corrections (including the false
 `DirectionalProjectile` sweep claim) and the `README.md` Architecture/Features prose describing
@@ -801,7 +801,7 @@ All four were escalated to the user and answered before any implementation plan 
 None was resolved silently. Recorded here with the outcome and its reasoning.
 
 1. **`WorldSystems` per-frame order — RESOLVED: physics → zone.** The user **flipped** this from
-   the earlier zone → physics lean carried by `docs/phase-1-map-and-space-plan.md` §2.5. The
+   the earlier zone → physics lean carried by `docs/plans/86-phase-1-map-and-space/plan.md` §2.5. The
    design now runs `reconcileSpatialIndex()` → `physicsSystem.step()` → `zoneIndex.refresh(world)`
    (§4.9). The flip is a clear improvement: zone membership is computed against the frame's final
    positions, so the one-frame `EntityChangedZone` lag is eliminated, and it costs nothing —
@@ -836,4 +836,4 @@ None was resolved silently. Recorded here with the outcome and its reasoning.
    end. **Recorded explicitly: `dt` was never an independently considered choice** — it rode along
    from the issue body's proposed-API sketch into the phase-1 plan — so this is a correction of an
    unexamined detail rather than the reversal of a deliberate decision. §7 carries the
-   corresponding correction to `docs/phase-1-map-and-space-plan.md` §2.5.
+   corresponding correction to `docs/plans/86-phase-1-map-and-space/plan.md` §2.5.

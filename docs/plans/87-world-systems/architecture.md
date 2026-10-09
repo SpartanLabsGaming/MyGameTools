@@ -12,7 +12,7 @@
   branch `feature/71-combat-package`, not designed here; #78 modifies what #71 lands).
 - **What this designs:** the systems-level shape of the five-stage rollout that replaces the
   superseded, closed `WorldSystems(world, zoneIndex?, physicsSystem?)` aggregator
-  (`docs/world-systems-plan-draft.md`) with an open, opt-in registry on `World` — `WorldSystem`,
+  (`docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`) with an open, opt-in registry on `World` — `WorldSystem`,
   a two-tier install-order model, and the three concrete adapters (`ZoneWorldSystem`,
   `ExperienceSystem`, `PhysicsWorldSystem`) that occupy it.
 - **Status:** systems design — implementation plans to follow. No source, test, or build file has
@@ -21,14 +21,14 @@
   uncommitted working-tree changes listed in §3. `dcb396e` does not compile
   gametools-core (its own commit body says so); every fact below is cited against the actual
   working tree, with the compile state noted where it matters.
-- **Related docs:** `docs/world-systems-plan-draft.md` (superseded aggregator, kept as historical
-  record); `docs/issue-49-physics-architecture.md` (physics's own design, units 1–6, decomposition
-  §10); `docs/physics-core-seams-plan.md` (unit 1, plan for the `@SupportedExtension`/
-  `reconcileSpatialIndex` half of #49, now split — see §7); `docs/physics-system-plan.md`
-  (`PhysicsSystem`'s last-planned shape); `docs/phase-1-map-and-space-plan.md` (original
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md` (superseded aggregator, kept as historical
+  record); `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (physics's own design, units 1–6, decomposition
+  §10); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (unit 1, plan for the `@SupportedExtension`/
+  `reconcileSpatialIndex` half of #49, now split — see §7); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`
+  (`PhysicsSystem`'s last-planned shape); `docs/plans/86-phase-1-map-and-space/plan.md` (original
   `world.system`/`world.geometry` sketches); `docs/api-openness-decisions-6.0.0.md` (D3 `EventBus`,
   D4 `World` — both bear on this design); `docs/framework-vision-and-roadmap.md` (Phase 2 item 5,
-  Open Decision E); `docs/issue-47-zones-plan.md` (`ZoneIndex`, deferred `WorldSystems` to #49).
+  Open Decision E); `docs/plans/86-phase-1-map-and-space/47-zones/plan.md` (`ZoneIndex`, deferred `WorldSystems` to #49).
 
 ---
 
@@ -57,7 +57,7 @@ did. Land it as five ordered stages so each is independently plannable and revie
 
 - **C1 (#76 annotations).** Both annotations live in a new `com.spartanlabs.gaming.annotation`
   package in `gametools-core`: an Experimental `@RequiresOptIn` marker, and `@SupportedExtension`
-  copied verbatim from `docs/physics-core-seams-plan.md` §2.2/§3.1 — parameterless,
+  copied verbatim from `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2/§3.1 — parameterless,
   `@MustBeDocumented`, `BINARY` retention, targeting `CLASS`/`FUNCTION`/`PROPERTY`/
   `CONSTRUCTOR`/`TYPEALIAS`. #79 only *applies* `@SupportedExtension`; it does not redesign it.
   Stages 1–4 have **no** dependency on #49. Physics-core-seams (#49 unit 1) keeps only its other
@@ -72,7 +72,7 @@ did. Land it as five ordered stages so each is independently plannable and revie
   agent). `ExperienceGrantor`/`AOEGrantor` are unreleased, so their signatures may change freely.
   Also fix `DefaultExperienceReceiver`'s stale KDoc (still mentions the removed `myLoc`).
 - **C3 (documentation corrections).** Superseded-pointers, in the style of the callout at the top
-  of `docs/world-systems-plan-draft.md`, are owed to five stale docs plus two roadmap notes — see
+  of `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`, are owed to five stale docs plus two roadmap notes — see
   §7. **Framing (binding):** the superseded closed `WorldSystems(world, zoneIndex?, physicsSystem?)`
   aggregator was *not* wrong because it was closed. `ZoneIndex` and `PhysicsSystem` were always
   fine as extensible pieces on their own. Specifically, the aggregator's fixed two-slot
@@ -112,7 +112,7 @@ did. Land it as five ordered stages so each is independently plannable and revie
   #78 after both #71 and #76 merge, #79 after #77 and #78, #80 after #49 (and #76); none of #71's
   changes ride in these stages' commits; #71's own PR closes #71, #78's PR closes #78 and refs
   #71; this planning pass lands via a docs-only PR off `master`, as #73 did for the physics plans,
-  and that PR also carries `docs/world-systems-plan-draft.md`'s rename/callout; release targeting
+  and that PR also carries `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s rename/callout; release targeting
   is an open decision (§12 OD3), not settled here.
 
 ### 1.3 Acceptance shape
@@ -203,7 +203,7 @@ not re-summarised.
 - **`SimulationLoop`** (`gametools-core/src/main/kotlin/com/spartanlabs/gaming/simulation/SimulationLoop.kt`)
   threads no `dt`: `advance()` (`SimulationLoop.kt:112-127`) calls `world.tick()` then
   `onTick(world.tickCount)` once per whole tick (`SimulationLoop.kt:118-119`) — an `onTick` closure
-  is exactly where a driver calls `world.stepSystems()`, mirroring how `docs/world-systems-plan-draft.md`'s
+  is exactly where a driver calls `world.stepSystems()`, mirroring how `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s
   superseded design was meant to be driven.
 - **`ZoneIndex`** (`gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/zone/ZoneIndex.kt`)
   is a plain, concrete class with one entry point, `refresh(world: World)` (`ZoneIndex.kt:38-62`),
@@ -241,8 +241,8 @@ not re-summarised.
   `@RequiresOptIn`/`@SupportedExtension`-shaped type exists anywhere in the repo today (confirmed:
   `gametools-core/src/main/kotlin/com/spartanlabs/gaming` has only `event`, `gameobjects`,
   `simulation`, `spatial`). `com.spartanlabs.gaming.annotation.SupportedExtension`'s exact,
-  parameterless shape was already settled by `docs/physics-core-seams-plan.md` §2.2/§10 item 1,
-  resolving a discrepancy against `docs/issue-49-physics-architecture.md` §4.2's own `note:
+  parameterless shape was already settled by `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2/§10 item 1,
+  resolving a discrepancy against `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §4.2's own `note:
   String = ""`-carrying sketch in favour of **no parameters** — this design reuses that resolved,
   parameterless shape (C1) rather than the architecture doc's superseded one.
 - **`World.reconcileSpatialIndex()` visibility.** Still `internal fun` on this branch
@@ -281,7 +281,7 @@ not re-summarised.
 | System | Module / package | Owns | Does not own |
 |---|---|---|---|
 | **`ExperimentalGameToolsApi`** | `gametools-core` / `com.spartanlabs.gaming.annotation` (new) | The library-wide `@RequiresOptIn(ERROR)` marker for an unproven seam. | Any specific seam's design; never deleted, even after everything it once gated graduates. |
-| **`SupportedExtension`** | `gametools-core` / `com.spartanlabs.gaming.annotation` (new) | The documentary "same semver guarantee as Stable Core, likely-but-non-core" marker (verbatim from `docs/physics-core-seams-plan.md` §2.2). | Any enforcement — `BINARY` retention, no compiler gate. |
+| **`SupportedExtension`** | `gametools-core` / `com.spartanlabs.gaming.annotation` (new) | The documentary "same semver guarantee as Stable Core, likely-but-non-core" marker (verbatim from `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §2.2). | Any enforcement — `BINARY` retention, no compiler gate. |
 | **`WorldSystem`** | `gametools-core` / `com.spartanlabs.gaming.gameobjects` (existing package, beside `World`) | The one-shot `installOn`/`uninstallFrom` lifecycle contract, the no-op-default `step`, and the `coreSlot` opt-in to tier 1. | Its own scheduling — that is `World`'s job; any concrete behaviour. |
 | **`CoreSystemSlot` / `CoreWorldSystemSlot`** | `gametools-core` / `com.spartanlabs.gaming.gameobjects` | The closed, library-defined set of tier-1 slots and their relative `order`. | Whether a slot is actually claimed by an installed system (that's `World`'s registry). |
 | **`World` registry members** (`installSystem`, `uninstallSystem`, `installedSystems`, `stepSystems`) | `gametools-core` / `com.spartanlabs.gaming.gameobjects` (members of the existing `World` class) | The install/uninstall bookkeeping, the tier-1-then-tier-2 step order, duplicate-instance and duplicate-slot rejection. | Any system's own behaviour; `World.tick()` is untouched and never calls `stepSystems()`. |
@@ -450,12 +450,12 @@ class ZoneIndex(grid: ZoneGrid) : AbstractWorldSystem() {
 `ZoneIndex` stays in `com.spartanlabs.gaming.world.zone` — package-by-feature, the same placement
 rule `ExperienceSystem` follows into `gameobjects.combat` (§4.6) and `PhysicsSystem` follows into
 `world.physics` (§4.8). The now-retired `world.system` package (superseded callout at the top of
-`docs/phase-1-map-and-space-plan.md`; its §2.1 package row) existed only for the superseded
+`docs/plans/86-phase-1-map-and-space/plan.md`; its §2.1 package row) existed only for the superseded
 aggregator and is not reused.
 
 **Revised 2026-09-28** — a user decision from #77's verification against the as-built #76 (recorded
 then in the earlier #77 plan, since replaced; the reasoning now lives in
-`docs/world-system-binding-architecture.md` §3 and §4.3). `ZoneIndex` keys its bookkeeping by
+`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §3 and §4.3). `ZoneIndex` keys its bookkeeping by
 `EntityId` and has no reset, and every `World` numbers its entities from the same start, so an
 index that has seen one `World` corrupts another's. This section first designed a guard only
 against the *same instance* being installed on a second `World` *concurrently*; that still let an
@@ -465,7 +465,7 @@ uninstall-then-install-elsewhere sequence mix two `World`s.
 `onInstalled()`), which would publish `EntityChangedZone` outside the per-frame loop the zone logic
 is meant to run in.
 
-**Revised 2026-10-01** — issue #77's design pass (`docs/world-system-binding-architecture.md`)
+**Revised 2026-10-01** — issue #77's design pass (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`)
 replaces the 2026-09-28 fixes this section went on to list — an adapter that builds its own index,
 and an `IllegalStateException` guard in `installOn` — and **reverses** the 2026-09-29 decision that
 "direct `ZoneIndex` use becomes `internal`". This section first designed `ZoneWorldSystem`, an
@@ -616,7 +616,7 @@ the `WorldSystem`: it extends `AbstractWorldSystem`, claims `PHYSICS`, declares
 where `World.reconcileSpatialIndex()` is called is #49's re-plan's decision; the rest of this
 section is history. See the callout.)*
 
-The unit plan (`docs/physics-world-system-plan.md` §2.4, its OD1) recommended a per-instance guard
+The unit plan (`docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` §2.4, its OD1) recommended a per-instance guard
 in `PhysicsWorldSystem.installOn`, because the last-planned `PhysicsSystem` keys its body registry
 by per-`World` `EntityId` alone — the hazard §4.5 records for `ZoneIndex`. That question is moot as
 of 2026-10-01: `PhysicsSystem` extends `AbstractWorldSystem`, which gives it bind-for-life, so no
@@ -626,13 +626,13 @@ this adapter carries the propagating `@ExperimentalGameToolsApi` like the other 
 and #79 strips it with them). Treats `PhysicsSystem`'s final shape
 as an unknown dependency — its last-planned shape,
 `class PhysicsSystem(resolver) { fun step(world: World) }`, comes from
-`docs/physics-system-plan.md`, itself now stale pending #49's re-plan (§7). The one fact this
+`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`, itself now stale pending #49's re-plan (§7). The one fact this
 adapter leans on is `World.reconcileSpatialIndex()` becoming public, which is #49's re-planned
 unit 1's job, not this document's. This design's headline contribution over the superseded
 `WorldSystems` aggregator: because `PHYSICS` and `ZONE` are now tier-1 slots with a fixed relative
 `order` rather than install-order-dependent, a game that installs `ZoneWorldSystem` *before*
 `PhysicsWorldSystem` still gets physics stepped first, every frame — the adapter's own regression
-test (§10, adapted from `docs/world-systems-plan-draft.md` §5's headline test) proves exactly this.
+test (§10, adapted from `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md` §5's headline test) proves exactly this.
 
 ---
 
@@ -669,7 +669,7 @@ sequenceDiagram
 ```
 *(Superseded 2026-10-01: the hooks take no `World` — `installSystem` checks, binds, records, then
 calls `onInstalled()` (a throwing hook is rolled back), and `uninstallSystem` removes, then calls
-`onUninstalled()`; the current sequence is `docs/world-system-binding-architecture.md` §5.1.)*
+`onUninstalled()`; the current sequence is `docs/plans/87-world-systems/77-zone-world-system/architecture.md` §5.1.)*
 
 ### 5.2 One frame with physics + zone — tier-1 order holds regardless of install order (#80)
 
@@ -733,15 +733,15 @@ sequenceDiagram
 | **`StandardCommandApplier` / `ClientCommand.applyTo`** | Per-datagram request handling, not per-frame or event-driven. | **Never.** |
 | **`Alive`'s own event publishing** (`DamageDealt`, `EntityDied`, etc.) | Per-object, not a world-level concern. | **Never.** |
 | **`AttackIntent`'s self-clear subscription** (`Alive.kt:493-514`) | Intent-scoped, tied to one actor's one standing order — the same *shape* `ExperienceSystem` uses, but at the wrong granularity to centralise. | **Never.** Named as the precedent `ExperienceSystem`'s subscription pattern follows, not a candidate to convert. |
-| **`IntentSource`** (`docs/intent-source-plan.md`) | A per-object poll from `Alive.onUpdate`, not a world-level per-frame concern. | **Never.** |
+| **`IntentSource`** (`docs/plans/67-intent-source/plan.md`) | A per-object poll from `Alive.onUpdate`, not a world-level per-frame concern. | **Never.** |
 | **Actor-intent-orders / client-command-protocol designs** | Per-object / per-datagram, respectively. | **Never.** |
 
 ---
 
 ## 7. Documentation corrections owed
 
-**Scope note, raised mid-design by a parallel review of `docs/issue-49-physics-architecture.md`
-§10 and confirmed against that document directly (`docs/issue-49-physics-architecture.md:707-717`,
+**Scope note, raised mid-design by a parallel review of `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`
+§10 and confirmed against that document directly (`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md:707-717`,
 row 6): the superseded `world-systems` unit's ownership was never limited to the `WorldSystems`
 class.** That unit's row also assigned it (a) the cross-cutting documentation/roadmap corrections
 listed in the architecture doc's own §7 — including the false `DirectionalProjectile`-sweeps claim
@@ -755,28 +755,28 @@ silently assumes someone else carries them. *(Superseded 2026-10-01: there is no
 adapter; #80 is resolved by #49. See the callout.)*
 
 The planner applies the edits below in this same planning pass, as pointer-style superseded
-callouts (in the register of `docs/world-systems-plan-draft.md`'s own callout), not as rewrites of
+callouts (in the register of `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s own callout), not as rewrites of
 the underlying historical text.
 
 | # | File : anchor | Heading | What the pointer says |
 |---|---|---|---|
-| 1 | `docs/issue-49-physics-architecture.md:1-31` (header), plus §1.2 constraints 1 and 4, §4.1 (`@SupportedExtension` and `WorldSystems` rows), §4.2, §4.9, §8 (`WorldSystems` row), §9 (first bullet, the rejected registry), §10 rows 1 and 6, §12 OD1 | Header/Association (one top-of-document callout naming every section) | The `WorldSystems` design in this document is superseded by #76–#80 (`docs/world-systems-implementation-architecture.md`); the physics→zone *ordering requirement* survives unchanged as tier-1 slot order (`PHYSICS(0)`, `ZONE(1)`). The §7/README-prose duties this unit's row also carried (see scope note above) are **not** resolved by this document and remain outstanding for #49's re-plan. |
-| 2 | `docs/physics-core-seams-plan.md:1-34` (header) | Header/Association | This unit's `@SupportedExtension`/annotation-package half is superseded — that annotation, plus its sibling `ExperimentalGameToolsApi`, is now built in #76 (`docs/world-systems-implementation-architecture.md` §4.1/§8), one stage earlier than #49 originally planned. Only this plan's other half — widening `World.reconcileSpatialIndex()` `internal` → `public` — remains #49's to re-plan. |
-| 3 | `docs/physics-system-plan.md:1-38` (header) | Header/Association | `PhysicsSystem`'s cross-unit contract (`class PhysicsSystem(resolver) { fun step(world: World) }`) is treated as an unknown dependency by #80's `PhysicsWorldSystem` adapter (`docs/world-systems-implementation-architecture.md` §4.8); this plan's own detailed design is stale pending #49's re-plan and should be revised or superseded there, not assumed current. *(Superseded 2026-10-01: there is no `PhysicsWorldSystem` adapter — `PhysicsSystem` is itself the `WorldSystem` and #80 is resolved by #49; see the callout.)* |
-| 4 | `docs/phase-1-map-and-space-plan.md:237,404` (`world.system` package row) | §2.1 package table; §2.5 directory listing | The `world.system`/`WorldSystems` sketch is superseded twice over: first by the aggregator's own retirement (`docs/world-systems-plan-draft.md`'s callout), and now by #76–#80's `WorldSystem` mechanism, which places its built-in slot types in `gametools-core`'s existing `gameobjects` package, not a new `gametools-world` `world.system` package. |
+| 1 | `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md:1-31` (header), plus §1.2 constraints 1 and 4, §4.1 (`@SupportedExtension` and `WorldSystems` rows), §4.2, §4.9, §8 (`WorldSystems` row), §9 (first bullet, the rejected registry), §10 rows 1 and 6, §12 OD1 | Header/Association (one top-of-document callout naming every section) | The `WorldSystems` design in this document is superseded by #76–#80 (`docs/plans/87-world-systems/architecture.md`); the physics→zone *ordering requirement* survives unchanged as tier-1 slot order (`PHYSICS(0)`, `ZONE(1)`). The §7/README-prose duties this unit's row also carried (see scope note above) are **not** resolved by this document and remain outstanding for #49's re-plan. |
+| 2 | `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md:1-34` (header) | Header/Association | This unit's `@SupportedExtension`/annotation-package half is superseded — that annotation, plus its sibling `ExperimentalGameToolsApi`, is now built in #76 (`docs/plans/87-world-systems/architecture.md` §4.1/§8), one stage earlier than #49 originally planned. Only this plan's other half — widening `World.reconcileSpatialIndex()` `internal` → `public` — remains #49's to re-plan. |
+| 3 | `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md:1-38` (header) | Header/Association | `PhysicsSystem`'s cross-unit contract (`class PhysicsSystem(resolver) { fun step(world: World) }`) is treated as an unknown dependency by #80's `PhysicsWorldSystem` adapter (`docs/plans/87-world-systems/architecture.md` §4.8); this plan's own detailed design is stale pending #49's re-plan and should be revised or superseded there, not assumed current. *(Superseded 2026-10-01: there is no `PhysicsWorldSystem` adapter — `PhysicsSystem` is itself the `WorldSystem` and #80 is resolved by #49; see the callout.)* |
+| 4 | `docs/plans/86-phase-1-map-and-space/plan.md:237,404` (`world.system` package row) | §2.1 package table; §2.5 directory listing | The `world.system`/`WorldSystems` sketch is superseded twice over: first by the aggregator's own retirement (`docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s callout), and now by #76–#80's `WorldSystem` mechanism, which places its built-in slot types in `gametools-core`'s existing `gameobjects` package, not a new `gametools-world` `world.system` package. |
 | 5 | `docs/api-openness-decisions-6.0.0.md` (D1's `@SupportedExtension` footnote area, and D3/D4) | D1 Follow-up; D3 `EventBus`; D4 `World` | `@SupportedExtension`'s home and final, parameterless shape are now fixed by #76, one stage ahead of #49 — no further design owed for its shape. D4's compositional answer ("Phase 1's `WorldSystems.step()` is purpose-built for 'run my own systems each frame'") is superseded by name only: the *purpose* it named is now met by `World.installSystem`/`stepSystems` instead of the retired `WorldSystems` class — D4's underlying ruling (keep `World` closed to subclassing) is unaffected and not reopened here. |
 | 6 | `docs/framework-vision-and-roadmap.md:140-148` (Phase 2 item 5) | Phase 2 — Rich combat, item 5 | "Kill-credit resolution + XP/leveling hooks (event-driven; curve pluggable — Open Decision E)" is now concretely `ExperienceSystem` + the reshaped `ExperienceGrantor`/`AOEGrantor` contract (#78), landing ahead of the rest of Phase 2/`gametools-combat`, inside `gametools-core`'s existing `gameobjects.combat` package rather than a new module. |
 | 7 | `docs/framework-vision-and-roadmap.md:249` (Open Decision E) | §5 Open Decisions table, row E | "How opinionated is XP/leveling?" is partly answered by #78: the *credit* policy (who receives, how split) is now fully pluggable via `ExperienceGrantor`/`AOEGrantor`'s open hooks; the *leveling curve* question (`LevelCurve` interface vs. fixed formula) is untouched by this design and stays open — see §12 OD2 for the one related, still-open tier question. |
-| 8 | `docs/world-systems-plan-draft.md` (already-staged rename with its Superseded callout) | Top-of-file callout | Append a short addendum, without rewriting the existing callout: the callout's own replacement design (every system stepped in plain installation order, physics→zone as a caller-kept convention) was itself refined before implementation into the two-tier model of §4.3/§4.4 — `PHYSICS`/`ZONE` are library-reserved slots whose relative order holds regardless of install order — and this document plus its five plans are the "revised plan" the callout forward-references. #79 later marks the callout fully landed. |
+| 8 | `docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md` (already-staged rename with its Superseded callout) | Top-of-file callout | Append a short addendum, without rewriting the existing callout: the callout's own replacement design (every system stepped in plain installation order, physics→zone as a caller-kept convention) was itself refined before implementation into the two-tier model of §4.3/§4.4 — `PHYSICS`/`ZONE` are library-reserved slots whose relative order holds regardless of install order — and this document plus its five plans are the "revised plan" the callout forward-references. #79 later marks the callout fully landed. |
 
 **README/CONTRIBUTING/CHANGELOG duties per stage** (each stage documents its own new surface, per
-the precedent `docs/issue-49-physics-architecture.md` §10's closing paragraph already established
+the precedent `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §10's closing paragraph already established
 for the six physics units):
 
 | Stage | Owns |
 |---|---|
-| #76 | README/CONTRIBUTING: new `com.spartanlabs.gaming.annotation` package row (core), `WorldSystem`/slot types/`World` members in the `gameobjects` row. CHANGELOG `[Unreleased] ### Added` entry. *Narrowed by `docs/world-system-core-plan.md` §4.7/§4.8 and built that way:* `annotation` joins the core row's existing package glob rather than getting its own row, and the README core row names `WorldSystem` (Experimental) and the two stability markers only; the slot types and `World`'s new members are documented in KDoc, not in the module table. *(Superseded in part 2026-10-01: unit 1 of #77, `docs/world-system-binding-plan.md` §4.6, amends this README core row, class diagram and installed-systems bullet, and the #76 CHANGELOG entry, for the reworked contract.)* |
-| #77 | README: the world row and the zone bullet rewritten around `ZoneIndex` as the zone `WorldSystem` (installed and driven by `stepSystems()`; no `ZoneWorldSystem`, no `refresh`), plus a `ZoneIndex` clause in the installed-systems bullet. CONTRIBUTING: no edit — its world row already lists `ZoneIndex`. CHANGELOG: #47's still-unreleased zone entry reworded around `ZoneIndex` as the system, plus a new #77 entry. Owned by `docs/zone-world-system-plan.md` §5 (unit 2). Website: none — see #79's row. *(Superseded in part 2026-10-02: CONTRIBUTING's world row gains `UnzonedEntityException`, and so does README's world row; the README zone bullet and the new #77 CHANGELOG entry also give `zoneOf`'s `Result<Zone>` shape — binding architecture C22.)* |
+| #76 | README/CONTRIBUTING: new `com.spartanlabs.gaming.annotation` package row (core), `WorldSystem`/slot types/`World` members in the `gameobjects` row. CHANGELOG `[Unreleased] ### Added` entry. *Narrowed by `docs/plans/87-world-systems/76-world-system-core/plan.md` §4.7/§4.8 and built that way:* `annotation` joins the core row's existing package glob rather than getting its own row, and the README core row names `WorldSystem` (Experimental) and the two stability markers only; the slot types and `World`'s new members are documented in KDoc, not in the module table. *(Superseded in part 2026-10-01: unit 1 of #77, `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` §4.6, amends this README core row, class diagram and installed-systems bullet, and the #76 CHANGELOG entry, for the reworked contract.)* |
+| #77 | README: the world row and the zone bullet rewritten around `ZoneIndex` as the zone `WorldSystem` (installed and driven by `stepSystems()`; no `ZoneWorldSystem`, no `refresh`), plus a `ZoneIndex` clause in the installed-systems bullet. CONTRIBUTING: no edit — its world row already lists `ZoneIndex`. CHANGELOG: #47's still-unreleased zone entry reworded around `ZoneIndex` as the system, plus a new #77 entry. Owned by `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` §5 (unit 2). Website: none — see #79's row. *(Superseded in part 2026-10-02: CONTRIBUTING's world row gains `UnzonedEntityException`, and so does README's world row; the README zone bullet and the new #77 CHANGELOG entry also give `zoneOf`'s `Result<Zone>` shape — binding architecture C22.)* |
 | #78 | README: the Leveling bullet (now wired via `ExperienceSystem`, with the reshaped `ExperienceGrantor`/`AOEGrantor`). CONTRIBUTING: no edit — its `gametools-core` row is a package glob that already covers `gameobjects.*` (corrected in the alignment pass). CHANGELOG: `ExperienceSystem` bullet (#78), plus the `ExperienceGrantor`/`AOEGrantor` bullet. That bullet amends #71's own if #71 added one; otherwise it is written fresh and credited `(#71)` — #71's branch has none today. |
 | #79 | CHANGELOG `### Changed` promotion entry ("no longer Experimental — promoted to `@SupportedExtension`"), or an amendment to #76's own still-`[Unreleased]` entry if both fall in the same window. README/CONTRIBUTING: strip the "Experimental" qualifiers #76/#77/#78 added (added in the alignment pass). Marks the draft doc's callout "fully landed" and updates this document's Status line. Website: none — every World Systems website update (`WorldSystem`'s installed-systems line, #76's F1, and #77's zone cards) waits for Phase 1's close (#86), by the user's decision of 2026-09-28. |
 | #80 | README/CONTRIBUTING: `PhysicsWorldSystem` added to the (re-planned) physics package mention. CHANGELOG entry. **Does not** carry the physics-as-a-whole README prose or the roadmap Open Decision C correction — those remain #49's, per the scope note above. *(Superseded 2026-10-01: there is no `PhysicsWorldSystem`; #80 is resolved by #49. See the callout.)* |
@@ -803,7 +803,7 @@ documentation.
 | `ZoneIndex` | Experimental — class-level `@ExperimentalGameToolsApi` from #77, so `zoneOf` and `entitiesIn` need the opt-in too | Stable Core, untagged — doubles as `WorldSystem`'s worked example | Itself the zone `WorldSystem` (§4.5): extends `AbstractWorldSystem`, claims `ZONE`, declares `uniqueRole = ZoneIndex::class`; public constructor, no `refresh`. Reverses the 2026-09-29 call that the class and its reads stay untagged while its constructor and `refresh` go `internal`. *(2026-10-02: `zoneOf` returns `Result<Zone>`; its miss carries the new `UnzonedEntityException`, class-level `@ExperimentalGameToolsApi` like `ZoneIndex` and graduating with it at #79 to untagged Stable Core — binding architecture C22.)* |
 | `ExperienceSystem` | Experimental | Stable Core, untagged | Same as `ZoneWorldSystem`. *(Superseded 2026-10-01: read `ZoneIndex`; `ExperienceSystem` extends `AbstractWorldSystem` and declares `uniqueRole = ExperienceSystem::class`.)* |
 | `ExperienceGrantor` / `AOEGrantor` (reshaped) | Open decision — see §12 OD2 | — | Recommendation: Stable Core, untagged, matching `ExperienceReceiver`'s own existing (untagged) tier — XP crediting is core combat functionality (roadmap Phase 2 item 5), the interface + shipped default is exactly the parameterised-policy shape the library rule asks for, and its shape is exercised in-repo by `ExperienceSystem` and `AOEGrantor` themselves. Not gated by the Experimental marker, since it is not part of the `WorldSystem` seam. |
-| `PhysicsWorldSystem` | — (lands after #79) | Stable Core from birth, no marker ever needed | Lands post-graduation. *(Superseded 2026-10-01: no `PhysicsWorldSystem` — `PhysicsSystem` (#49) is itself the `WorldSystem` and follows `ZoneIndex`'s tier path (`docs/world-system-binding-architecture.md` §8); see the callout.)* |
+| `PhysicsWorldSystem` | — (lands after #79) | Stable Core from birth, no marker ever needed | Lands post-graduation. *(Superseded 2026-10-01: no `PhysicsWorldSystem` — `PhysicsSystem` (#49) is itself the `WorldSystem` and follows `ZoneIndex`'s tier path (`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §8); see the callout.)* |
 | Gradle test-only opt-in | `compileTestKotlin` in `gametools-core`/`gametools-world` `build.gradle.kts`, adding `com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` to `compilerOptions.optIn` | Removed at #79 | No main-source-set flag, ever — production code that wants to use these types opts in explicitly per call site or per class, the same as any other consumer. |
 
 **Domain vs. infrastructure split, applied:** `WorldSystem`, `ZoneWorldSystem`, `ExperienceSystem`,
@@ -828,7 +828,7 @@ reimplementing the split or breaking its invariants.
   warns against, and #78's `ExperienceSystem` — a system with no per-frame work at all — proved
   the two slots didn't generalize the moment a second real consumer showed up.
 - **Pure install order, no slots at all.** Simpler, and was in fact the first generalisation
-  proposed (`docs/world-systems-plan-draft.md`'s own superseding callout). Rejected because it
+  proposed (`docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`'s own superseding callout). Rejected because it
   makes physics-before-zone a *documented convention* a caller can silently violate by installing
   in the wrong order, reintroducing the one-frame `EntityChangedZone` lag #49's own flip was
   designed to eliminate — with no compiler signal. Would win if no ordering guarantee were ever
@@ -877,21 +877,21 @@ reimplementing the split or breaking its invariants.
 
 | Slug | Issue | Scope | Depends on | Landing order | Branch |
 |---|---|---|---|---|---|
-| `world-system-core` | #76 | `com.spartanlabs.gaming.annotation` (`ExperimentalGameToolsApi`, `SupportedExtension`); `WorldSystem`, `CoreSystemSlot`/`CoreWorldSystemSlot`; `World`'s `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems`. | none | 1 | `feature/76-world-system-core`, off `master` *(Superseded in part 2026-10-01: #77's unit 1, `world-system-binding` (`docs/world-system-binding-plan.md`), reworks `WorldSystem` and these `World` members — parameterless hooks, `AbstractWorldSystem`, `uniqueRole`, `World.systemOf`; see the callout.)* |
-| `zone-world-system` | #77 | `ZoneWorldSystem` wrapping the existing `ZoneIndex` into the `ZONE` tier-1 slot. | `world-system-core` | 2 | `feature/77-zone-world-system`, off `master` after #76 merges (`CONTRIBUTING.md`: branch off the latest `master`; no stacking) *(Superseded 2026-10-01: `ZoneIndex` is itself the zone `WorldSystem` and nothing wraps it — unit 2, `docs/zone-world-system-plan.md`, which replaced the earlier plan of that name; see the callout.)* |
+| `world-system-core` | #76 | `com.spartanlabs.gaming.annotation` (`ExperimentalGameToolsApi`, `SupportedExtension`); `WorldSystem`, `CoreSystemSlot`/`CoreWorldSystemSlot`; `World`'s `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems`. | none | 1 | `feature/76-world-system-core`, off `master` *(Superseded in part 2026-10-01: #77's unit 1, `world-system-binding` (`docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md`), reworks `WorldSystem` and these `World` members — parameterless hooks, `AbstractWorldSystem`, `uniqueRole`, `World.systemOf`; see the callout.)* |
+| `zone-world-system` | #77 | `ZoneWorldSystem` wrapping the existing `ZoneIndex` into the `ZONE` tier-1 slot. | `world-system-core` | 2 | `feature/77-zone-world-system`, off `master` after #76 merges (`CONTRIBUTING.md`: branch off the latest `master`; no stacking) *(Superseded 2026-10-01: `ZoneIndex` is itself the zone `WorldSystem` and nothing wraps it — unit 2, `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`, which replaced the earlier plan of that name; see the callout.)* |
 | `experience-system` | #78 | `ExperienceSystem`; the `ExperienceGrantor`/`AOEGrantor` reshape (C2); `DefaultExperienceReceiver` KDoc/import cleanup. | `world-system-core`, **and #71 merged** | 3 | `feature/78-experience-system`, off `master` after both #71 and #76 merge |
 | `world-system-graduation` | #79 | Remove all Experimental markers from #76–#78's surface; add `@SupportedExtension` to `WorldSystem`; CHANGELOG promotion entry; mark the draft doc's callout fully landed. | `zone-world-system`, `experience-system` | 4 | `feature/79-world-system-graduation`, off `master` after #77 and #78 merge *(Superseded 2026-10-01: #79 also tags `AbstractWorldSystem` `@SupportedExtension`; `uniqueRole` and both forms of `World.systemOf` graduate with the registry; `ZoneIndex` replaces `ZoneWorldSystem` in its removal list; see the callout.)* |
 | `physics-world-system` | #80 | `PhysicsWorldSystem` adapter (`PHYSICS` slot) plus its regression test proving tier-1 order holds regardless of install order. Physics itself is out of scope — designed by #49's own re-plan. | `world-system-core`, **and #49 re-implemented** | 5 | `feature/80-physics-world-system`, off `master` after #49 (re-planned and merged) and #76 *(Superseded 2026-10-01: there is no adapter — #80 is resolved by #49, whose `PhysicsSystem` is itself the `WorldSystem`; see the callout.)* |
 
-Plan documents land as `docs/world-system-core-plan.md`, `docs/zone-world-system-plan.md`,
-`docs/experience-system-plan.md`, `docs/world-system-graduation-plan.md`,
-`docs/physics-world-system-plan.md`. Sequencing relative to #71/#49: #71 and #76/#77 are mutually
+Plan documents land as `docs/plans/87-world-systems/76-world-system-core/plan.md`, `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`,
+`docs/plans/87-world-systems/78-experience-system/plan.md`, `docs/plans/87-world-systems/79-world-system-graduation/plan.md`,
+`docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`. Sequencing relative to #71/#49: #71 and #76/#77 are mutually
 independent and may proceed in parallel; #78 is the first stage that requires #71's package move
 to have landed (it edits the `AOEGrantor` #71 introduces); #80 is gated on #49's own re-plan and
 re-implementation, which this document does not design.
 
 **`physics-world-system` (#80) is narrower than the physics-side duties the superseded
-`world-systems` unit (`docs/issue-49-physics-architecture.md` §10 row 6) used to carry.** That
+`world-systems` unit (`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §10 row 6) used to carry.** That
 unit also owned the §7 cross-cutting documentation/roadmap corrections (the false
 `DirectionalProjectile`-sweeps claim, etc.) and the README physics-as-a-whole prose — see §7's
 scope note above. Neither duty is a row in this table, and none of the five units listed here
@@ -927,7 +927,7 @@ absorbs both, or they go permanently unowned — carried forward as a gap risk i
   mostly costs the out-of-range killer bonus (§12 OD4).
 - **#80's dependency drift.** This document treats `PhysicsSystem`'s shape
   (`class PhysicsSystem(resolver) { fun step(world: World) }`) as an *unknown*, sourced from a
-  stale plan (`docs/physics-system-plan.md`) that itself predates #49's reopening. If #49's
+  stale plan (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`) that itself predates #49's reopening. If #49's
   re-plan changes that shape — most plausibly, folding `reconcileSpatialIndex()` into
   `PhysicsSystem.step` itself — `PhysicsWorldSystem.step` loses its own explicit call, a small,
   contained, single-call-site change. The bigger drift risk is scope, not shape: §7's scope note
@@ -950,7 +950,7 @@ absorbs both, or they go permanently unowned — carried forward as a gap risk i
   semver weight. The same holds for #77's rework of #76's merged `WorldSystem` core (parameterless
   hooks, `AbstractWorldSystem`, `uniqueRole`, `World.systemOf`) and for `ZoneIndex` becoming the
   zone `WorldSystem` with no `refresh`: #76 and #47 have never been in a release — provided `5.2.0`
-  is not cut before #77 merges (`docs/world-system-binding-architecture.md` §12, C12).
+  is not cut before #77 merges (`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §12, C12).
 - **Cross-repo impact:** none identified. No wire/protocol change; `gametools-net` is untouched by
   #76–#80. Per standing "no downstream consumer issues" guidance, `MyGameServer`/`GameGraphics` are
   not filed against.
@@ -1001,7 +1001,7 @@ absorbs both, or they go permanently unowned — carried forward as a gap risk i
      fix: a death-position snapshot carried on the event.
 
 **Added 2026-10-01 — decisions from #77's design pass.** They are recorded in
-`docs/world-system-binding-architecture.md` §13, numbered OD1–OD4c there, independently of OD1–OD4
+`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §13, numbered OD1–OD4c there, independently of OD1–OD4
 above. Resolved on 2026-09-30 and 2026-10-01: what a throwing `onInstalled()` does (OD1),
 re-entrancy while it runs (OD2), whether `ZoneIndex` and `PhysicsSystem` declare a `uniqueRole`
 (OD3), and the `World.systemOf` lookup, with its `Result` return, its reified form and its
@@ -1018,11 +1018,11 @@ Appended by the planner after stage 4. The five unit plans were drafted in paral
 that could not see each other. Every plan was then read in full and checked against this
 architecture and against its siblings:
 
-- `docs/world-system-core-plan.md` (#76)
-- `docs/zone-world-system-plan.md` (#77)
-- `docs/experience-system-plan.md` (#78)
-- `docs/world-system-graduation-plan.md` (#79)
-- `docs/physics-world-system-plan.md` (#80)
+- `docs/plans/87-world-systems/76-world-system-core/plan.md` (#76)
+- `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` (#77)
+- `docs/plans/87-world-systems/78-experience-system/plan.md` (#78)
+- `docs/plans/87-world-systems/79-world-system-graduation/plan.md` (#79)
+- `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` (#80)
 
 ### What was checked
 
@@ -1088,7 +1088,7 @@ architecture and against its siblings:
 
    #80's guard, KDoc and tests were changed from `require`/IAE to `check`/ISE.
 
-   **Revised 2026-10-01** (issue #77's design pass, `docs/world-system-binding-architecture.md`
+   **Revised 2026-10-01** (issue #77's design pass, `docs/plans/87-world-systems/77-zone-world-system/architecture.md`
    §1.2 C2, C6, C7): the adapters' `installOn` guards, and with them the `check`/
    `IllegalStateException` rule, no longer exist. Every install rejection — a duplicate instance, an
    occupied slot, a system bound to a different `World`, and a duplicate `uniqueRole`, which

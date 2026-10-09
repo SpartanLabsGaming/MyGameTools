@@ -15,7 +15,7 @@
   § Branching model, `fix/<issue#>-<slug>`).
 - **Commit:** this plan document rides **commit 1** of three on
   `fix/40-umbrella-empty-docs-jars` (the repo-wide Dokka classloader fix) so
-  `git log --follow docs/issue-40-umbrella-empty-sources-jar.md` binds plan to implementation.
+  `git log --follow docs/plans/40-umbrella-empty-sources-jar/plan.md` binds plan to implementation.
   See § 7 for the three-commit breakdown.
 - **PR:** opens against `master` with `Closes #40` — three commits, see § 7.
 - **Status:** **complete on branch `fix/40-umbrella-empty-docs-jars`**; both halves landed.
@@ -30,7 +30,7 @@
   `release/*` branch cuts (currently trending `5.1.0`, carrying #39 / PR #41). The
   `coordinates(...)` bump and the `CHANGELOG.md` `[Unreleased]` → version-heading move happen
   on that release branch per `CONTRIBUTING.md` § Releasing, never here.
-- **Related docs:** `docs/module-split-plan.md` (§ "gametools umbrella module" and its Risks
+- **Related docs:** `docs/plans/32-module-split/plan.md` (§ "gametools umbrella module" and its Risks
   list both state the umbrella "emits an empty sources/javadoc jar — Central accepts it";
   this plan supersedes that for **both** jars); `CONTRIBUTING.md` § Module layout,
   § Versioning, § Releasing.
@@ -360,7 +360,7 @@ sources/javadoc jar is never on the compile or runtime classpath.
 
 | Option | Verdict |
 | --- | --- |
-| **Publish no `-sources.jar` / `-javadoc.jar` for the umbrella** (`sourcesJar = false` etc.) | Rejected. `module-split-plan.md` records that Central *accepts* the empty jars, not that it accepts *missing* ones — validation risk. And it improves no consumer: the umbrella coordinate would still resolve nothing, just via absence instead of an empty file. |
+| **Publish no `-sources.jar` / `-javadoc.jar` for the umbrella** (`sourcesJar = false` etc.) | Rejected. `docs/plans/32-module-split/plan.md` records that Central *accepts* the empty jars, not that it accepts *missing* ones — validation risk. And it improves no consumer: the umbrella coordinate would still resolve nothing, just via absence instead of an empty file. |
 | **Documentation only** ("depend on `-core` / `-net` for sources") | Rejected as *the* fix — leaves the papercut for every umbrella consumer. Kept as a supporting README line (Resolved decisions #4). |
 | **Aggregate classes into the umbrella `.jar` too** (fat/shadow umbrella) | Rejected. Contradicts the "carries no source of its own" design; puts the same classes on the classpath twice; solves no problem. |
 | **`project(...).sourceSets["main"].allSource` for sources** | Rejected — not configuration-cache safe; evaluation-order fragile. |
@@ -520,7 +520,7 @@ Replace the WT `### Fixed` bullet (currently sources-only) with two bullets:
 - The WT Testing paragraph (`:build-logic:integrationTest`) — update "`-sources.jar`" →
   "`-sources.jar` / `-javadoc.jar`" to match commit 3's re-enabled assertion.
 
-#### `docs/module-split-plan.md` **(WT, adjust wording)**
+#### `docs/plans/32-module-split/plan.md` **(WT, adjust wording)**
 
 - WT line ~202 note currently says the `-javadoc.jar` "is still empty, blocked on a repo-wide
   Dokka v2 issue". Change to: *"(both the `-sources.jar` and `-javadoc.jar` are populated
@@ -529,7 +529,7 @@ Replace the WT `### Fixed` bullet (currently sources-only) with two bullets:
   The `.jar` (classes) stays deliberately empty."*
 - WT Risks "Empty umbrella jar" note — same: drop "the `-javadoc.jar` fix is still pending".
 
-#### `docs/issue-40-umbrella-empty-sources-jar.md` — this document
+#### `docs/plans/40-umbrella-empty-sources-jar/plan.md` — this document
 
 `git add`-ed into **commit 1** (with the Dokka fix) so `git log --follow` binds plan to the
 first implementation commit.
@@ -590,7 +590,7 @@ with a `build-logic-test-reports` artifact upload on failure. No change.
 | **Inner core** (in-editor) | Yes | `//region` block + why-comment + `// issue #40` marker on the new build code, per `.aiassistant/rules/CLAUDE.md` §5. |
 | **Component ring** (KDoc / API contract) | No | No Kotlin API, class, or signature change. |
 | **Boundary ring** (protocol / integration) | Yes | The Maven coordinate is a cross-project contract. `CHANGELOG.md [Unreleased]` gains two `### Fixed` bullets (module javadoc jars + umbrella docs jars); `README.md` Installation gains the sources/docs note. |
-| **Architectural outer layer** | Minor | This plan document; the build-topology change (Kotlin/Dokka plugins now applied from the root — a deliberate, documented `plugins {}` layout choice, comment in `build.gradle.kts` + `settings.gradle.kts`); de-stale note in `docs/module-split-plan.md`; README Testing paragraph for the new `:build-logic:integrationTest` task. No C4 diagram change. |
+| **Architectural outer layer** | Minor | This plan document; the build-topology change (Kotlin/Dokka plugins now applied from the root — a deliberate, documented `plugins {}` layout choice, comment in `build.gradle.kts` + `settings.gradle.kts`); de-stale note in `docs/plans/32-module-split/plan.md`; README Testing paragraph for the new `:build-logic:integrationTest` task. No C4 diagram change. |
 
 README **is** updated this change: a new build/test task (`:build-logic:integrationTest`) and
 a behavioural note about the published artifacts both count under the global README-currency
@@ -821,7 +821,7 @@ After the next release is published to Maven Central (the user runs the publish)
      `build.gradle.kts` root (`apply false` for KGP + serialization),
      `build-logic/build.gradle.kts` (DGP `2.0.0 → 2.2.0` only),
      `CHANGELOG.md` `[Unreleased]` `### Fixed` (the "every module javadoc jar was empty"
-     bullet), and `docs/issue-40-umbrella-empty-sources-jar.md` (this plan — same commit,
+     bullet), and `docs/plans/40-umbrella-empty-sources-jar/plan.md` (this plan — same commit,
      binds plan to first implementation commit). Body: cite the Dokka warning + Gradle #25616;
      `Refs #40`.
   2. `fix(build): populate the umbrella -sources.jar and -javadoc.jar`
@@ -830,7 +830,7 @@ After the next release is published to Maven Central (the user runs the publish)
      **both**; delete the `NOTE`/`FIXME` block),
      `.github/workflows/ci.yml` (`assemble` job runs **both** verify tasks),
      `CHANGELOG.md` (the umbrella-jars bullet), `README.md` Installation "Sources & docs"
-     blockquote, `docs/module-split-plan.md` de-stale. `Refs #40`.
+     blockquote, `docs/plans/32-module-split/plan.md` de-stale. `Refs #40`.
   3. `test(build): TestKit coverage for the module & umbrella documentation jars`
      — `build-logic/build.gradle.kts` (JUnit 5 + TestKit deps + `integrationTest` task +
      `test` exclusion of `testing.integration`; keep the DGP bump in commit 1),
@@ -879,7 +879,7 @@ One item is genuinely the human's call:
 3. **Commit 2 — umbrella aggregation.** `gametools/build.gradle.kts`: add
    `verifyUmbrellaJavadocJar` to the `check` `dependsOn`, delete the `NOTE`/`FIXME` block.
    `ci.yml` `assemble` job runs both verify tasks. `CHANGELOG.md` umbrella bullet, `README.md`
-   "Sources & docs" blockquote, `docs/module-split-plan.md` de-stale. Run
+   "Sources & docs" blockquote, `docs/plans/32-module-split/plan.md` de-stale. Run
    `:gametools:dokkaGeneratePublicationHtml` once; tune `verifyUmbrellaJavadocJar` heuristics
    to the real aggregated tree.
 4. **Level 1 gating** (§ 5): both umbrella jars, both `verifyUmbrella*` tasks, `./gradlew build`,
@@ -906,5 +906,5 @@ One item is genuinely the human's call:
   five-level task wiring) now that the test source set exists — separate issue.
 - Guard the `docs` CI job against a future module-Dokka regression at source (§ 3, commit 2
   optional note) — small follow-up if it did not ride this PR.
-- `gametools-bom` (`java-platform`) — already deferred in `docs/module-split-plan.md`
+- `gametools-bom` (`java-platform`) — already deferred in `docs/plans/32-module-split/plan.md`
   Open Decision C; unaffected by this change.

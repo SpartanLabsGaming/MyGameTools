@@ -9,12 +9,12 @@
   [SpartanLabsGaming/MyGameTools#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76)
   (*"World Systems Stage 1: `WorldSystem` core mechanism (opt-in per-`World` system registry)"*,
   merged as PR #130). **This plan is the rework of #76's core** — `gametools-core` only.
-- **Architecture:** [`docs/world-system-binding-architecture.md`](world-system-binding-architecture.md),
+- **Architecture:** [`docs/plans/87-world-systems/77-zone-world-system/architecture.md`](architecture.md),
   unit `world-system-binding` (§10 row 1; slices §4.1–§4.5, §5, §6, §7.1, §7.4, §8, §9, §11.1,
   §12, §13). Its §1.2 C1–C22 are the user's binding decisions and are not re-litigated here.
-  Sibling unit: `zone-world-system` (`docs/zone-world-system-plan.md`).
+  Sibling unit: `zone-world-system` (`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`).
 - **Branch:** `feature/77-zone-world-system` (exists; HEAD `b5e57b0`). One PR for both units (C12).
-- **Commit:** TBD — this plan **and** `docs/world-system-binding-architecture.md` are committed in
+- **Commit:** TBD — this plan **and** `docs/plans/87-world-systems/77-zone-world-system/architecture.md` are committed in
   unit 1's **first** commit (Stage 1), so `git log --follow` binds them to the implementation.
 - **PR:** TBD (shared with unit 2).
 - **What this plans:** `WorldSystem` reworked to a bound, parameterless-hook contract with
@@ -180,7 +180,7 @@ recorded; from inside it `installedSystems` contains the system, `systemOf` find
 | 1 — in-editor | `//region` / `//endregion` markers and numbered import groups in the new `AbstractWorldSystem.kt` and `MissingWorldSystemException.kt` and the edited files (house style); the `// 1.2 Spartan Gaming` / `// 3.2.1 Standard library` groups gain `kotlin.reflect.KClass` where used; a Level-1 line comment on `MissingWorldSystemException.fillInStackTrace` (it runs from `Throwable`'s constructor and must read nothing) |
 | 2 — component / API contract | Level-2 KDoc (`@param`/`@return`/`@throws`) on every new or changed public declaration: `WorldSystem` and all its members, `AbstractWorldSystem` and its public `world`, `World.installSystem` / `uninstallSystem` / `installedSystems` / `stepSystems` / `systemOf`, `MissingWorldSystemException` and its `role`; `CoreSystemSlot` / `CoreWorldSystemSlot` |
 | 3 — boundary / protocol | The install protocol (this plan's §2.2 flowchart; KDoc on `installSystem`), the hook ordering guarantees, bind-for-life, C15's legal-but-discouraged calls, the exact-key lookup rule; README feature bullet; CHANGELOG |
-| 4 — architectural | `docs/world-system-binding-architecture.md` (committed in Stage 1); README class diagram. Older architecture docs are the planner's (§11.2 of the architecture — approved and applied 2026-10-01, landing as a separate `docs:` commit — **not this unit's**) |
+| 4 — architectural | `docs/plans/87-world-systems/77-zone-world-system/architecture.md` (committed in Stage 1); README class diagram. Older architecture docs are the planner's (§11.2 of the architecture — approved and applied 2026-10-01, landing as a separate `docs:` commit — **not this unit's**) |
 
 **README currency:** this change alters a public protocol and adds public types, so the **same PR**
 updates `README.md` (Stage 3, §4.6) and `CHANGELOG.md`. `CONTRIBUTING.md`: no edit (its core row is
@@ -241,11 +241,11 @@ but the stash is the durable one):
   `ZoneIndexTest`) — a nested member shadows a top-level declaration, no redeclaration error.
 - the uncommitted test-only opt-in block in `gametools-world/build.gradle.kts` (unit 2 commits it;
   harmless without a `WorldSystem` in `gametools-world`).
-- every uncommitted `docs/*.md` hunk (`docs/api-openness-decisions-6.0.0.md`, `docs/issue-47-zones-plan.md`,
-  `docs/phase-1-map-and-space-plan.md`, `docs/physics-world-system-plan.md`,
-  `docs/world-system-core-architecture.md`, `docs/world-system-core-plan.md`,
-  `docs/world-system-graduation-plan.md`, `docs/world-systems-implementation-architecture.md`,
-  `docs/zone-world-system-plan.md`) — planner-owned (§11.2) or unit 2's; never staged here.
+- every uncommitted `docs/*.md` hunk (`docs/api-openness-decisions-6.0.0.md`, `docs/plans/86-phase-1-map-and-space/47-zones/plan.md`,
+  `docs/plans/86-phase-1-map-and-space/plan.md`, `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`,
+  `docs/plans/87-world-systems/76-world-system-core/architecture.md`, `docs/plans/87-world-systems/76-world-system-core/plan.md`,
+  `docs/plans/87-world-systems/79-world-system-graduation/plan.md`, `docs/plans/87-world-systems/architecture.md`,
+  `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`) — planner-owned (§11.2) or unit 2's; never staged here.
 
 **Never use** `git clean`, `git checkout .`, `git restore .`, a `git stash`/`git stash -u` **without
 a pathspec**, or `git add -A`/`git add .` in this PR: each would destroy, park or sweep in
@@ -963,7 +963,7 @@ separate, later plan. Related issue: #133, which defines a selective Level-5 `te
 | # | Message | Stages / files |
 |---|---|---|
 | 0 | — (no commit) | Stage 0: the path-limited stash (§4.0) |
-| 1 | `feat(gameobjects): bind a WorldSystem to its World` | `MAIN/WorldSystem.kt`, `MAIN/AbstractWorldSystem.kt` (new), `MAIN/World.kt` (no `systemOf`), `MAIN/CoreSystemSlot.kt`; the nine migrated tests (including the robustness file, plus its new "many throwing installs" test); new `AbstractWorldSystemTest`, `WorldInstallSystemBindingTest`, `WorldInstallSystemUniquenessTest`, `WorldInstallSystemRollbackTest`, `WorldInstallSystemReentrancyTest`; **`docs/world-system-binding-plan.md` and `docs/world-system-binding-architecture.md`** |
+| 1 | `feat(gameobjects): bind a WorldSystem to its World` | `MAIN/WorldSystem.kt`, `MAIN/AbstractWorldSystem.kt` (new), `MAIN/World.kt` (no `systemOf`), `MAIN/CoreSystemSlot.kt`; the nine migrated tests (including the robustness file, plus its new "many throwing installs" test); new `AbstractWorldSystemTest`, `WorldInstallSystemBindingTest`, `WorldInstallSystemUniquenessTest`, `WorldInstallSystemRollbackTest`, `WorldInstallSystemReentrancyTest`; **`docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` and `docs/plans/87-world-systems/77-zone-world-system/architecture.md`** |
 | 2 | `feat(gameobjects): add World.systemOf, a role-keyed lookup of installed systems` | `MAIN/World.kt` (`systemOf` in both forms, returning `Result<T>`), **`MAIN/MissingWorldSystemException.kt` (new, C21)**, the deferred `systemOf` KDoc sentences in `MAIN/WorldSystem.kt` and `MAIN/World.kt`; `WorldSystemOfTest`, `WorldSystemOfReifiedTest`, `WorldSystemOfDeterminismTest`, **`MissingWorldSystemExceptionTest`**; the `systemOf` lookup-budget test added to `WorldSystemRegistryRobustnessTest`. Needs only commit 1 (OD5 resolved 2026-10-02). |
 | 3 | `docs(gameobjects): document the bound WorldSystem contract in README and CHANGELOG` | `README.md`, `CHANGELOG.md` |
 
@@ -1048,7 +1048,7 @@ built in the same shape and lands in unit 2.
 
 ## 10. Interfaces with sibling units
 
-### Unit `zone-world-system` (unit 2, `docs/zone-world-system-plan.md`) consumes exactly this
+### Unit `zone-world-system` (unit 2, `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`) consumes exactly this
 
 ```kotlin
 // gametools-core, package com.spartanlabs.gaming.gameobjects
@@ -1112,7 +1112,7 @@ and the #47 bullet still need unit 2's rewrite; `CONTRIBUTING.md` needs only uni
 
 ### Other units (named follow-ups, nothing to build now)
 
-- **#78 `ExperienceSystem`** (`docs/experience-system-plan.md`): extends `AbstractWorldSystem`, one
+- **#78 `ExperienceSystem`** (`docs/plans/87-world-systems/78-experience-system/plan.md`): extends `AbstractWorldSystem`, one
   subscription in `onInstalled()` cancelled in `onUninstalled()`, `uniqueRole = ExperienceSystem::class`;
   the per-`World` `IdentityHashMap` and the `installedSystems.none { it is ExperienceSystem }` guard are
   deleted from its plan (that guard would now see *itself* and reject every install).

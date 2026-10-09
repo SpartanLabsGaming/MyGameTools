@@ -1,6 +1,6 @@
 # Plan: Phase 1 bounded tiled map model (`TiledMap`, terrain, static geometry, spawn points)
 
-> **Partly superseded — 2026-10-04, issue #77 (unit 3, `docs/tiled-map-result-lookups-plan.md`).**
+> **Partly superseded — 2026-10-04, issue #77 (unit 3, `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`).**
 > `TiledMap.terrainAt(point)` returns `Result<TerrainType>`. An off-grid miss is an
 > `OutOfGridException` carrying the tile, passed through from `TerrainLayer.terrainAt`, whose own
 > miss is now that same stackless type rather than a stack-traced `IndexOutOfBoundsException`.
@@ -12,7 +12,7 @@
 > after it; §3.2's `TerrainLayer` sketch, with its `IndexOutOfBoundsException` failure; and §6's
 > Level 2 `TiledMapTest` bullet ("`terrainAt` in/out of bounds (value / `null`)") and
 > `TerrainLayerTest` bullet. The convention is now `Result` over nullable for lookups that can miss.
-> Architecture: `docs/world-system-binding-architecture.md` (C23–C29).
+> Architecture: `docs/plans/87-world-systems/77-zone-world-system/architecture.md` (C23–C29).
 
 ## Header / Association
 
@@ -23,7 +23,7 @@
 - **Commit:** TBD
 - **PR:** TBD — this plan document is committed together with the first commit of its
   implementation (§9) so `git log --follow` binds the two.
-- **What this plans:** the map-model slice of `docs/phase-1-map-and-space-plan.md` §2.2 —
+- **What this plans:** the map-model slice of `docs/plans/86-phase-1-map-and-space/plan.md` §2.2 —
   `TiledMap`, `TerrainLayer`, `TerrainType`, `StaticGeometry`, `SpawnPoint`, `MapDefinition`
   (+ its snapshot DTOs), and `MapLoader`, all new in `gametools-world`'s
   `com.spartanlabs.gaming.world.map` package; plus wiring `World.space: Space?` in
@@ -32,9 +32,9 @@
 - **Status:** planning only. No source, test, or build file has been modified by this document.
 - **Target version:** `5.2.0` (Feature release, unreleased) — the second of the three
   `feature/48-*` / `feature/46-map-model` / `feature/47-zones` branches that make up the
-  `5.2.0` series per `docs/phase-1-map-and-space-plan.md` §8. No version bump happens on this
+  `5.2.0` series per `docs/plans/86-phase-1-map-and-space/plan.md` §8. No version bump happens on this
   branch; that happens once on the later `release/5.2.0` branch.
-- **Related docs:** `docs/phase-1-map-and-space-plan.md` (the Phase 1 umbrella plan — §2.2,
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/plan.md` (the Phase 1 umbrella plan — §2.2,
   §3 file lists, §9 Open Decisions 1/6/7/8/10 for this item; treated as input here, verified
   against current `master` below, **not** edited by this document); `docs/framework-vision-and-roadmap.md`
   §3 Phase 1; `CONTRIBUTING.md` (module layout, branching, commit/versioning conventions).
@@ -556,7 +556,7 @@ Per `CONTRIBUTING.md` (trunk-based, semi-linear merge, Conventional Commits, PR-
 - **Commit sequence** (rebased into coherent units before the PR is opened; the first commit
   carries this plan document, binding doc and implementation per the Association requirement):
   1. `feat(world): add the map domain model (TiledMap, TerrainLayer, TerrainType, StaticGeometry, SpawnPoint)` —
-     `docs/issue-46-map-model-plan.md` (this file) + all of §4's new `world/map/*.kt` domain
+     `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md` (this file) + all of §4's new `world/map/*.kt` domain
      types (not yet `MapDefinition`/`MapLoader`) + their Level 2 component tests.
   2. `feat(core): wire World.space to the Space port` — `World.kt` change + `WorldSpaceTest`.
   3. `feat(world): load a TiledMap from a MapDefinition` — `MapDefinition.kt`, `MapLoader.kt`,
@@ -593,7 +593,7 @@ issue's own proposed API:
 ## 10. Sequencing & follow-ups
 
 - Lands after #48 (already merged) and before #47 (zones), matching
-  `docs/phase-1-map-and-space-plan.md` §8's ordering; nothing here blocks or is blocked by #47
+  `docs/plans/86-phase-1-map-and-space/plan.md` §8's ordering; nothing here blocks or is blocked by #47
   beyond both needing to land before `release/5.2.0`.
 - Deliberately deferred, not part of this item: enforcing `isWalkable`/`StaticGeometry` against
   `Movement` output (physics, #49); consuming `TerrainType.heightLevel`/`blocksVision` for

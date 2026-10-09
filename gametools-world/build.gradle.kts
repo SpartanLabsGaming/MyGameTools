@@ -1,4 +1,4 @@
-// Phase 1 module (docs/phase-1-map-and-space-plan.md): the bounded map model, zones, physics
+// Phase 1 module (docs/plans/86-phase-1-map-and-space/plan.md): the bounded map model, zones, physics
 // and vision systems that build on gametools-core's World. Bootstrapped empty by issue #48;
 // its first public types land with issue #46 (map model).
 

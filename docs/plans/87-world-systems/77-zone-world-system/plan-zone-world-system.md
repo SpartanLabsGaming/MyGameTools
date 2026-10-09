@@ -17,10 +17,10 @@
   with `UnzonedEntityException` a new public type in this package. `entitiesIn(zone)` is unchanged.
   This too carries no semver weight, for the same reason: `ZoneIndex` (#47) is unreleased and
   `5.2.0` is not cut before #77 merges (C12).
-- **Architecture:** `docs/world-system-binding-architecture.md`, unit `zone-world-system` (§10
+- **Architecture:** `docs/plans/87-world-systems/77-zone-world-system/architecture.md`, unit `zone-world-system` (§10
   row 2; §1.2 C9, C13, C16–C19, C22; §4 inventory `ZoneIndex` and `UnzonedEntityException` rows;
   §4.3; §4.5; §7.2; §7.4 last row; §7.5; §8; §11.1 unit-2 bullet). Sibling:
-  `docs/world-system-binding-plan.md` (unit `world-system-binding`, lands first). This document **replaces** the superseded #77 plan of the same name (the
+  `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` (unit `world-system-binding`, lands first). This document **replaces** the superseded #77 plan of the same name (the
   `ZoneWorldSystem` adapter + `internal ZoneIndex` design); its committed predecessor is in git
   history (`7f19cff`).
 - **Branch:** `feature/77-zone-world-system` (exists; HEAD `b5e57b0` plus unit 1's commits).
@@ -33,7 +33,7 @@
   tests at the same levels; the existing zone tests driven through `installSystem` +
   `stepSystems()`, with every `zoneOf` assertion in the `Result` shape; the shared `ZoneFixtures.kt`
   and the test-only opt-in block committed; KDoc cleanup (C13); README / CONTRIBUTING / CHANGELOG
-  entries; and the correction of `docs/issue-49-physics-architecture.md`'s now-false
+  entries; and the correction of `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`'s now-false
   `ZoneIndex.refresh` statements.
 - **Status:** planning only — **no open decisions remain** (this plan's §10 question was answered by
   the user on 2026-10-02: architecture OD6, C22). No source, test, or build file has been modified by
@@ -425,7 +425,7 @@ All line numbers are HEAD's. Wording "refresh" → "step"; `[ZoneIndex.refresh]`
 ### 3.3 `src/main/kotlin/com/spartanlabs/gaming/world/zone/ZoneGrid.kt` — KDoc only (C13)
 
 - `:21-22` — drop the pointer: *"… irregular zones are a later addition behind [zoneAt]'s existing
-  contract."* (was: *"… existing contract (`docs/phase-1-map-and-space-plan.md` Open Decision 11)."*).
+  contract."* (was: *"… existing contract (`docs/plans/86-phase-1-map-and-space/plan.md` Open Decision 11)."*).
 - `:24-26` — drop *"(see the class's risk note in the plan this package implements)"*; the sentence
   ends after "a map mutated afterwards". Append one contract sentence the new tests lean on: *"A
   [ZoneGrid] never changes after construction, so one grid can safely back any number of
@@ -566,7 +566,7 @@ Four landable stages inside the unit's commits (§8). Every commit compiles and 
    also need a temporary main-code `@OptIn`: HEAD's untagged `ZoneIndex` could not construct the
    Experimental exception without one.)
 4. **Docs** (commits 4–7) — the `ZoneGrid` KDoc `docs/`-pointer cleanup (C13), README and
-   CONTRIBUTING, CHANGELOG, `docs/issue-49-physics-architecture.md`.
+   CONTRIBUTING, CHANGELOG, `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`.
 
 ---
 
@@ -670,7 +670,7 @@ owns two:
    > "a `ZoneGrid` copies its geometry at construction", because its zones' `bounds` stay mutable
    > (C36, C37).
 
-**`docs/issue-49-physics-architecture.md` — correction (the caller's explicit requirement).** Its
+**`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` — correction (the caller's explicit requirement).** Its
 `:618` row claims *"`ZoneIndex.refresh` remains directly callable exactly as before"* — false: there
 is no `refresh`. The body stays as historical record (C13); the fix is a dated callout item plus two
 inline markers. Line numbers are the file's today (it has no uncommitted changes); apply the
@@ -685,7 +685,7 @@ edits **bottom-up** (`:618`, `:606`, then the header) so the numbers do not shif
 
    ```markdown
    > 4. **The adapters and the `refresh` call — 2026-09-30, issue #77's design pass
-   >    (`docs/world-system-binding-architecture.md`).** Item 1's "`ZoneWorldSystem` adapter (#77)"
+   >    (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).** Item 1's "`ZoneWorldSystem` adapter (#77)"
    >    and "thin `PhysicsWorldSystem` adapter (#80)" were never built and no longer exist as
    >    planned. `ZoneIndex` is itself the zone `WorldSystem`: it extends `AbstractWorldSystem`,
    >    claims `CoreWorldSystemSlot.ZONE`, has a public constructor and **no `refresh` method** —
@@ -701,13 +701,13 @@ edits **bottom-up** (`:618`, `:606`, then the header) so the numbers do not shif
    >    the physics → zone ordering requirement is unchanged (item 1). `PhysicsSystem`'s own
    >    signatures shown below (`step(world)`, `attach`/`detach`) predate the parameterless-hook
    >    contract and are #49's re-plan to revise — not corrected here. The unit plans written
-   >    against this document carry matching 2026-10-01 callouts: `docs/physics-system-plan.md`,
-   >    `docs/physics-core-seams-plan.md`, `docs/physics-resolution-plan.md` and
-   >    `docs/physics-world-system-plan.md` (the last wholly superseded).
+   >    against this document carry matching 2026-10-01 callouts: `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`,
+   >    `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`, `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-resolution.md` and
+   >    `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` (the last wholly superseded).
    ```
 
    > **As built (2026-10-05):** the inserted item 4 cites sections, not line numbers. Inserting it
-   > shifts every later line of `docs/issue-49-physics-architecture.md`, so the line numbers it
+   > shifts every later line of `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, so the line numbers it
    > first cited were wrong as soon as it landed. The main session corrected the applied text, and
    > the copy above was updated to match on 2026-10-04. The paragraph below keeps its line numbers,
    > the file's before the insertion, as the record of how the list was found.
@@ -719,7 +719,7 @@ edits **bottom-up** (`:618`, `:606`, then the header) so the numbers do not shif
 **Not this unit's:** the other planner-owned doc corrections (architecture §11.2) —
 approved by the user and applied by the planner on 2026-10-01, landing as a separate docs commit;
 this plan neither plans nor
-contradicts them. Cross-references into the old `zone-world-system-plan.md` sections live in those
+contradicts them. Cross-references into the old `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` sections live in those
 planner-owned hunks.
 
 ---
@@ -1188,7 +1188,7 @@ After three ticks both assert: `index.zoneOf(hero.entityId).getOrNull() == heroZ
   2026-09-30, 59 commits up to 2026-09-24 carry a `Co-Authored-By` trailer, the commits since,
   including #76's, carry none):
   1. `test(world): add the shared zone fixture and the test-only Experimental opt-in` —
-     **`docs/zone-world-system-plan.md` (this document)**, `ZoneFixtures.kt`,
+     **`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` (this document)**, `ZoneFixtures.kt`,
      `gametools-world/build.gradle.kts`. Technically needs only Step 0; lands after unit 1's commits,
      per the landing order (precondition above).
   2. `feat(world): add UnzonedEntityException, the failure of a zone lookup miss` —
@@ -1308,7 +1308,7 @@ order, pre-install error), it is reported against unit 1, not worked around here
 **To #49 re-plan / `PhysicsSystem`:** `ZoneIndex` is the worked example of a slot-claiming,
 role-declaring, `EntityId`-keyed `AbstractWorldSystem` (no wrapper, no adapter); `PHYSICS` orders
 before `ZONE`, proven by `ZoneIndexOrderingIntegrationTest` 1 and 3, whose test-local `PHYSICS`
-fake #49's regression test replaces with the real `PhysicsSystem`. `docs/issue-49-physics-architecture.md`
+fake #49's regression test replaces with the real `PhysicsSystem`. `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`
 gets the §5 callout from this unit; its other now-stale `PhysicsSystem` signatures are #49's.
 
 **To #78 `ExperienceSystem`:** none (independent; same `AbstractWorldSystem` pattern).
@@ -1319,7 +1319,7 @@ supported way to reach a `World`'s zone index without threading references (arch
 allocates one stackless `UnzonedEntityException` (architecture §7.5).
 
 **To the planner (architecture §11.2, §11.3):** the cross-references into the old
-`zone-world-system-plan.md` (sections §2.2/§2.6/§6/§9) that the planner-owned hunks cite no longer
+`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` (sections §2.2/§2.6/§6/§9) that the planner-owned hunks cite no longer
 resolve; they sat in the planner's REWRITE hunks (applied 2026-10-01), not here. The older documents
 that quoted `zoneOf: Zone?` carry §11.3's callouts (approved 2026-10-02 and applied), not this
 unit's edits.
@@ -1375,7 +1375,7 @@ architecture §4.5) are made above with reasons, and the user can overturn any o
    references to "the replacement plan's test-opt-in section" cite §3.4 here, which keeps its number.)
 5. **Follow-ups owned elsewhere:** #79 (graduation: §9 list, including `UnzonedEntityException`), #49's
    re-plan (`PhysicsSystem` as a `WorldSystem`; revise `step(world)` signatures in
-   `issue-49-physics-architecture.md`; decide whether `bodyFor` follows `zoneOf` to a `Result` —
+   `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`; decide whether `bodyFor` follows `zoneOf` to a `Result` —
    architecture §7.5), Phase 3 interest filtering and #50 vision (use `systemOf<ZoneIndex>()`, unwrap
    `zoneOf`'s `Result`), and the website update when #86 closes (zones and World Systems together).
 6. The owed `ZoneIndex` openness review (`docs/api-openness-decisions-6.0.0.md`) starts from this

@@ -447,7 +447,7 @@ failure is attributable. `CONTRIBUTING.md`: JDK 23, Gradle wrapper 9.7.1.
   1. `feat(networking)!: adopt the WebTools 2.0.0b NAT-traversal handshake`
      — `build.gradle.kts` (coordinate bump, drop `exclude`, comment fixes),
      `GameServer.kt` (`Connection` retype + KDoc), **and this plan document**
-     (`docs/webtools-2.0.0b-upgrade-plan.md`) so `git log --follow` binds plan to code.
+     (`docs/plans/14-webtools-2.0.0b-upgrade/plan.md`) so `git log --follow` binds plan to code.
      Body: note slf4j 2.0.16 wins over WebTools' 2.0.13; `Refs #14`.
      Footer: `BREAKING CHANGE: GameServer clients send "Iam <name>" and read a bare
      "TXRXON <sendPort> <receivePort>" reply on the socket they sent "Iam" from; the reply

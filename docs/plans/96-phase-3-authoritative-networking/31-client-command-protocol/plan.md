@@ -25,8 +25,8 @@
   and would migrate onto it after release (§9). Per standing guidance no GitHub issues are
   filed against consumer repos; the migration is tracked only in this document.
 - **Related docs:** `docs/framework-vision-and-roadmap.md` (§7 transport boundary; this is
-  the library-hardening theme of #21/#22/#23); `docs/phase-0-foundations-plan.md`
-  (`EntityId`, `World.byId` — the identity layer this builds on); `docs/module-split-plan.md`
+  the library-hardening theme of #21/#22/#23); `docs/plans/90-phase-0-foundations/plan.md`
+  (`EntityId`, `World.byId` — the identity layer this builds on); `docs/plans/32-module-split/plan.md`
   (why the wire types live in `gametools-net`).
 
 ---

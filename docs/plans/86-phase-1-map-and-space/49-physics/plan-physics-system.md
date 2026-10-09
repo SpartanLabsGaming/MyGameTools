@@ -7,13 +7,13 @@
 > KDoc ("see `WorldSystems`, `com.spartanlabs.gaming.world.system`"), the Level 3/4b/5 notes in the
 > test plan, §8 "Provides to unit 6", §10 "Follow-up owed to unit 6" — is replaced by the
 > `WorldSystem` registry on `World` (#76) plus a thin `PhysicsWorldSystem` adapter (#80,
-> `docs/physics-world-system-plan.md`). The adapter occupies the library-reserved
+> `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`). The adapter occupies the library-reserved
 > `CoreWorldSystemSlot.PHYSICS` slot and, on every `World.stepSystems()`, calls
 > `world.reconcileSpatialIndex()` then `physicsSystem.step(world)`. #80 treats `step(world: World)`
 > as a provisional contract and adapts if #49's re-plan changes it. Architecture:
-> `docs/world-systems-implementation-architecture.md`.
+> `docs/plans/87-world-systems/architecture.md`.
 >
-> **Addendum — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`).**
+> **Addendum — 2026-10-01, issue #77's design (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).**
 > `PhysicsSystem` is itself the physics `WorldSystem`: it extends the new `AbstractWorldSystem`,
 > claims `CoreWorldSystemSlot.PHYSICS`, declares `uniqueRole = PhysicsSystem::class`, and its
 > `step()` takes no `World`, unlike the `step(world: World)` this plan specifies. There is therefore
@@ -31,7 +31,7 @@
   — *"Phase 1: physics — motion integration + collision resolution (push-out / slide)"* (item 4
   of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1). This plan covers **unit 5 of 6**
   only.
-- **Architecture:** `docs/issue-49-physics-architecture.md`, unit slug `physics-system` (§10
+- **Architecture:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, unit slug `physics-system` (§10
   decomposition table, row 5; scope defined in §4.4, §4.7 hazards 2/3/4, §4.6's collider-order
   contract, §6 adoption verdicts, §8 stability tiers, §12 open decisions).
 - **Branch:** `feature/49-physics-system`, off `master` (see §8 — **not** off any of units 2-4's
@@ -53,8 +53,8 @@
 - **Dependencies:** units 1 (`physics-core-seams`), 2 (`physics-body-model`), 3
   (`physics-narrow-phase`), 4 (`physics-resolution`) — all four must be merged first. Unit 6
   (`world-systems`) depends on this one landing.
-- **Related docs:** `docs/issue-49-physics-architecture.md` (§4.4, §4.6, §4.7, §6, §8, §10, §12);
-  `docs/physics-core-seams-plan.md` (unit 1, settled — `SupportedExtension`,
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (§4.4, §4.6, §4.7, §6, §8, §10, §12);
+  `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (unit 1, settled — `SupportedExtension`,
   `World.reconcileSpatialIndex()`); unit plans for `physics-body-model`,
   `physics-narrow-phase`, `physics-resolution` are **not yet written** at the time of this
   plan (only unit 1's plan exists in `docs/` as of this writing) — this plan consumes their
@@ -534,7 +534,7 @@ The only production file this unit adds. Full class per §2.3/§2.4, with KDoc c
  * not, reach into that latch. A consumer that wants an actor to walk back after being jostled
  * assigns [Movement.Persistent] instead, which already re-derives its approach from the actor's
  * current position every tick and composes with this system for free; so does [Movement.Homing].
- * See `docs/issue-49-physics-architecture.md` §4.7 hazard 2 for the full reasoning, including why
+ * See `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §4.7 hazard 2 for the full reasoning, including why
  * this is documented rather than worked around, and `docs/api-openness-decisions-6.0.0.md` D1 for
  * where the real fix lands (`6.0.0`'s `Movement` refactor).
  *
@@ -695,7 +695,7 @@ CHANGELOG entry" rule:
   verbatim in the class doc, per the task's explicit requirement. Must render cleanly under
   `./gradlew dokkaGeneratePublicationHtml`.
 - **Boundary Ring:** not touched — no wire format, no protocol change.
-- **Architectural Outer Layer:** `docs/issue-49-physics-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` already documents this
   unit's design; no update owed to it by this unit specifically (unit 6 owns the §7 roadmap
   corrections and the umbrella physics prose per architecture §10).
 - **README currency:** updated in this unit's own commit (§3.4), per the global README rule and
@@ -705,7 +705,7 @@ CHANGELOG entry" rule:
 
 ## 5. Test plan (5-level hierarchy)
 
-Convention note, matching unit 1's own finding (`docs/physics-core-seams-plan.md` §6): this
+Convention note, matching unit 1's own finding (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §6): this
 repo's actual test stack is **`kotlin.test` on the JUnit 5 platform**, not MockK — no module
 depends on MockK today. Where the global standard calls for mocking `CollisionResolver` at Level
 2, this plan uses a small, hand-written test-local fake implementing `CollisionResolver`
@@ -795,7 +795,7 @@ package, mirroring the new `world.physics` production package):
   `PhysicsSystem.step(world)` in this test's own driving loop, mirroring what `WorldSystems`
   (unit 6) will do — this test is this unit's own proof that the public widening unit 1 shipped
   is actually usable from `gametools-world`, closing the gap unit 1's own plan flagged as
-  untestable from inside `gametools-core` (`docs/physics-core-seams-plan.md` §6).
+  untestable from inside `gametools-core` (`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §6).
 
 ### Level 4a — deterministic
 
@@ -902,7 +902,7 @@ repo's own test tree.
   uncommitted, in-flight refactor moving `Alive`/`Buff`/`Capability`/`Intent`/`ModularStat`/
   `StatMod`/`CombinedStat`/`ExperienceReceiver` into a new `gameobjects.combat` subpackage
   (visible in `git status`: renames plus new `BuffPlacer.kt`/`ProjectilePrefabs.kt`, touching
-  `CHANGELOG.md`, `docs/phase-1-map-and-space-plan.md`, `gametools-core/build.gradle.kts`,
+  `CHANGELOG.md`, `docs/plans/86-phase-1-map-and-space/plan.md`, `gametools-core/build.gradle.kts`,
   `Actor.kt`, `DirectionalProjectile.kt`, `GameObject.kt`, `HomingProjectile.kt`, `Moddable.kt`,
   `Player.kt`, `Projectile.kt`, `VisibleObject.kt`, `World.kt`, plus a long list of touched test
   files under `gametools-core/src/test`, and `gametools-net`'s `GameServer.kt`/`ClientCommand.kt`/
@@ -912,7 +912,7 @@ repo's own test tree.
   does so as its own, separately planned commit(s) on its own branch.
 - **Commit sequence:**
   1. `feat(world): add PhysicsSystem attach/detach registry and step pipeline` — adds
-     `docs/physics-system-plan.md` (this document) and `PhysicsSystem.kt` (§3.1/§3.2) plus its
+     `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md` (this document) and `PhysicsSystem.kt` (§3.1/§3.2) plus its
      Level 2 tests (§5). Body: cites architecture §4.4/§4.7 hazards 2-4, references #49.
   2. `test(world): integration/deterministic/nonfunctional coverage for PhysicsSystem` — the
      Level 3/4a/4c test files (§3.3/§5). Kept separate from commit 1 so the production surface and

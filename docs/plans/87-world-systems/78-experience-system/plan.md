@@ -1,9 +1,9 @@
 # Plan: `experience-system` — `ExperienceSystem` and the `ExperienceGrantor`/`AOEGrantor` reshape
 
 > **Revise before implementing — 2026-10-01, issue #77's design
-> (`docs/world-system-binding-architecture.md`).** That document ("the binding architecture"
+> (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`).** That document ("the binding architecture"
 > below; this plan's own "architecture" is still
-> `docs/world-systems-implementation-architecture.md`) reworks the `WorldSystem` contract this
+> `docs/plans/87-world-systems/architecture.md`) reworks the `WorldSystem` contract this
 > plan copies from #76. The plan body is deliberately left as written; #78's own planning must
 > revise the items below before this unit is implemented. Line numbers are this file's before the
 > callout was added, and the list is a sweep, so also search the plan for `installOn`,
@@ -65,7 +65,7 @@
   Package (#71) deliverable. Also touches [SpartanLabsGaming/MyGameTools#71](https://github.com/SpartanLabsGaming/MyGameTools/issues/71)
   (*"Combat Package"*) only in that this unit reshapes the `ExperienceGrantor`/`AOEGrantor`
   contract #71 introduces; #71's own package-move scope is not re-litigated here.
-- **Architecture:** `docs/world-systems-implementation-architecture.md`, unit slug
+- **Architecture:** `docs/plans/87-world-systems/architecture.md`, unit slug
   `experience-system` (§10 decomposition table, row 3; scope in §4.6, stability in §8, open
   decisions OD2/OD4 in §12).
 - **Branch:** `feature/78-experience-system`, cut from `master` **only after both #71 and #76
@@ -85,15 +85,15 @@
   re-decided here) — #71's `refactor(gameobjects)!:` commit is a `!`-suffixed breaking change, so
   #78 cannot ship in a release ahead of it.
 - **Dependencies:** [#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76)
-  (`world-system-core` — not yet implemented; plan at `docs/world-system-core-plan.md`) **and**
+  (`world-system-core` — not yet implemented; plan at `docs/plans/87-world-systems/76-world-system-core/plan.md`) **and**
   #71 (branch `feature/71-combat-package` — not yet merged). Both must be on `master` before this
   branch is cut. **This plan's baseline for #71's landed shape is the CURRENT WORKING TREE of
   `feature/71-combat-package`** (read from disk, not from `dcb396e`, which the branch's own commit
   message says leaves `gametools-core` non-compiling). §1 records exactly what was read and where;
   §1.4 states what must be re-verified once #71 actually merges.
-- **Related docs:** `docs/world-systems-implementation-architecture.md` (binding); `docs/issue-47-zones-plan.md`
-  and `docs/physics-core-seams-plan.md` (plan-document skeleton and conventions this plan mirrors);
-  `docs/world-system-core-plan.md` (#76, sibling — not yet written at the time of this reading);
+- **Related docs:** `docs/plans/87-world-systems/architecture.md` (binding); `docs/plans/86-phase-1-map-and-space/47-zones/plan.md`
+  and `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (plan-document skeleton and conventions this plan mirrors);
+  `docs/plans/87-world-systems/76-world-system-core/plan.md` (#76, sibling — not yet written at the time of this reading);
   `docs/framework-vision-and-roadmap.md` §5 Open Decision E (partially answered by this unit, per
   architecture §7 pointer 7 — that pointer edit is applied by the architecture's own docs-only PR,
   not repeated here).
@@ -506,7 +506,7 @@ class ExperienceSystem : WorldSystem { /* body per §3.5 */ }
   caller) records nothing either (its own contract: "if `installOn` throws, nothing is
   recorded"). **Logging**: `DEBUG` "ExperienceSystem subscribed to a World's events (seed {})" on
   success. It is `DEBUG`, not `INFO`, because `World.installSystem` already logs the install
-  lifecycle event at `INFO` (#76, `docs/world-system-core-plan.md` §3.5), and a second `INFO`
+  lifecycle event at `INFO` (#76, `docs/plans/87-world-systems/76-world-system-core/plan.md` §3.5), and a second `INFO`
   line per install would duplicate it. The same rule applies to `ZoneWorldSystem` and
   `PhysicsWorldSystem`. There is no log line on the rejected path: the thrown exception itself is
   the signal, matching `TiledMap.addSpawnPoint`'s convention of not also logging a `require`
@@ -828,7 +828,7 @@ a deliberate design decision, architecture §9, not re-litigated by a test).
      `ExperienceSystem.kt`, rewritten `ExperienceGrantor.kt`, doc/import-fixed
      `ExperienceReceiver.kt`, and the four new/updated test files (§6). This plan document is not
      in this commit: it already landed in the docs-only planning PR. The body cites
-     `docs/experience-system-plan.md`.
+     `docs/plans/87-world-systems/78-experience-system/plan.md`.
   2. `docs: document ExperienceSystem and the ExperienceGrantor reshape in README` — the §5.2
      README edit.
   3. `docs: changelog entry for ExperienceSystem and ExperienceGrantor` — the §5.3 CHANGELOG edit

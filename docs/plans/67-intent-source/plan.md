@@ -59,13 +59,13 @@
   consumer), the `gametools-world` module bootstrap and its map/zone types (#46–#48, #63, #66).
   This plan itself bootstraps a fifth module, `gametools-ai` (§2.5, §3), following the exact
   precedent of the `gametools-world` bootstrap (commit `d096847`, issue #48).
-- **Related docs:** `docs/issue-42-actor-intent-plan.md` and `docs/actor-intent-orders-plan.md`
+- **Related docs:** `docs/plans/42-actor-intent/plan.md` and `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md`
   (both describe the `Actor`-level placement §2.2 now revises before release — §2.8 specifies
   the exact correction note each needs); `docs/framework-vision-and-roadmap.md` (§3 Phase 2
   "rich combat" — moves `Alive` to `gametools-combat`, the separate Major release this plan's
   version *tag* is deferred to batch with, §8/§9 Decision 2; §3 Phase 4 "AI & pathfinding" — the
   `gametools-ai` module this plan bootstraps early and the `Creep` archetype, corrected in §2.6);
-  `docs/client-command-protocol-plan.md` (the open-hierarchy pattern `ClientCommand` and `Intent`
+  `docs/plans/96-phase-3-authoritative-networking/31-client-command-protocol/plan.md` (the open-hierarchy pattern `ClientCommand` and `Intent`
   both follow).
 
 ---
@@ -542,7 +542,7 @@ dependencies {
 silent contradiction of it.** `gametools-ai/build.gradle.kts` carries a header comment saying
 so (§3), and `docs/framework-vision-and-roadmap.md` §2.1's dependency-direction paragraph gains
 a trailing sentence: *"`gametools-ai` depends directly on `gametools-core` from its
-`docs/intent-source-plan.md` bootstrap (`Monster`/`WanderIntentSource`) until Phase 2 moves
+`docs/plans/67-intent-source/plan.md` bootstrap (`Monster`/`WanderIntentSource`) until Phase 2 moves
 `Alive` into `gametools-combat`, at which point it re-points to `world` + `combat` as stated
 above — a deliberate, temporary deviation, not a correction to this table."* `gametools-ai`
 does **not** yet depend on `gametools-world` either — `Monster`'s wander logic (below) uses no
@@ -561,7 +561,7 @@ listed as a named follow-up in §11 — it is Phase 2's responsibility, not this
  * [IntentSource] consumer proving the mechanism, not a full AI archetype — contrast the future
  * `Creep` (§ `docs/framework-vision-and-roadmap.md` Phase 4), a move-to-point-then-attack-target
  * goal AI for MOBA lane creeps, which `Monster` is deliberately not. `Monster` also bootstraps
- * this module (`gametools-ai`) ahead of the rest of Phase 4 — see `docs/intent-source-plan.md` §2.5.
+ * this module (`gametools-ai`) ahead of the rest of Phase 4 — see `docs/plans/67-intent-source/plan.md` §2.5.
  */
 open class Monster(
     location: Point,
@@ -626,13 +626,13 @@ document itself), update:
   selection helpers built on the threat table + vision, the future `Creep` archetype
   (move-to-point-then-attack-target goal AI, MOBA lane creeps), and `Monster` (simple wander
   behavior via `IntentSource`), which bootstraps this module ahead of the rest of Phase 4
-  (`docs/intent-source-plan.md`). Depends on `gametools-core` directly until Phase 2 moves
+  (`docs/plans/67-intent-source/plan.md`). Depends on `gametools-core` directly until Phase 2 moves
   `Alive` to `gametools-combat` — a temporary deviation from the dependency row below (see
-  `docs/intent-source-plan.md` §2.5).`
+  `docs/plans/67-intent-source/plan.md` §2.5).`
 - Phase 4 item 5 to: `**Target-seeking AI.** The `Creep` archetype: a
   move-to-point-then-attack-target goal `IntentSource` for MOBA lane creeps, built on the
   threat table + vision (distinct from `Monster`'s simple wander behavior, already shipped in
-  this module ahead of the rest of Phase 4 via `docs/intent-source-plan.md`'s `IntentSource`
+  this module ahead of the rest of Phase 4 via `docs/plans/67-intent-source/plan.md`'s `IntentSource`
   mechanism and module bootstrap).`
 - §2.1's dependency-direction paragraph gains the trailing sentence quoted in §2.5 above, noting
   the temporary `gametools-ai` → `gametools-core` dependency.
@@ -664,30 +664,30 @@ listed as a named follow-up in §11.
 
 ### 2.8 Cross-references, and the note `#42`'s two docs now need
 
-`docs/issue-42-actor-intent-plan.md` §7 and `docs/actor-intent-orders-plan.md` §1.2 both already
+`docs/plans/42-actor-intent/plan.md` §7 and `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md` §1.2 both already
 flag `AttackMove`/`Patrol`/`Hold` as future consumer `Intent`s attaching at "Phase 4." Neither
 says *what decides when to issue them* — that gap is exactly `IntentSource`. **Recommendation:**
 add one cross-reference sentence to each (implementation work, not this document): to
-`issue-42-actor-intent-plan.md` §7, under each of the three bullets, "an `IntentSource` on
-`Alive` is what would decide when to issue this, once built (`docs/intent-source-plan.md`)"; to
-`actor-intent-orders-plan.md`'s already-historical §1.2, a trailing note that the "what decides"
-question these consumer intents leave open is answered by `docs/intent-source-plan.md`.
+`docs/plans/42-actor-intent/plan.md` §7, under each of the three bullets, "an `IntentSource` on
+`Alive` is what would decide when to issue this, once built (`docs/plans/67-intent-source/plan.md`)"; to
+`docs/plans/42-actor-intent/superseded/draft-2026-09-11.md`'s already-historical §1.2, a trailing note that the "what decides"
+question these consumer intents leave open is answered by `docs/plans/67-intent-source/plan.md`.
 
 **New this revision:** both documents describe `Actor.intent`/`Actor.issue`/`Actor.world` as
 already-landed fact, written before §2.2's relocation was decided. Since none of it has shipped,
 each gets one additional short note, non-structural, matching how the rest of §2.8 already
 handles cross-references:
 
-- `docs/issue-42-actor-intent-plan.md`: a one-line note at the top of §2.2 ("`Actor` gains
-  `world` and `intent`") reading: *"Superseded before release: `docs/intent-source-plan.md`
+- `docs/plans/42-actor-intent/plan.md`: a one-line note at the top of §2.2 ("`Actor` gains
+  `world` and `intent`") reading: *"Superseded before release: `docs/plans/67-intent-source/plan.md`
   moves `intent`/`issue`/`clearIntent`/`world` down to `Alive` and narrows `Intent`'s own
   signatures to match, once it became clear `Alive` is `Intent`'s only real consumer. The design
   captured here shipped as source, briefly, but never as a release — treat this section as
   historical."*
-- `docs/actor-intent-orders-plan.md`: since it is already marked superseded by the document
+- `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md`: since it is already marked superseded by the document
   above, one line appended to its own existing superseded-by note: *"...and that document's own
   `Actor`-level placement was itself superseded, before release, by
-  `docs/intent-source-plan.md` — `Intent` lives on `Alive`, not `Actor`, in the shipped shape."*
+  `docs/plans/67-intent-source/plan.md` — `Intent` lives on `Alive`, not `Actor`, in the shipped shape."*
 
 ---
 
@@ -779,10 +779,10 @@ unlike the first revision.
 (`d096847`) exactly in shape:
 ```kotlin
 // Phase 4 module (docs/framework-vision-and-roadmap.md §3 Phase 4), bootstrapped early by
-// docs/intent-source-plan.md to hold Monster/WanderIntentSource today. Depends on
+// docs/plans/67-intent-source/plan.md to hold Monster/WanderIntentSource today. Depends on
 // gametools-core directly for now - Alive/IntentSource still live there; the roadmap's target
 // dependency (world + combat) applies once Phase 2 moves Alive to gametools-combat, at which
-// point this repoints there. Deliberate, temporary deviation - see docs/intent-source-plan.md §2.5.
+// point this repoints there. Deliberate, temporary deviation - see docs/plans/67-intent-source/plan.md §2.5.
 
 plugins {
     id("gametools.published-library")
@@ -837,7 +837,7 @@ dokka {
 - `CHANGELOG.md`: amend the existing `[Unreleased]` `#42` entries in place, plus new entries for
   this plan (§8 — full detail, including the exact amendment).
 - `docs/framework-vision-and-roadmap.md`: the corrections in §2.6.
-- `docs/issue-42-actor-intent-plan.md`, `docs/actor-intent-orders-plan.md`: the notes specified
+- `docs/plans/42-actor-intent/plan.md`, `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md`: the notes specified
   in §2.8.
 
 ---
@@ -858,7 +858,7 @@ immediately).
 
 `Alive.onUpdate` already gates the *mechanisms* (`move()` via `super.onUpdate()`,
 `considerAttack()`) on `can(CoreCapability.MOVE)`/`ATTACK)` — a suppressed capability freezes
-what a mechanism does, not what orders exist (`docs/issue-42-actor-intent-plan.md` §2.4,
+what a mechanism does, not what orders exist (`docs/plans/42-actor-intent/plan.md` §2.4,
 "Decision H," already established this for direct `issue()` calls). `IntentSource.decide` is
 polled unconditionally, for the same reason `StandardCommandApplier.applyTo` was always
 documented as *not* doing capability checks: a stunned unit whose network queue drains a `Move`
@@ -1094,7 +1094,7 @@ judgment call for whoever builds on this next (the eventual `Creep` and `gametoo
 | An `Alive` addressed by a network command has no `StandardCommandIntentSource` assigned | New `ApplyResult.NotNetworkControlled` reports it rather than silently dropping or throwing. |
 | `gametools-ai` temporarily depends on `gametools-core` instead of the roadmap's stated `world` + `combat` | Explicit, documented deviation in both `gametools-ai/build.gradle.kts`'s header comment and the roadmap doc itself (§2.5, §2.6). Re-pointed at Phase 2 (§11 follow-up). |
 | `TestAlive` is `public`, not `internal`, so `testFixtures` can cross the `gametools-core`/`gametools-net` module boundary | Documented in §5.2 as a required, low-risk consequence of Kotlin's per-compiler-module `internal` visibility — this fixture carries no state or invariant worth hiding. |
-| Reverting `Actor.world`/`ActorSnapshot.intent` and moving `Alive.intent`/`issue`/`clearIntent` undoes pieces of the already-landed #42 work | Zero consumer-facing cost — none of it has ever released (§ Header baseline). `docs/issue-42-actor-intent-plan.md`/`docs/actor-intent-orders-plan.md` get a short superseded-before-release note each (§2.8) so the historical record stays honest. |
+| Reverting `Actor.world`/`ActorSnapshot.intent` and moving `Alive.intent`/`issue`/`clearIntent` undoes pieces of the already-landed #42 work | Zero consumer-facing cost — none of it has ever released (§ Header baseline). `docs/plans/42-actor-intent/plan.md`/`docs/plans/42-actor-intent/superseded/draft-2026-09-11.md` get a short superseded-before-release note each (§2.8) so the historical record stays honest. |
 | Wire compatibility | **No wire/schema change at all** beyond `intent` moving from `ActorSnapshot` to `AliveSnapshot` — itself pre-release, so no real client has ever decoded it from the old location. `ClientCommand`'s `@Serializable` shapes are untouched. |
 | Cross-repo impact | See below. |
 

@@ -30,10 +30,10 @@
   together with the directives that close no OD (among them C35–C39, from the QA pass of 2026-10-06
   to 2026-10-08).
   Implementation plans:
-  - `docs/world-system-binding-plan.md` (unit 1);
-  - `docs/zone-world-system-plan.md` (unit 2, which replaces the superseded #77 plan of the same
+  - `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` (unit 1);
+  - `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` (unit 2, which replaces the superseded #77 plan of the same
     name);
-  - `docs/tiled-map-result-lookups-plan.md` (unit 3, "Result lookups: `TiledMap` + `ZoneGrid.zoneAt`").
+  - `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md` (unit 3, "Result lookups: `TiledMap` + `ZoneGrid.zoneAt`").
   
   They are aligned against each other in §14 (latest pass 2026-10-04, updated 2026-10-05).
   Planner-owned edits to older documents, all approved by the user and applied:
@@ -50,19 +50,19 @@
   **superseded** by this document. Latest tag `v5.1.0`; #76 and #47 are unreleased. *(2026-10-04:
   unit 1's Step 0 has parked that implementation in its path-limited stash, and units 1 and 2 are
   implemented, uncommitted, in the working tree; unit 3's anchors were verified against that tree.)*
-- **Supersedes, in part:** `docs/world-systems-implementation-architecture.md` (§4.2, §4.4, §4.5,
-  §4.6, §4.8 and their rows in §6, §8, §10) and `docs/world-system-core-architecture.md` (§4.2
+- **Supersedes, in part:** `docs/plans/87-world-systems/architecture.md` (§4.2, §4.4, §4.5,
+  §4.6, §4.8 and their rows in §6, §8, §10) and `docs/plans/87-world-systems/76-world-system-core/architecture.md` (§4.2
   reservation, the mid-install visibility guarantee, the multi-`World` policy), and — since
-  2026-10-04 — `docs/issue-46-map-model-plan.md`'s nullable `terrainAt(point)` / `spawnPoint(name)`
-  design and `docs/issue-47-zones-plan.md`'s stack-traced `IndexOutOfBoundsException` for
+  2026-10-04 — `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`'s nullable `terrainAt(point)` / `spawnPoint(name)`
+  design and `docs/plans/86-phase-1-map-and-space/47-zones/plan.md`'s stack-traced `IndexOutOfBoundsException` for
   `zoneAt(point, clamped = false)`. The callouts those documents need are listed in §11 of this one;
   this document does not edit them.
-- **Related docs:** `docs/world-system-binding-plan.md`, `docs/zone-world-system-plan.md` and
-  `docs/tiled-map-result-lookups-plan.md` (this design's three unit plans; the second replaces the
-  superseded #77 plan of the same name), `docs/issue-46-map-model-plan.md`,
-  `docs/issue-47-zones-plan.md`, `docs/world-system-core-plan.md`, `docs/experience-system-plan.md`,
-  `docs/world-system-graduation-plan.md`, `docs/physics-world-system-plan.md`,
-  `docs/issue-49-physics-architecture.md`.
+- **Related docs:** `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md`, `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` and
+  `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md` (this design's three unit plans; the second replaces the
+  superseded #77 plan of the same name), `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`,
+  `docs/plans/86-phase-1-map-and-space/47-zones/plan.md`, `docs/plans/87-world-systems/76-world-system-core/plan.md`, `docs/plans/87-world-systems/78-experience-system/plan.md`,
+  `docs/plans/87-world-systems/79-world-system-graduation/plan.md`, `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`,
+  `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`.
 
 ---
 
@@ -218,7 +218,7 @@ directives:
   applies to everything written from 2026-10-04 on; units 1 and 2 and older documents are not swept.
 
 The user's decision of 2026-10-05 on unit 3's last open question (OD11, §13.1). The same answer kept
-unit 3's plan at `docs/tiled-map-result-lookups-plan.md` with its slug unchanged, and approved
+unit 3's plan at `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md` with its slug unchanged, and approved
 §11.5:
 
 - **C34 (OD11 → a).** `UnzonedPointException` copies its point once, when it is built
@@ -367,21 +367,21 @@ Only the conclusions that moved a decision. The planner's full synthesis is not 
   narrowing are not in any commit (`git status`), so landing order is not constrained by a
   committed intermediate state (§10). Unit 1's Step 0 parks that code — and the superseded README,
   CHANGELOG and CONTRIBUTING hunks — in one path-limited stash, recoverable until the PR merges
-  (`docs/world-system-binding-plan.md` §4.0). The uncommitted Markdown edits in `docs/` mix two things: wording for
+  (`docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` §4.0). The uncommitted Markdown edits in `docs/` mix two things: wording for
   the superseded `ZoneWorldSystem` / `internal ZoneIndex` design (to be rewritten), and the user's
   2026-09-28 decision that every World Systems website update waits for Phase 1's close (#86),
-  which is still true and must be kept (e.g. `docs/world-system-core-architecture.md` I2/R8/F1,
-  `docs/world-system-core-plan.md` F1, `docs/world-system-graduation-plan.md`'s Website bullet).
+  which is still true and must be kept (e.g. `docs/plans/87-world-systems/76-world-system-core/architecture.md` I2/R8/F1,
+  `docs/plans/87-world-systems/76-world-system-core/plan.md` F1, `docs/plans/87-world-systems/79-world-system-graduation/plan.md`'s Website bullet).
   §11 classifies them per document.
 - **No `World`-side lookup exists.** A system can be found today only by scanning
   `installedSystems`; no main-code caller does so (the only planned one, #78's uniqueness guard at
-  `docs/experience-system-plan.md:359`, is replaced by `uniqueRole`, not by a lookup).
+  `docs/plans/87-world-systems/78-experience-system/plan.md:359`, is replaced by `uniqueRole`, not by a lookup).
 - **Tests asserting behaviour this rework removes.** In
   `gametools-core/.../component/gameobjects/WorldInstallSystemTest.kt`: `:59` (installedSystems
   excludes the system during the hook), `:95`, `:105`, `:118`, `:229` (failure-atomic install),
   `:208` (helper recorded before the outer system), `:219` (self-uninstall inside the hook is a
   no-op). And `WorldSystemEventBusIntegrationTest.kt:84` (one instance on two `World`s).
-- **`ExperienceSystem` does not exist in source yet**; its plan (`docs/experience-system-plan.md:356`)
+- **`ExperienceSystem` does not exist in source yet**; its plan (`docs/plans/87-world-systems/78-experience-system/plan.md:356`)
   holds a per-`World` `IdentityHashMap<World, Subscription>` and the in-hook uniqueness guard.
 - **No other module** references `WorldSystem` (`gametools-net`, the umbrella, and `website/` are
   clean) — no cross-repo surface.
@@ -806,7 +806,7 @@ Stated plainly because they reverse documented, tested guarantees:
 
 1. **Hooks lose their `World` parameter**; the `World` is `system.world`.
 2. **`installedSystems` now contains the system while `onInstalled()` runs.** #76 guaranteed the
-   opposite (`WorldSystem.kt:34-41`; `world-system-core-architecture.md` §1.2, and #78 depended on
+   opposite (`WorldSystem.kt:34-41`; `docs/plans/87-world-systems/76-world-system-core/architecture.md` §1.2, and #78 depended on
    it). With the guarantee reversed, #78's old guard `installedSystems.none { it is ExperienceSystem }`
    would now see *itself* and reject every install — it must be replaced by `uniqueRole`, not kept.
 3. **Multi-`World` use is reversed.** #76 said one instance may serve several `World`s and the
@@ -893,9 +893,9 @@ uniqueness `require` and per-`World` map). Every user of either is answered belo
 
 | Sibling | Consequence | Verdict |
 |---|---|---|
-| **#78 `ExperienceSystem`** (`docs/experience-system-plan.md:356`) | Extends `AbstractWorldSystem`; `onInstalled()` subscribes once, `onUninstalled()` cancels and nulls it; `override val uniqueRole = ExperienceSystem::class`. The per-`World` `IdentityHashMap` and the `installedSystems.none` `require` are deleted from the plan. Re-install on the same `World` re-subscribes, which is correct because the binding survives uninstall. The class is `final`, so exact-class uniqueness is sufficient. | **Named follow-up: #78's own plan** — revise `experience-system-plan.md` before #78 is implemented. Not built yet, so nothing to refactor now. |
-| **#79 graduation** (`docs/world-system-graduation-plan.md`) | Additionally tags `AbstractWorldSystem` `@SupportedExtension` and lets `uniqueRole` graduate with the seam; `ZoneIndex` replaces `ZoneWorldSystem` in the removal list (the class-level `@ExperimentalGameToolsApi` goes, `zoneOf`/`entitiesIn` become untagged Stable Core). `World.systemOf` (both forms) joins its §1.1 inventory and its removal list: it graduates with the registry (C20), so #79's "exactly one `ExperimentalGameToolsApi` hit remains" completeness check holds unchanged. So do the two new exception types, each carrying a class-level marker that #79 removes — `MissingWorldSystemException` with `systemOf` (C21), `UnzonedEntityException` with `ZoneIndex` (C22); without them in the removal list the completeness check would fail. Its review-checkpoint questions about `ZoneWorldSystem.installOn/uninstallFrom` change accordingly; questions 1–2 ("did a system need to inspect `installedSystems` to find a peer?") now have a supported answer, `systemOf`. Unit 3's two exception types (`MissingSpawnPointException`, `OutOfGridException`) are untagged, like the map model, so they do **not** join the removal list (§4.6). | **Named follow-up: #79's plan.** |
-| **#80 / #49** | `PhysicsSystem` extends `AbstractWorldSystem`, claims `PHYSICS`, declares `uniqueRole = PhysicsSystem::class` (C16), its `step()` takes no `World`. Its `EntityId`-keyed body registry gets bind-for-life from the base class, which removes the per-instance guard the old #80 plan (`docs/physics-world-system-plan.md` §2.4) worried about. The conditional at `physics-world-system-plan.md:299` ("`PhysicsSystem` itself becomes a `WorldSystem`") is now decided: #80 is "resolved by #49"; no `PhysicsWorldSystem` type exists. | **Named follow-up: #49's re-plan** consumes this; `physics-world-system-plan.md` stays as historical record with a pointer. |
+| **#78 `ExperienceSystem`** (`docs/plans/87-world-systems/78-experience-system/plan.md:356`) | Extends `AbstractWorldSystem`; `onInstalled()` subscribes once, `onUninstalled()` cancels and nulls it; `override val uniqueRole = ExperienceSystem::class`. The per-`World` `IdentityHashMap` and the `installedSystems.none` `require` are deleted from the plan. Re-install on the same `World` re-subscribes, which is correct because the binding survives uninstall. The class is `final`, so exact-class uniqueness is sufficient. | **Named follow-up: #78's own plan** — revise `docs/plans/87-world-systems/78-experience-system/plan.md` before #78 is implemented. Not built yet, so nothing to refactor now. |
+| **#79 graduation** (`docs/plans/87-world-systems/79-world-system-graduation/plan.md`) | Additionally tags `AbstractWorldSystem` `@SupportedExtension` and lets `uniqueRole` graduate with the seam; `ZoneIndex` replaces `ZoneWorldSystem` in the removal list (the class-level `@ExperimentalGameToolsApi` goes, `zoneOf`/`entitiesIn` become untagged Stable Core). `World.systemOf` (both forms) joins its §1.1 inventory and its removal list: it graduates with the registry (C20), so #79's "exactly one `ExperimentalGameToolsApi` hit remains" completeness check holds unchanged. So do the two new exception types, each carrying a class-level marker that #79 removes — `MissingWorldSystemException` with `systemOf` (C21), `UnzonedEntityException` with `ZoneIndex` (C22); without them in the removal list the completeness check would fail. Its review-checkpoint questions about `ZoneWorldSystem.installOn/uninstallFrom` change accordingly; questions 1–2 ("did a system need to inspect `installedSystems` to find a peer?") now have a supported answer, `systemOf`. Unit 3's two exception types (`MissingSpawnPointException`, `OutOfGridException`) are untagged, like the map model, so they do **not** join the removal list (§4.6). | **Named follow-up: #79's plan.** |
+| **#80 / #49** | `PhysicsSystem` extends `AbstractWorldSystem`, claims `PHYSICS`, declares `uniqueRole = PhysicsSystem::class` (C16), its `step()` takes no `World`. Its `EntityId`-keyed body registry gets bind-for-life from the base class, which removes the per-instance guard the old #80 plan (`docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` §2.4) worried about. The conditional at `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md:299` ("`PhysicsSystem` itself becomes a `WorldSystem`") is now decided: #80 is "resolved by #49"; no `PhysicsWorldSystem` type exists. | **Named follow-up: #49's re-plan** consumes this; `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md` stays as historical record with a pointer. |
 | Docs & README | §11. | **In scope now** (each unit owns its own; planner owns the older architecture docs). |
 
 ### 7.4 Adoption of `World.systemOf` (C17)
@@ -907,10 +907,10 @@ Every user of that mechanism, actual or planned, is answered here (sweep of main
 | Site | What it does today | Verdict |
 |---|---|---|
 | Main source of all three modules | Nothing locates a peer system. The only scan *pattern* is `WorldSystem.kt:15-17`'s KDoc advice to check `installedSystems` for per-`World` uniqueness. | **Nothing to refactor now.** That advice is replaced by `uniqueRole` (unit 1's KDoc rewrite) — uniqueness is not a lookup. |
-| #78's planned guard (`docs/experience-system-plan.md:359`) | `require(world.installedSystems.none { it is ExperienceSystem })` | **Replaced by `uniqueRole` (C7)**, not by `systemOf`. |
+| #78's planned guard (`docs/plans/87-world-systems/78-experience-system/plan.md:359`) | `require(world.installedSystems.none { it is ExperienceSystem })` | **Replaced by `uniqueRole` (C7)**, not by `systemOf`. |
 | Tests asserting `installedSystems` membership (`WorldInstallSystemTest`, `WorldInstalledSystemsTest`, `WorldUninstallSystemTest`, the zone ordering tests) | Assert what the registry holds. | **Never** — they test the registry itself. New `systemOf` tests are added beside them (§7.1). |
-| #49 `PhysicsSystem` | Physics consults no zone data (`docs/issue-49-physics-architecture.md:540`). | **Never, as designed.** This corrects the first draft's guess that #49 would be the first consumer. |
-| #79's review checkpoint Q1–Q2 (`docs/world-system-graduation-plan.md:82-89`) | Asks whether a shipped system needed an install-time view of its peers. | **Named follow-up (#79's plan):** `systemOf` is now the supported answer; the question becomes "did any shipped system need more than `uniqueRole` and `systemOf`?" |
+| #49 `PhysicsSystem` | Physics consults no zone data (`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md:540`). | **Never, as designed.** This corrects the first draft's guess that #49 would be the first consumer. |
+| #79's review checkpoint Q1–Q2 (`docs/plans/87-world-systems/79-world-system-graduation/plan.md:82-89`) | Asks whether a shipped system needed an install-time view of its peers. | **Named follow-up (#79's plan):** `systemOf` is now the supported answer; the question becomes "did any shipped system need more than `uniqueRole` and `systemOf`?" |
 | Phase 3 per-player interest filtering (vision → zone → distance, `docs/framework-vision-and-roadmap.md:182`) and #50 vision | Will need a `World`'s `ZoneIndex` (and its vision system) given only the `World`. Nothing built. | **Named follow-up (the Phase 3 and #50 plans)** — the most plausible first real consumer; those plans should use `systemOf` rather than threading references. |
 | Consumer-facing docs (README zone bullet) | A consumer holds the `ZoneIndex` it installed. | **Unit 2's README edit** mentions `world.systemOf<ZoneIndex>()` (a `Result`) for code that holds only a `World`. |
 
@@ -932,7 +932,7 @@ lookup with the same nullable by-key shape, is answered here (sweep of main and 
 | Ten older `docs/*.md` | Quote `zoneOf: Zone?` or "the reads, unchanged", or call OD5 open | **Applied** (approved 2026-10-02) — dated callouts and inline markers, §11.3 |
 | `World.byId(id): GameObject?` (core) | The same nullable keyed-lookup shape | **Never in #77.** Released since `v3.1.0` (`git tag --contains 7f6fbde`), so changing it is a breaking change for a Major; the 2026-10-01 question C22 answers already stated it stays nullable either way. |
 | `TiledMap.spawnPoint(name): SpawnPoint?` and `TiledMap.terrainAt(point): TerrainType?` (`gametools-world`, #46) | The same shape; unreleased (not in `v5.1.0`) | **Not in #77** — C22 expands #77's scope to `zoneOf` alone. Reported to the user as a possible follow-up issue (cheapest before a release ships #46); the user's call, not decided here. *(Superseded 2026-10-04: the user changed both in #77, as unit 3 — C23–C27, §7.6.)* |
-| `PhysicsSystem.bodyFor` (#49, unbuilt) — `docs/physics-system-plan.md:274` names `zoneOf`'s `Zone?` as its precedent for `PhysicsBody?` | Planned nullable | **Named follow-up: #49's re-plan** decides whether `bodyFor` follows; §11.3 item 8 marks the precedent stale. *(2026-10-04: the C23 convention now sets the direction — a `Result` — for this new lookup; #49's re-plan applies it.)* |
+| `PhysicsSystem.bodyFor` (#49, unbuilt) — `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md:274` names `zoneOf`'s `Zone?` as its precedent for `PhysicsBody?` | Planned nullable | **Named follow-up: #49's re-plan** decides whether `bodyFor` follows; §11.3 item 8 marks the precedent stale. *(2026-10-04: the C23 convention now sets the direction — a `Result` — for this new lookup; #49's re-plan applies it.)* |
 | Phase 3 interest filtering and #50 vision (unbuilt) | Will read `zoneOf` | **Named follow-up** — unwrap with `getOrNull()` / `fold`, mindful that a miss allocates a stackless exception and its `Result` box (§12). |
 
 ### 7.6 Unit 3, and adoption of the `Result` convention (C23)
@@ -952,9 +952,9 @@ sweep of main and test source, `docs/`, README, CHANGELOG, CONTRIBUTING and `web
 | Zone tests: `ZoneGridTest`'s `zoneAt with clamped = false fails on the far edge and on a negative out-of-bounds point`; `ZoneGridPartitionLawsTest`'s `zoneAt(clamped = false)` law | The only test asserting `zoneAt`'s failure type (`assertIs<IndexOutOfBoundsException>`, which still passes) is tightened to `UnzonedPointException`; the law gains the payload check. New: `UnzonedPointException`'s component tests and a level-4c guard. | **In scope now** |
 | Unit 2's `ZoneDrivenSimulationE2ETest` and `ZoneIndexSimulationLoopE2ETest` | `checkNotNull(map.spawnPoint(…))` stops compiling under C24; one `.getOrNull()` each. | **In scope now** (unit 3 lands after unit 2) |
 | README's Modules table world row, Map & Space `TiledMap` and zone bullets; CONTRIBUTING's Module layout `gametools-world` row; CHANGELOG (a new #77 bullet after unit 2's) | The map and zone sub-lists, `TileIndex` added to the map lists (C32), the two bullets. | **In scope now** — unit 3 §4.9 (§11.1) |
-| `docs/issue-46-map-model-plan.md`, `docs/issue-47-zones-plan.md`, `docs/api-openness-decisions-6.0.0.md` | State the nullable shapes or their rationale, or owe a `TiledMap` openness review. | **Applied** (approved 2026-10-04) — §11.4 |
-| `docs/issue-47-zones-plan.md` again | §3.3's `ZoneGrid` sketch and resolution bullet, §3.6's alternatives and §6's `ZoneGridTest` bullet describe `zoneAt`'s failure as an `IndexOutOfBoundsException`. | **Applied** (approved 2026-10-05) — §11.5 |
-| `docs/physics-narrow-phase-plan.md` (§1.2's `TerrainLayer.kt` bullet; §2.11's `TerrainCollisionIndex.build`) and `docs/physics-system-plan.md` (§2.2's precedent paragraph) | Use or cite `TerrainLayer.terrainAt`'s `Result`; the planned `TerrainCollisionIndex` folds failure to `false`. | **No change** — still true for any failure type |
+| `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`, `docs/plans/86-phase-1-map-and-space/47-zones/plan.md`, `docs/api-openness-decisions-6.0.0.md` | State the nullable shapes or their rationale, or owe a `TiledMap` openness review. | **Applied** (approved 2026-10-04) — §11.4 |
+| `docs/plans/86-phase-1-map-and-space/47-zones/plan.md` again | §3.3's `ZoneGrid` sketch and resolution bullet, §3.6's alternatives and §6's `ZoneGridTest` bullet describe `zoneAt`'s failure as an `IndexOutOfBoundsException`. | **Applied** (approved 2026-10-05) — §11.5 |
+| `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-narrow-phase.md` (§1.2's `TerrainLayer.kt` bullet; §2.11's `TerrainCollisionIndex.build`) and `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md` (§2.2's precedent paragraph) | Use or cite `TerrainLayer.terrainAt`'s `Result`; the planned `TerrainCollisionIndex` folds failure to `false`. | **No change** — still true for any failure type |
 
 **C23 beyond unit 3.** After units 2 and 3, the only public nullable-returning function left in main
 source is `World.byId` (verified 2026-10-04 by search).
@@ -995,7 +995,7 @@ two exception types' `final` is the planner's call under the same rule (§4.5: o
 genuine extension point). Note the consequence of C9 recorded once: because `ZoneIndex` is
 class-level Experimental, its reads (`zoneOf`, `entitiesIn`) and `UnzonedEntityException` require
 opt-in until #79. That reverses the earlier "class and reads stay untagged" call in
-`world-systems-implementation-architecture.md` §8.
+`docs/plans/87-world-systems/architecture.md` §8.
 
 ---
 
@@ -1107,8 +1107,8 @@ this order.
 | Slug | Scope | Depends on | Landing order | Branch |
 |---|---|---|---|---|
 | `world-system-binding` | gametools-core only: `WorldSystem` rework, `AbstractWorldSystem`, `uniqueRole`, the `World` registry rework (checks → bind → record → notify, with C14's roll-back; reservation machinery removed; C15 documented), the new `World.systemOf` (§4.4, C17) and its miss type `MissingWorldSystemException` (C21), `CoreSystemSlot` KDoc, and #76's tests, KDoc, CHANGELOG entry (#76) and README/CONTRIBUTING bits. | none | 1 | `feature/77-zone-world-system` |
-| `zone-world-system` | gametools-world only: `ZoneIndex` as the zone `WorldSystem`, declaring `uniqueRole = ZoneIndex::class` (C16); `zoneOf` returning `Result<Zone>` and the new `UnzonedEntityException` (C22); `ZoneWorldSystem` deleted; tests, `ZoneFixtures`, KDoc cleanup (C13), CHANGELOG entries (#47, #77), README/CONTRIBUTING bits, and the correction of `docs/issue-49-physics-architecture.md`'s now-false `ZoneIndex.refresh` statements (§11). | `world-system-binding` | 2 | `feature/77-zone-world-system` |
-| `tiled-map-result-lookups` (unit 3, C27, C31) — "Result lookups: `TiledMap` + `ZoneGrid.zoneAt`" | gametools-world's map package and `ZoneGrid` (§4.6, §7.6). `TiledMap.spawnPoint` → `Result<SpawnPoint>` with the new `MissingSpawnPointException`; `TiledMap.terrainAt` → `Result<TerrainType>`; `TerrainLayer.terrainAt`'s miss → the new `OutOfGridException(tile)` (C28, C29); `ZoneGrid.zoneAt`'s `clamped = false` miss → the new `UnzonedPointException(point)` (C30). Every call site — including two of unit 2's e2e tests — and the README / CONTRIBUTING map and zone entries, including the missing `TileIndex` (C32), plus a new CHANGELOG #77 bullet. Plan: `docs/tiled-map-result-lookups-plan.md`. `UnzonedPointException` copies its point once, at construction (C34). | `zone-world-system` — no code dependency, but it edits files unit 2 created or touched (two e2e tests, `ZoneGrid`'s KDoc, the README / CONTRIBUTING rows) | 3 | `feature/77-zone-world-system` |
+| `zone-world-system` | gametools-world only: `ZoneIndex` as the zone `WorldSystem`, declaring `uniqueRole = ZoneIndex::class` (C16); `zoneOf` returning `Result<Zone>` and the new `UnzonedEntityException` (C22); `ZoneWorldSystem` deleted; tests, `ZoneFixtures`, KDoc cleanup (C13), CHANGELOG entries (#47, #77), README/CONTRIBUTING bits, and the correction of `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`'s now-false `ZoneIndex.refresh` statements (§11). | `world-system-binding` | 2 | `feature/77-zone-world-system` |
+| `tiled-map-result-lookups` (unit 3, C27, C31) — "Result lookups: `TiledMap` + `ZoneGrid.zoneAt`" | gametools-world's map package and `ZoneGrid` (§4.6, §7.6). `TiledMap.spawnPoint` → `Result<SpawnPoint>` with the new `MissingSpawnPointException`; `TiledMap.terrainAt` → `Result<TerrainType>`; `TerrainLayer.terrainAt`'s miss → the new `OutOfGridException(tile)` (C28, C29); `ZoneGrid.zoneAt`'s `clamped = false` miss → the new `UnzonedPointException(point)` (C30). Every call site — including two of unit 2's e2e tests — and the README / CONTRIBUTING map and zone entries, including the missing `TileIndex` (C32), plus a new CHANGELOG #77 bullet. Plan: `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`. `UnzonedPointException` copies its point once, at construction (C34). | `zone-world-system` — no code dependency, but it edits files unit 2 created or touched (two e2e tests, `ZoneGrid`'s KDoc, the README / CONTRIBUTING rows) | 3 | `feature/77-zone-world-system` |
 
 **Why this order compiles at every commit.** `ZoneWorldSystem.kt` and the `ZoneIndex` narrowing are
 uncommitted, so the tree at `HEAD` has no `WorldSystem` implementer outside gametools-core's tests.
@@ -1153,7 +1153,7 @@ first draft of this section listed only some of them. Line numbers are the worki
 
 ### 11.1 Owned by the unit plans (the implementer applies them, in the unit's own commits)
 
-- **Unit `world-system-binding`** (`docs/world-system-binding-plan.md`):
+- **Unit `world-system-binding`** (`docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md`):
   - `README.md` — class diagram `WorldSystem` block (`:83-88`: `world`, `onInstalled`,
     `onUninstalled`, `step`, `coreSlot`, `uniqueRole`; add an `AbstractWorldSystem` block);
     `:142`, `:145` rows, plus a new `AbstractWorldSystem` row under `:145`; `:159` core row (add
@@ -1173,7 +1173,7 @@ first draft of this section listed only some of them. Line numbers are the worki
     install/uninstall/`installedSystems` contracts), `CoreSystemSlot.kt` (`:14-16`, `:39`, and the
     working tree's `:42`, which names `ZoneWorldSystem` — `ZONE` is claimed by `ZoneIndex`,
     `PHYSICS` by `PhysicsSystem` (#49)); the new `MissingWorldSystemException.kt` (C21).
-- **Unit `zone-world-system`** (`docs/zone-world-system-plan.md`, the replacement):
+- **Unit `zone-world-system`** (`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`, the replacement):
   - `README.md` — `:161` world row (which also gains `UnzonedEntityException`), `:194` zone bullet
     (including `zoneOf`'s `Result<Zone>` shape, C22), and the "`ZoneIndex` is the first shipped
     system, claiming `ZONE`" clause in the `:180` bullet.
@@ -1189,7 +1189,7 @@ first draft of this section listed only some of them. Line numbers are the worki
     `zoneOf`'s new `@return`), `EntityChangedZone.kt` (`:11-17`, `:30-36`: "refresh" → "step"),
     `ZoneGrid.kt` (`:22`, `:26` docs pointers — C13; `:70-71`); the new `UnzonedEntityException.kt`
     (C22).
-  - **`docs/issue-49-physics-architecture.md`** — its `:618` row claims "`ZoneIndex.refresh`
+  - **`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`** — its `:618` row claims "`ZoneIndex.refresh`
     remains directly callable exactly as before", which is false under C9 (there is no `refresh`).
     Siblings of the same claim: `:193`, `:224`, `:450`, `:455`, `:494`, `:515-519`, `:524`, `:543`,
     `:575`, `:596`, `:606`, `:785-788` (unit 2's plan found the six not listed in the first
@@ -1199,7 +1199,7 @@ first draft of this section listed only some of them. Line numbers are the worki
     `PhysicsSystem` is itself the physics `WorldSystem` (no `PhysicsWorldSystem`, #80 resolved by
     #49) — plus a short inline marker on the `:618` row and the `:606` bullet pointing to it. The
     body otherwise stays as historical record (C13).
-- **Unit `tiled-map-result-lookups`** (`docs/tiled-map-result-lookups-plan.md`, §4.9), landing after
+- **Unit `tiled-map-result-lookups`** (`docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`, §4.9), landing after
   unit 2, so each edit is located by text:
   - `README.md`, Modules table world row: the **map** sub-list gains `TileIndex` (C32),
     `MissingSpawnPointException` and `OutOfGridException` (credit `(#46, #77)`); the **zone**
@@ -1222,13 +1222,13 @@ Deltas to existing plans are applied only after the user approves them (standing
 approved every edit below on 2026-10-01, and the planner applied them the same day** as uncommitted
 Markdown edits, which land in #77's PR as a separate `docs:` commit. Verified 2026-10-02: each
 target document carries its dated 2026-10-01 callout, addendum or inline marker, and item 12's
-re-pointed references (`world-system-core-architecture.md:702`, `world-system-core-plan.md:810`)
+re-pointed references (`docs/plans/87-world-systems/76-world-system-core/architecture.md:702`, `docs/plans/87-world-systems/76-world-system-core/plan.md:810`)
 resolve to §3.4 of the replacement zone plan. The list is kept as the record of what was changed.
 For live plans of unbuilt units (#78, #79) the edit was a dated callout listing what those units'
 own planning must revise, not a rewrite ahead of it. The further callouts that C21–C22 make
 necessary are §11.3's, approved by the user on 2026-10-02 and applied.
 
-1. **`docs/world-system-core-architecture.md`** (#76) — a dated revision callout at the top
+1. **`docs/plans/87-world-systems/76-world-system-core/architecture.md`** (#76) — a dated revision callout at the top
    naming the superseded parts: header "Does not cover" (`:25-26`); §1.2 (`:52-55`:
    failure-atomicity wording, "never contains a system mid-`installOn`", #78's dependence on it);
    the reservation rows in §3/§4.1 (`:116`, `:136`); §4.2's reservation flow (`:95-99`,
@@ -1238,12 +1238,12 @@ necessary are §11.3's, approved by the user on 2026-10-02 and applied.
    (`:441-448`, now dead — R2 right after it stands); reservation mentions in §8/§10/§12 (`:531-532`, `:566`, `:577`,
    `:604-606`); the cross-plan list (`:634-637`); the "one instance on two `World`s" test rows.
    Uncommitted hunks `:71-73`, `:393`, `:495-497`, `:602-603` KEEP; `:643` KEEP but re-point its
-   `zone-world-system-plan.md:689-690` reference to the replacement plan's test-opt-in section,
-   §3.4 of `docs/zone-world-system-plan.md`.
-2. **`docs/world-system-core-plan.md`** (#76, landed as PR #130) — a short "reworked by #77"
-   callout pointing to `docs/world-system-binding-plan.md` and this document. Uncommitted hunk
+   `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md:689-690` reference to the replacement plan's test-opt-in section,
+   §3.4 of `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`.
+2. **`docs/plans/87-world-systems/76-world-system-core/plan.md`** (#76, landed as PR #130) — a short "reworked by #77"
+   callout pointing to `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` and this document. Uncommitted hunk
    `:1330-1332` KEEP; `:784` re-pointed as in item 1.
-3. **`docs/world-systems-implementation-architecture.md`** (the #76–#80 grand design) — a dated
+3. **`docs/plans/87-world-systems/architecture.md`** (the #76–#80 grand design) — a dated
    callout plus corrections: header and §1.1 (`:16-17`, `:48`, `:52-53` — #80 resolved by #49 —
    `:123-124`); §1.2 C5 sketch (`:96-97`, `:108`); §2 findings 4–5 (`:164-176`); §3 (`:209-212`,
    marked historical); §4.1 inventory rows (`:288`, `:291`); §4.2 (`:299-316`); §4.3 slot comments
@@ -1255,16 +1255,16 @@ necessary are §11.3's, approved by the user on 2026-10-02 and applied.
    (`:780-790`); §9 (`:828`); §10 rows (`:854-858`); §11 risks (`:903-933`); the Cross-plan
    alignment block (`:988-1100`); §12 gains a pointer to this document's §13. Uncommitted hunks:
    `:760` KEEP; `:444-477` MIXED (keep the motivation); the rest REWRITE.
-4. **`docs/world-systems-plan-draft.md`** (the superseded aggregator; not in the first draft) — one
+4. **`docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`** (the superseded aggregator; not in the first draft) — one
    line added to its existing superseded callout: the registry that replaced it was itself reworked
    by #77 (parameterless hooks, binding, `ZoneIndex`/`PhysicsSystem` as the systems).
-5. **`docs/experience-system-plan.md`** (#78, unbuilt) — a dated callout listing what #78's own
+5. **`docs/plans/87-world-systems/78-experience-system/plan.md`** (#78, unbuilt) — a dated callout listing what #78's own
    planning must revise: the copied old contract (`:218-232`), the two-`World` diagram
    (`:287-305`), the `IdentityHashMap` and the guard (`:356-366`), `:441-457` (including the
    `ZoneWorldSystem`/`PhysicsWorldSystem` log-rule mention at `:452-453`), the tests at
    `:643-652`, `:736-737`, `:793-806`. Target shape: extends `AbstractWorldSystem`, parameterless
    hooks, one subscription, `uniqueRole = ExperienceSystem::class`.
-6. **`docs/world-system-graduation-plan.md`** (#79, unbuilt) — a dated callout listing what #79's
+6. **`docs/plans/87-world-systems/79-world-system-graduation/plan.md`** (#79, unbuilt) — a dated callout listing what #79's
    own planning must revise: the §1.1 inventory (`:54`, `:61`; add `AbstractWorldSystem`,
    `uniqueRole`, and both forms of `systemOf`, which graduate with the registry per C20 — so the
    "exactly one `ExperimentalGameToolsApi` hit" completeness check stays as it is); checkpoint
@@ -1274,34 +1274,34 @@ necessary are §11.3's, approved by the user on 2026-10-02 and applied.
    (`:417`, `:429-438`); `:555-556`, `:580-612`; `:33` and `:322` (#80). Uncommitted hunks `:61`,
    `:82-85`, `:591-595` REWRITE; `:392-395`, `:433-438`, `:597-599` MIXED (keep the #86 deferral
    and the `ZoneFixtures.kt` reuse).
-7. **`docs/physics-world-system-plan.md`** (#80) — wholly historical now (C11: #80 resolved by
+7. **`docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`** (#80) — wholly historical now (C11: #80 resolved by
    #49). A "Superseded — 2026-09-30" callout at the top: no `PhysicsWorldSystem`; `PhysicsSystem`
    extends `AbstractWorldSystem`, claims `PHYSICS`, declares `uniqueRole = PhysicsSystem::class`;
    bind-for-life lives in the base class, so §2.4's guard question and OD1 are moot. Its uncommitted
    2026-09-28 flag hunks (`:79-89`, `:169-170`, `:240-266`, `:284-287`, `:324`, `:333-336`,
    `:474-510`, `:559-562`, `:625-628`, `:661-666`) are all superseded; they stay as history under
    the new callout rather than being deleted.
-8. **`docs/physics-system-plan.md`**, **`docs/physics-core-seams-plan.md`** (`:12-15`, not in the
-   first draft) and **`docs/physics-resolution-plan.md`** (`:312`, precedent mention only) — extend
+8. **`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`**, **`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`** (`:12-15`, not in the
+   first draft) and **`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-resolution.md`** (`:312`, precedent mention only) — extend
    each existing "Partly superseded" callout with the dated item: `PhysicsSystem` is itself the
    physics `WorldSystem`; `World.reconcileSpatialIndex()`'s named caller is no longer
    `PhysicsWorldSystem.step()` — where that call lives is #49's re-plan's decision; `ZoneIndex.refresh`
    mentions are historical precedent only.
-9. **`docs/phase-1-map-and-space-plan.md`** — the committed 2026-09-22 callout (`:20-21`, not in the
+9. **`docs/plans/86-phase-1-map-and-space/plan.md`** — the committed 2026-09-22 callout (`:20-21`, not in the
    first draft: "Zones run as `ZoneWorldSystem` … physics as `PhysicsWorldSystem`") and the
    uncommitted 2026-09-29 addendum (`:25-29`, REWRITE) become one corrected, dated addendum: zones
    run as `ZoneIndex` itself and physics as `PhysicsSystem` itself.
-10. **`docs/issue-47-zones-plan.md`** — the uncommitted callout (`:3-9` REWRITE, `:10-14` MIXED) is
+10. **`docs/plans/86-phase-1-map-and-space/47-zones/plan.md`** — the uncommitted callout (`:3-9` REWRITE, `:10-14` MIXED) is
     rewritten: `ZoneIndex` is itself the zone `WorldSystem` (public constructor, no `refresh`,
     driven by `installSystem` + `stepSystems()`); the body's "plain method a consumer calls"
     still describes #47 as merged, never released.
 11. **`docs/api-openness-decisions-6.0.0.md`** — the uncommitted 2026-09-29 note (`:222-224`,
     REWRITE) becomes: review `ZoneIndex` in its post-#77 shape — itself a `WorldSystem` (extends
     `AbstractWorldSystem`), public constructor, no `refresh`, reads Experimental until #79.
-12. **Cross-references into the replaced `docs/zone-world-system-plan.md`** — its old §2.2, §2.6,
-    §6 and §9 are cited from `api-openness-decisions-6.0.0.md:224`, `issue-47-zones-plan.md:13`,
-    `phase-1-map-and-space-plan.md:29`, `physics-world-system-plan.md:169,262` and
-    `world-systems-implementation-architecture.md:449,470,923`. All sit in REWRITE hunks above and
+12. **Cross-references into the replaced `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md`** — its old §2.2, §2.6,
+    §6 and §9 are cited from `api-openness-decisions-6.0.0.md:224`, `docs/plans/86-phase-1-map-and-space/47-zones/plan.md:13`,
+    `docs/plans/86-phase-1-map-and-space/plan.md:29`, `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md:169,262` and
+    `docs/plans/87-world-systems/architecture.md:449,470,923`. All sit in REWRITE hunks above and
     are re-pointed or dropped with them; the two `:689-690` line pointers are items 1 and 2.
 
 ### 11.3 Planner-owned — approved by the user 2026-10-02, and applied
@@ -1315,7 +1315,7 @@ was changed. They follow from C21 and C22. `README.md`, `CHANGELOG.md` and `CONT
 listed: the unit plans own them (§11.1). A sweep on 2026-10-02 of every `zoneOf` mention in `docs/`
 found eight older documents now wrong or incomplete (items 1–2, 5–10); two more carry an OD5-era
 statement or an inventory that C21 makes incomplete (items 3–4).
-`docs/issue-49-physics-architecture.md` and `website/` mention no `zoneOf`. Each edit is a dated
+`docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` and `website/` mention no `zoneOf`. Each edit is a dated
 sentence added to the document's existing callout, or a one-line inline marker; no body is
 rewritten. Line numbers below are the working tree's on 2026-10-02, before the edits. Where the
 wording below differs from what was applied, the difference is in form only: item 1(a) became a
@@ -1325,7 +1325,7 @@ marker sits at the end of the sentence it follows; and the added sentences of it
 cite sections (§8's "Consumes from" entry; §1.1, §3.4, §4, §6, §8; §5) rather than line numbers,
 because each insertion shifts the lines below it.
 
-1. **`docs/world-systems-implementation-architecture.md`** (the #76–#80 grand design).
+1. **`docs/plans/87-world-systems/architecture.md`** (the #76–#80 grand design).
    (a) §12's "Added 2026-10-01" paragraph (`:1001-1007`) ends "Still open: OD5, what a `systemOf`
    miss carries inside `Result.failure`." — now false. Replace that sentence with: resolved
    2026-10-02 — a miss carries `MissingWorldSystemException`, and `ZoneIndex.zoneOf` returns
@@ -1338,7 +1338,7 @@ because each insertion shifts the lines below it.
    shape and `UnzonedEntityException`, in `ZoneIndex`'s tier. (d) The doc-duty table's #77 row
    (`:777`) says "CONTRIBUTING: no edit — its world row already lists `ZoneIndex`": now its world
    row gains `UnzonedEntityException`, and so does README's world row.
-2. **`docs/world-system-graduation-plan.md`** (#79, unbuilt) — extend the 2026-10-01 callout
+2. **`docs/plans/87-world-systems/79-world-system-graduation/plan.md`** (#79, unbuilt) — extend the 2026-10-01 callout
    (`:3-70`). Item 1 (§1.1 inventory and removal list): add `MissingWorldSystemException`
    (gametools-core) and `UnzonedEntityException` (gametools-world), each with a class-level
    `@ExperimentalGameToolsApi` that #79 removes — without them the "only the marker's own
@@ -1347,10 +1347,10 @@ because each insertion shifts the lines below it.
    `zoneOf` returns `Result<Zone>`, its miss an `UnzonedEntityException`, which becomes untagged
    with `ZoneIndex`. Item 6 (§5 tests): the zero-opt-in proof also covers both exception types.
    The "Target shape" paragraph (`:67-70`): add both types.
-3. **`docs/world-system-core-architecture.md`** (#76) — callout item 8 (§6 marker matrix,
+3. **`docs/plans/87-world-systems/76-world-system-core/architecture.md`** (#76) — callout item 8 (§6 marker matrix,
    `:45-49`): add `MissingWorldSystemException`, the type a `systemOf` miss carries, to the new
    Experimental declarations (until #79). (OD5, not `zoneOf`.)
-4. **`docs/world-system-core-plan.md`** (#76) — callout item 5 (`:25`): "both returning
+4. **`docs/plans/87-world-systems/76-world-system-core/plan.md`** (#76) — callout item 5 (`:25`): "both returning
    `Result<T>`" gains "a miss carrying a `MissingWorldSystemException` (a new, stackless
    `NoSuchElementException` naming the role)". (OD5, not `zoneOf`.)
 5. **`docs/api-openness-decisions-6.0.0.md`** — the 2026-10-01 note (`:222-225`) on the owed
@@ -1359,24 +1359,24 @@ because each insertion shifts the lines below it.
    `MissingWorldSystemException`, are `final` by the planner's call (the library is their only
    producer — not an extension point; binding architecture §4.5), so the owed review should include
    them.
-6. **`docs/issue-47-zones-plan.md`** — one sentence added to the 2026-10-01 callout (`:3-22`):
+6. **`docs/plans/86-phase-1-map-and-space/47-zones/plan.md`** — one sentence added to the 2026-10-01 callout (`:3-22`):
    `zoneOf` now returns `Result<Zone>` — `Result.success(zone)` for a placed entity, otherwise
    `Result.failure(UnzonedEntityException(entityId))` — so the body's `zoneOf(entityId): Zone?`
    signatures (`:74`, `:363`, `:526`), its "`zoneOf` returns `null`" test bullet (`:599`) and its
    CHANGELOG draft (`:690-693`) describe #47 as merged; `entitiesIn` is unchanged.
-7. **`docs/phase-1-map-and-space-plan.md`** — in the 2026-10-01 addendum (`:28-42`), after
+7. **`docs/plans/86-phase-1-map-and-space/plan.md`** — in the 2026-10-01 addendum (`:28-42`), after
    "§2.3's queries (…) are reads on that same `ZoneIndex`", add: `zoneOf` returns a `Result<Zone>`,
    a failure carrying `UnzonedEntityException` when the entity is in no zone (2026-10-02, #77). The
    body's `:316` stays historical.
-8. **`docs/physics-system-plan.md`** (#49's reference shape) — §2.3's error-handling summary
+8. **`docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`** (#49's reference shape) — §2.3's error-handling summary
    (`:274-275`) cites "`ZoneIndex.zoneOf`'s own `Zone?`-returning shape" as the precedent for
    `bodyFor: PhysicsBody?`, which no longer holds. Add an inline marker there, and one sentence to
    the 2026-10-01 addendum (`:16-23`): `zoneOf` returns `Result<Zone>` (C22); whether `bodyFor`
    follows is #49's re-plan's decision.
-9. **`docs/physics-world-system-plan.md`** (#80, wholly historical) — one sentence in the
+9. **`docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`** (#80, wholly historical) — one sentence in the
    superseded callout's `ZoneIndex` bullet (`:19-22`): `zoneOf` returns `Result<Zone>`, so `:508`'s
    `zoneWorldSystem.zoneIndex.zoneOf(...)` is doubly historical.
-10. **`docs/world-systems-plan-draft.md`** (the superseded aggregator) — one sentence appended to
+10. **`docs/plans/86-phase-1-map-and-space/49-physics/superseded/plan-world-systems-2026-09-21.md`** (the superseded aggregator) — one sentence appended to
     the 2026-10-01 "Reworked" note (`:66-69`): `ZoneIndex.zoneOf` returns `Result<Zone>`
     (2026-10-02), so the headline test's `zoneIndex.zoneOf(...)` assertions (`:679`, `:696`,
     `:699`) are historical.
@@ -1397,14 +1397,14 @@ The list is kept as the record of what was changed.
   rationale (items 1–2). Item 3 is listed for parity with §11.3 item 5, not because it cites a
   nullable.
 - Several documents name or use the lookups without a shape and stay true, so they need nothing:
-  `docs/phase-1-map-and-space-plan.md` ("answer correctly", "hit/miss");
-  `docs/physics-narrow-phase-plan.md` (§1.2's `TerrainLayer.kt` bullet, and §2.11's
-  `TerrainCollisionIndex.build`, whose fold suits any failure type); `docs/physics-system-plan.md`
+  `docs/plans/86-phase-1-map-and-space/plan.md` ("answer correctly", "hit/miss");
+  `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-narrow-phase.md` (§1.2's `TerrainLayer.kt` bullet, and §2.11's
+  `TerrainCollisionIndex.build`, whose fold suits any failure type); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md`
   (§2.2's precedent paragraph); the unit plans; and `website/`.
 - Each edit is a dated callout or a one-line inline marker; no body is rewritten. References are by
   section, never by line number (the user's standing rule of 2026-10-04).
 
-1. **`docs/issue-46-map-model-plan.md`** (the #46 plan; no callout yet). Add a dated "Partly
+1. **`docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`** (the #46 plan; no callout yet). Add a dated "Partly
    superseded — 2026-10-04, #77 (unit 3)" callout under the title:
    - `TiledMap.terrainAt(point)` returns `Result<TerrainType>`. An off-grid miss is an
      `OutOfGridException`, passed through from `TerrainLayer.terrainAt`, whose miss is now that same
@@ -1416,9 +1416,9 @@ The list is kept as the record of what was changed.
      §3.2's `TerrainLayer` sketch, with its `IndexOutOfBoundsException` failure, and §6's Level 2
      `TiledMapTest` bullet ("`terrainAt` in/out of bounds (value / `null`)") and `TerrainLayerTest`
      bullet.
-   - The convention is now `Result` over nullable (C23). Plan: `docs/tiled-map-result-lookups-plan.md`;
+   - The convention is now `Result` over nullable (C23). Plan: `docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`;
      architecture: this document.
-2. **`docs/issue-47-zones-plan.md`** — two inline dated markers, *(Superseded 2026-10-04:
+2. **`docs/plans/86-phase-1-map-and-space/47-zones/plan.md`** — two inline dated markers, *(Superseded 2026-10-04:
    `TiledMap.terrainAt` returns `Result<TerrainType>` — #77, unit 3, C25)*:
    - one inside §1.2's `.aiassistant/rules/CLAUDE.md` §2 bullet, right after its sentence "`TiledMap`
      wraps that into a nullable convenience (…)";
@@ -1444,7 +1444,7 @@ the record of what was changed.
   changed anyway (C31).
 - README, CHANGELOG and CONTRIBUTING are unit 3's (§11.1).
 
-1. **`docs/issue-47-zones-plan.md`** — one dated sentence added to its callout, after the 2026-10-02
+1. **`docs/plans/86-phase-1-map-and-space/47-zones/plan.md`** — one dated sentence added to its callout, after the 2026-10-02
    paragraph: `ZoneGrid.zoneAt(point, clamped = false)` now fails with `UnzonedPointException`, a
    stackless `IndexOutOfBoundsException` carrying a copy of the point, instead of a stack-traced
    `IndexOutOfBoundsException`. So these describe #47 as merged: §3.3's `ZoneGrid` sketch (its
@@ -1455,7 +1455,7 @@ the record of what was changed.
 ### 11.6 Not edited
 
 The website (every World Systems website update waits for #86); GitHub issue #80 (C11). The
-superseded 2026-09-29 version of `docs/zone-world-system-plan.md` is not kept in the repo — its
+superseded 2026-09-29 version of `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` is not kept in the repo — its
 committed predecessor is in git history (`7f19cff`), and the uncommitted version was copied
 outside the repo before the replacement was written.
 
@@ -1532,7 +1532,7 @@ outside the repo before the replacement was written.
 - **Documentation debt.** More older documents carry now-wrong statements than usual (§11); a
   missed callout misleads #78, #79 and #49, which read those documents first. §11.3's C21–C22
   callouts were approved and applied: #79's plan now lists both exception types for its removal
-  list, and `physics-system-plan.md` marks its `zoneOf: Zone?` precedent for `bodyFor` superseded
+  list, and `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-system.md` marks its `zoneOf: Zone?` precedent for `bodyFor` superseded
   (§7.5). Like §11.2's, those edits are uncommitted until the planner's `docs:` commit lands.
   §11.4's unit-3 callouts were approved and applied on 2026-10-04, and §11.5's C30 callout on
   2026-10-05.
@@ -1564,7 +1564,7 @@ outside the repo before the replacement was written.
 
 The first draft left four decisions open (OD1–OD4), resolved on 2026-09-30; OD4's lookup then
 raised three API-shape details (OD4a–OD4c), resolved on 2026-10-01. OD5 here, and OD6, which
-`docs/zone-world-system-plan.md` §10 raised on 2026-10-01, were resolved on 2026-10-02. OD7 — the
+`docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` §10 raised on 2026-10-01, were resolved on 2026-10-02. OD7 — the
 `TiledMap` follow-up the planner reported on 2026-10-02 (§7.5) — was resolved on 2026-10-04, and
 unit 3's OD8–OD10 the same day. OD11, which C30's wording raised on 2026-10-04, was resolved on
 2026-10-05. Each is carried as a binding constraint in §1.2 and folded into the sections listed. The
@@ -1593,7 +1593,7 @@ The QA pass brought five more directives that close no OD, on 2026-10-06 and 202
 | OD4b | A reified form beside the `KClass` form | (a) `KClass` form only; (b) also `systemOf<T>()` (recommended) | **(b)**, 2026-10-01. The reified `systemOf<T>()` is added; it also returns `Result<T>`. | C19; §4.4; §7.1; §8; §9; §12 |
 | OD4c | When `systemOf` graduates | (a) with the registry at #79; (b) separately, once a consumer has built against it (recommended) | **(a)**, 2026-10-01. Both forms graduate with the rest of the registry at #79; #79's "only the marker's own declaration remains" completeness check holds unchanged. | C20; §4.4; §7.3; §7.4; §8; §9; §11.2 item 6 |
 | OD5 | Which exception a `systemOf` miss carries inside `Result.failure` | (a) `NoSuchElementException` (recommended); (b) `IllegalStateException`; (c) a dedicated exception type carrying `val role` | **(c)**, 2026-10-02: `MissingWorldSystemException`, extending `NoSuchElementException`, carrying `val role: KClass<out WorldSystem>`, stackless (overrides `fillInStackTrace`), in a new file `MissingWorldSystemException.kt` in gametools-core's `gameobjects`, `@ExperimentalGameToolsApi`, graduating with `systemOf` at #79. | C21; §1.3; §2 finding 5; §4 inventory; §4.3; §4.4; §4.5; §5.3; §6; §7.1; §7.3; §8; §9; §10; §11.1; §11.3; §12 |
-| OD6 | Should `ZoneIndex.zoneOf(entityId)` return a `Result` instead of `Zone?` (raised in `docs/zone-world-system-plan.md` §10, 2026-10-01) | Keep `Zone?` (recommended); return `Result<Zone>` | **`Result<Zone>`**, 2026-10-02. A miss is `Result.failure(UnzonedEntityException(...))`, never a throw or `null`; `UnzonedEntityException` is new in gametools-world's `world.zone`, extends `NoSuchElementException`, carries `val entityId: EntityId`, is stackless and `@ExperimentalGameToolsApi` (`ZoneIndex`'s tier), and graduates with `ZoneIndex` at #79. `entitiesIn` is unchanged. #77's scope expands explicitly to cover it; no semver weight (C12). | C22; §1.3; §2 finding 5; §4 inventory; §4.5; §5.3; §6; §7.2; §7.3; §7.5; §8; §9; §10; §11.1; §11.3; §12 |
+| OD6 | Should `ZoneIndex.zoneOf(entityId)` return a `Result` instead of `Zone?` (raised in `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` §10, 2026-10-01) | Keep `Zone?` (recommended); return `Result<Zone>` | **`Result<Zone>`**, 2026-10-02. A miss is `Result.failure(UnzonedEntityException(...))`, never a throw or `null`; `UnzonedEntityException` is new in gametools-world's `world.zone`, extends `NoSuchElementException`, carries `val entityId: EntityId`, is stackless and `@ExperimentalGameToolsApi` (`ZoneIndex`'s tier), and graduates with `ZoneIndex` at #79. `entitiesIn` is unchanged. #77's scope expands explicitly to cover it; no semver weight (C12). | C22; §1.3; §2 finding 5; §4 inventory; §4.5; §5.3; §6; §7.2; §7.3; §7.5; §8; §9; §10; §11.1; §11.3; §12 |
 | OD7 | `TiledMap.spawnPoint(name): SpawnPoint?` and `TiledMap.terrainAt(point): TerrainType?` keep the nullable shape C22 retired for `zoneOf` (reported 2026-10-02 as a possible follow-up issue) | File an issue to decide before a release ships #46 (recommended); accept the mixed convention | **Change them in #77, as unit 3**, 2026-10-04 — a small decision, not an issue of its own. A standing convention prefers `Result` over nullable for lookups that can miss. `spawnPoint` returns `Result<SpawnPoint>` (miss: `MissingSpawnPointException`, stackless `NoSuchElementException`, `val name: String`). `terrainAt` returns `Result<TerrainType>` (miss: `OutOfGridException`, stackless `IndexOutOfBoundsException`). `TerrainLayer.terrainAt`'s miss switches to the same type, so `TiledMap` passes it through. Unit 3 lands after unit 2, and units 1–2 are unchanged. | C23–C27; §1.1; §1.3; §4 inventory; §4.6; §5.3; §6; §7.3; §7.5; §7.6; §8; §9; §10; §11.1; §11.4; §12 |
 | OD8 | What `OutOfGridException` carries | (a) `val tile: TileIndex` (recommended); (b) `val point: Point`; (c) tile plus a nullable point; (d) an open type plus a point-carrying subclass | **(a)**, 2026-10-04. It carries `val tile: TileIndex`, and `TiledMap.terrainAt(point)` stays a pure pass-through. | C28; §1.3; §4 inventory; §4.6; §9; unit 3 |
 | OD9 | `OutOfGridException`'s constructor | (i) `(tile)` (recommended); (ii) `(tile, columns, rows)` with grid-size properties; (iii) the same with the grid size only in the message | **(i)**, 2026-10-04. The constructor is `(tile)` only, with the message built inside the type ("tile (4, 3) is outside the terrain grid"). | C29; §4 inventory; §4.6; §9; unit 3 |
@@ -1684,7 +1684,7 @@ they change it (item 6 below).
 **Changed in this pass.**
 
 1. **First round (C23–C27).**
-   - Unit 3 planned (`docs/tiled-map-result-lookups-plan.md`) and folded into this document.
+   - Unit 3 planned (`docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md`) and folded into this document.
    - The tidy-ups the user approved that day applied. The unit plans' wording about §11.3 now says
      approved and applied: unit 1 §8's never-stage bullet and §11's "Deliberately left for later";
      unit 2 §8's never-stage bullet, §9's "To the planner" and §11 items 4 and 6. No instruction
@@ -1878,7 +1878,7 @@ re-read both plans in full and checked them against each other and against this 
 
 ### 14.3 Pass of 2026-09-30 (historical record)
 
-The two unit plans — `docs/world-system-binding-plan.md` and `docs/zone-world-system-plan.md` —
+The two unit plans — `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` and `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` —
 were drafted in parallel by agents that could not see each other. The planner read both in full
 and checked them against each other and against this document. (Its shared-risk list below is
 superseded by §14.1's: OD4a and OD4b were resolved on 2026-10-01 and OD5 on 2026-10-02, and §11.2's
@@ -1902,8 +1902,8 @@ edits were approved and applied on 2026-10-01.)
   fakes are per module (no cross-module test code). Lifecycle logging is `World`'s alone.
 - **Gaps — none left.** Step 0 is unit 1's; `ZoneFixtures.kt` and the `gametools-world` opt-in block
   are committed by unit 2's first commit; this document by unit 1's first commit; the
-  `docs/issue-49-physics-architecture.md` correction by unit 2's last commit; the two dangling
-  `zone-world-system-plan.md:689-690` references by the planner (§11.2 items 1–2, now targeting §3.4
+  `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` correction by unit 2's last commit; the two dangling
+  `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md:689-690` references by the planner (§11.2 items 1–2, now targeting §3.4
   of the new zone plan).
 - **Ordering.** Unit 1: Step 0 → Stage 1 (bound contract) → *OD4a/OD4b answered* → Stage 2
   (`systemOf`) → Stage 3 (README, CHANGELOG). Unit 2: commits 1–6 on top. The planner's §11.2 docs
@@ -1913,7 +1913,7 @@ edits were approved and applied on 2026-10-01.)
 - **Coverage.** Every §1.3 acceptance criterion has tests (binding, uniqueness, roll-back, C15 and
   `systemOf` in unit 1; `ZoneIndex` publishing through `stepSystems()`, `systemOf(ZoneIndex::class)`
   and the slot rejection in unit 2); C1–C17 are honoured; every §11.1 file is in a plan, including
-  `docs/issue-49-physics-architecture.md:618`.
+  `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md:618`.
 - **Standards.** Both plans are file by file with signatures, error handling and mutability; every
   test has a level and a path (no `testing.gating` or `testing.uat` package exists and none is
   invented — level 1 is pre-commit runs plus compile and Dokka checks); documentation rings, README

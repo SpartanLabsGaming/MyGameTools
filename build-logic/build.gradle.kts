@@ -6,7 +6,7 @@ plugins {
     // `kotlin-dsl` is safe here: this is a separate included build, compiled on the build
     // script classpath. gradleApi()'s bundled slf4j provider never reaches a library module's
     // main or test runtime, so it cannot shadow logback the way it would if applied to the
-    // library itself (see the root build's history / docs/module-split-plan.md §6).
+    // library itself (see the root build's history / docs/plans/32-module-split/plan.md §6).
     `kotlin-dsl`
 }
 

@@ -19,7 +19,7 @@
   `<issue#>` branch prefix, so these are filed before their branches are cut.
 - **Upstream dependency:** none. Unlike Phase 3, Phase 0 touches no WebTools surface.
 - **Related docs:** `docs/framework-vision-and-roadmap.md` (§2 target architecture, §3 phases,
-  §7 transport boundary); `docs/webtools-2.0.0c-upgrade-plan.md` (plan-doc format precedent).
+  §7 transport boundary); `docs/plans/18-webtools-2.0.0c-upgrade/plan.md` (plan-doc format precedent).
 
 ---
 
@@ -520,7 +520,7 @@ into **five feature PRs**, each rebased on `master`, each merged as a `--no-ff` 
 | 5 | `feature/<new>-simulation-loop` | — | PR 3 (`tickCount`) | `feat(simulation): opt-in fixed-timestep SimulationLoop` |
 
 - This plan document is committed **in PR 1's first commit** (precedent:
-  `webtools-2.0.0c-upgrade-plan.md`), so `git log --follow` binds plan to code.
+  `docs/plans/18-webtools-2.0.0c-upgrade/plan.md`), so `git log --follow` binds plan to code.
 - `CHANGELOG.md [Unreleased]` accretes across PRs 1–5.
 - Each PR: `./gradlew build dokkaGeneratePublicationHtml` green, branch up to date via
   **rebase** (never merge from master), PR title a valid Conventional Commit.

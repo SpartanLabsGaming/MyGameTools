@@ -26,7 +26,7 @@
 - **Target version:** GameTools `2.0.0` → `3.0.0` (major; second consecutive breaking
   wire-protocol change — see Open decisions #2). The version bump itself lands on a later
   `release/3.0.0` branch per `CONTRIBUTING.md` §Releasing, not on this feature branch.
-- **Related docs:** `docs/webtools-2.0.0b-upgrade-plan.md` (the Tier 1 upgrade this one
+- **Related docs:** `docs/plans/14-webtools-2.0.0b-upgrade/plan.md` (the Tier 1 upgrade this one
   continues; its "Deliberately left for later" section flags Tier 2 by name).
 
 ---
@@ -617,7 +617,7 @@ failure is attributable. `CONTRIBUTING.md`: JDK 23, Gradle wrapper 9.7.1.
 
   1. `feat(networking)!: adopt the WebTools 2.0.0c single-socket data path`
      — `build.gradle.kts` (coordinate bump), `GameServer.kt` (KDoc only, no code change), **and
-     this plan document** (`docs/webtools-2.0.0c-upgrade-plan.md`) so `git log --follow` binds
+     this plan document** (`docs/plans/18-webtools-2.0.0c-upgrade/plan.md`) so `git log --follow` binds
      plan to code. Body: note this compiles but the test suite is not green until commit 2;
      `Refs #<issue#>` if filed.
      Footer: `BREAKING CHANGE: a GameServer client no longer gets a dedicated UDP port pair.

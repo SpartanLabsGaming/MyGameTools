@@ -6,7 +6,7 @@
   — *"Phase 1: physics — motion integration + collision resolution (push-out / slide)"* (item 4
   of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1). This plan covers **unit 3 of 6**
   only.
-- **Architecture:** `docs/issue-49-physics-architecture.md`, unit slug `physics-narrow-phase`
+- **Architecture:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, unit slug `physics-narrow-phase`
   (§10 decomposition table, row 3; scope defined by §4.6, with supporting context from §4.3,
   §4.4 step 3, and §4.7 hazard 7).
 - **Branch:** `feature/49-physics-narrow-phase`, off `master` — but see §8: this branch cannot be
@@ -25,15 +25,15 @@
 - **Status:** planning only. No source, test, or build file has been modified by this document.
 - **Target release:** `5.3.0`. **`5.2.0` has not been cut yet** (all four published coordinates
   still read `5.1.0`, `gametools-world/build.gradle.kts:14`) — per
-  `docs/issue-49-physics-architecture.md`'s own header and `docs/physics-core-seams-plan.md`'s
+  `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`'s own header and `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`'s
   header, `5.2.0` must be released first. This plan does not bump any version number or cut a
   release; this unit's commits land on `master` under `[Unreleased]`.
 - **Dependencies:** unit 2 (`physics-body-model` — `Shape`, `PhysicsBody`, `Contact`), landing
   order 2. This unit lands third. Units 4/5/6 depend on this one.
-- **Related docs:** `docs/issue-49-physics-architecture.md` (§4.3 data model, §4.6 narrow-phase
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (§4.3 data model, §4.6 narrow-phase
   design — this unit's primary source, §4.7 hazards 1/4/7, §8 stability tiers, §10 decomposition,
-  §12 Open Decision 3); `docs/physics-core-seams-plan.md` (unit 1, settled, referenced for
-  convention only — this unit does not touch `gametools-core`); `docs/issue-46-map-model-plan.md`
+  §12 Open Decision 3); `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (unit 1, settled, referenced for
+  convention only — this unit does not touch `gametools-core`); `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`
   (`TiledMap`/`TerrainLayer`/`StaticGeometry`, verified against `master` in §1 below).
 
 ---
@@ -106,7 +106,7 @@ terrain, and other `PhysicsBody`-attached bodies.
     verified by listing every file in the sources jar (`geometry/*.kt`); confirmed as a real gap,
     not an oversight on this plan's part.
 - No `gametools-world/.../world/physics` package exists yet (verified: no such directory).
-  Neither does `docs/physics-body-model-plan.md` — unit 2 has an architecture-level design
+  Neither does `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-body-model.md` — unit 2 has an architecture-level design
   (§4.3) but no implementation plan has been written yet at the time of this plan; see §11.
 
 ### 1.3 Acceptance shape for this unit
@@ -840,7 +840,7 @@ hot loop. No function in this unit *returns* `Result<T>` to its own caller.
   fully KDoc'd despite `TiledMap` itself being public and `StaticGeometry`'s constructor
   parameters being simple) is to document generously regardless of visibility tier.
 - **Boundary Ring:** not touched — no wire format, no cross-service protocol.
-- **Architectural Outer Layer:** `docs/issue-49-physics-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` already documents this
   unit's design (§4.6); no update owed to it by this unit specifically (architecture §7's
   documentation-correction ledger assigns cross-cutting roadmap corrections to unit 6, not this
   one).
@@ -1079,7 +1079,7 @@ physics behaviour.
      argument (§2.11).
   3. `feat(world-physics): add the narrowPhase collider-order orchestrator` — `NarrowPhase.kt`,
      its Level 2 test, and the Level 4a deterministic oracle/failure-mode suites (§6). Adds
-     `docs/physics-narrow-phase-plan.md` (this document) in this same commit, per the plan's own
+     `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-narrow-phase.md` (this document) in this same commit, per the plan's own
      commit-with-implementation rule. Body: cites the `Contact`-vs-TOI gap (§2.3) and the
      one-contact-per-body-per-tick simplification (§2.4).
   4. `docs: log the physics narrow phase in the changelog` — `CHANGELOG.md` only (§5). No README
@@ -1167,7 +1167,7 @@ physics behaviour.
 
 - **Landing order:** unit 1 and unit 2 first (this unit depends only on unit 2, but unit 2's own
   plan has not been written yet at the time of this document — flagged to the caller as a real
-  gap in the overall issue's planning sequence: `docs/physics-body-model-plan.md` does not exist).
+  gap in the overall issue's planning sequence: `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-body-model.md` does not exist).
   This unit lands third; units 4, 5, 6 depend on it and must land after.
 - **Follow-up owed to unit 4's plan:** confirm the normal-direction convention (§2.2, Open
   Decision 1) before `PositionalCorrectionResolver` is implemented against it.

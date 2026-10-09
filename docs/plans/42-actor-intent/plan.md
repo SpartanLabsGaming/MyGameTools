@@ -4,7 +4,7 @@
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#42](https://github.com/SpartanLabsGaming/MyGameTools/issues/42)
   — *"Model a unit's standing order as a first-class Intent on Actor"*.
-- **Supersedes:** `docs/actor-intent-orders-plan.md` (design exploration; all ten open
+- **Supersedes:** `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md` (design exploration; all ten open
   decisions A–J it raised are closed — see §0 below for how each is carried into this plan).
   That document stays in `docs/` as the historical record of the exploration; it is not
   deleted, and its own final line already says it is superseded by this one.
@@ -21,13 +21,13 @@
   (`AttackMove`, `Patrol`, `Hold`/`HoldPosition`) are explicitly **out of scope** — see §7.
 - **Status:** planning only. No source, test, or build file has been modified by this
   document.
-- **Baseline:** GameTools `5.1.0` on `master` (PR #41, #44, #45 landed; `docs/phase-1-map-and-space-plan.md`
+- **Baseline:** GameTools `5.1.0` on `master` (PR #41, #44, #45 landed; `docs/plans/86-phase-1-map-and-space/plan.md`
   merged as a *plan*, not yet implemented). `Actor` and `Alive` both live in `gametools-core`
   today.
-- **Related docs:** `docs/actor-intent-orders-plan.md` (concept, rejected alternatives, full
+- **Related docs:** `docs/plans/42-actor-intent/superseded/draft-2026-09-11.md` (concept, rejected alternatives, full
   open-decision record); `docs/framework-vision-and-roadmap.md` (§3 Phase 2 "rich combat" —
   moves `Alive` to `gametools-combat`, unrelated to and not a prerequisite for this plan; §3
-  Phase 4 "AI & pathfinding" — where `AttackMove`/`Patrol`/`Hold` attach); `docs/client-command-protocol-plan.md`
+  Phase 4 "AI & pathfinding" — where `AttackMove`/`Patrol`/`Hold` attach); `docs/plans/96-phase-3-authoritative-networking/31-client-command-protocol/plan.md`
   (the open-hierarchy + consumer-registration pattern `Intent` mirrors).
 
 ### A note on "Phase 2" / "Phase 4"
@@ -599,7 +599,7 @@ itself takes.
   review as one; keep as separate commits if reviewed incrementally):
   1. `feat(gameobjects): add Intent, Idle, and Move` — new `Intent.kt`; `Actor.world`/`intent`/
      `issue`/`clearIntent`; `World.add`'s `is Actor` change; `GameEvent.IntentIssued`/
-     `IntentCleared`. Includes this plan doc (`docs/issue-42-actor-intent-plan.md`) in the same
+     `IntentCleared`. Includes this plan doc (`docs/plans/42-actor-intent/plan.md`) in the same
      commit, per the plan/implementation-binding convention.
   2. `feat(gameobjects): add AttackIntent and self-clear it on AttackEnded` — `Alive.kt`'s
      `AttackIntent`, removal of `Alive.world`.

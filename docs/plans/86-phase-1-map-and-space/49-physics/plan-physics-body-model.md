@@ -6,7 +6,7 @@
   — *"Phase 1: physics — motion integration + collision resolution (push-out / slide)"* (item 4
   of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1). This plan covers **unit 2 of 6**
   only.
-- **Architecture:** `docs/issue-49-physics-architecture.md`, unit slug `physics-body-model`
+- **Architecture:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, unit slug `physics-body-model`
   (§10 decomposition table, row 2; design in §4.3, stability tiers in §8).
 - **Branch:** `feature/49-physics-body-model`, off current `master`.
 - **Commit:** TBD
@@ -25,9 +25,9 @@
 - **Dependencies:** none. Per architecture §10 this unit is independent of unit 1
   (`physics-core-seams`) and may land in parallel with it. Units 3 (`physics-narrow-phase`), 4
   (`physics-resolution`), and 5 (`physics-system`) all depend on this unit's exact signatures.
-- **Related docs:** `docs/issue-49-physics-architecture.md` (§4.1 system inventory, §4.3 data
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (§4.1 system inventory, §4.3 data
   model, §4.6 diagonal-gap policy, §4.7 hazard 6, §8 stability tiers, §10 decomposition);
-  `docs/physics-core-seams-plan.md` (unit 1, sibling, independent); `docs/issue-46-map-model-plan.md`
+  `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (unit 1, sibling, independent); `docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`
   (`StaticGeometry`/`CenteredBox` precedent this design follows); GeneralTools `2.2.0`
   (`Point`, `Dimensions`, `CenteredBox` — the vocabulary this unit's types are built from).
 
@@ -82,7 +82,7 @@
 - `gametools-world`'s existing test tree uses `kotlin.test` on the JUnit 5 platform, one class
   per file, `com.spartanlabs.gaming.testing.<level>.world.<subpackage>` packaging (verified:
   `StaticGeometryTest.kt`, `TiledMapQueryLawsTest.kt`) — no MockK anywhere in the repo (verified
-  by search), matching `docs/physics-core-seams-plan.md` §6's same finding for `gametools-core`.
+  by search), matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §6's same finding for `gametools-core`.
 
 ### 1.2 Acceptance criteria for this unit
 
@@ -172,7 +172,7 @@ sealed interface Shape {
   data they control, not user input arriving over a wire — exactly the same category `TiledMap`
   treats as a `require` failure for its own `widthTiles`/`heightTiles`/`tileSize`
   (`TiledMap.kt:57`, precedent applied directly). This is *unlike* `MapLoader.fromJson`, which
-  wraps genuinely untrusted external JSON in `Result` (`docs/issue-46-map-model-plan.md`) —
+  wraps genuinely untrusted external JSON in `Result` (`docs/plans/86-phase-1-map-and-space/46-map-model/plan.md`) —
   the difference is where the untrusted boundary actually is, not the kind of value. A future
   call site that *does* face untrusted input (e.g. a level editor parsing a shape from a file)
   is responsible for catching `IllegalArgumentException` and translating it into its own
@@ -428,10 +428,10 @@ splitting into multiple PRs the way units 3-6 might be.
   already carries what a client needs to render the *result* of physics. If a future phase wants
   client-side prediction using raw physics state, that is a new, separate design decision, not a
   silent gap in this one (flagged in §9 as an open item for the record).
-- **Architectural Outer Layer:** `docs/issue-49-physics-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` already documents this
   unit's design in full (§4.3); no update owed to it by this unit specifically. The `§7`
   cross-cutting roadmap corrections remain unit 6's responsibility (already assigned there by
-  architecture §10 and restated by `docs/physics-core-seams-plan.md` §9 for unit 1's own
+  architecture §10 and restated by `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §9 for unit 1's own
   boundary — this plan draws the same boundary for unit 2).
 - **README / CHANGELOG currency:** both updated in this unit's own commits (§7.3), per the
   global README-currency rule and architecture §10's explicit per-unit-documents-its-own-surface
@@ -775,7 +775,7 @@ with zero dependency changes.
 
 No `com.spartanlabs.gaming.testing.gating` package exists anywhere in this repo (verified: only
 `component`/`integration`/`deterministic`/`e2e`/`nonfunctional` directories exist under
-`gametools-world/src/test/kotlin/.../testing/`, matching `docs/physics-core-seams-plan.md` §5's
+`gametools-world/src/test/kotlin/.../testing/`, matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §5's
 identical finding for `gametools-core`). Not invented here. Level 1 for this unit in practice
 means `./gradlew :gametools-world:componentTest :gametools-world:deterministicTest` before
 pushing, using the level 2/4a tests below.
@@ -885,7 +885,7 @@ scale - belongs to unit 3 (the narrow phase that actually produces them at volum
 No `com.spartanlabs.gaming.testing.uat` package exists anywhere in this repo. Not invented here.
 Three value types with no observable runtime behaviour of their own produce nothing for a human
 or AI evaluator to assess in isolation - any UAT signal for issue #49 belongs to whichever unit
-first produces observable physics (unit 5 or 6), matching `docs/physics-core-seams-plan.md`
+first produces observable physics (unit 5 or 6), matching `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md`
 §5's identical conclusion for unit 1.
 
 ### What genuinely cannot be tested automatically, here and now
@@ -895,7 +895,7 @@ first produces observable physics (unit 5 or 6), matching `docs/physics-core-sea
 - **That `PhysicsSystem.attach` (unit 5, not yet landed) is actually the only realistic path to
   a `PhysicsBody` a consumer holds.** This unit's own `internal constructor` is directly callable
   from any test file within the `gametools-world` module (Kotlin `internal` is module-scoped,
-  not file-scoped - the same mechanism `docs/physics-core-seams-plan.md` §1.1 relies on for
+  not file-scoped - the same mechanism `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §1.1 relies on for
   `World.reconcileSpatialIndex()` and `SpatialIndexScalabilityTest`), so this unit's own tests
   construct `PhysicsBody` directly rather than through `attach`. Proving the *intended* external
   path (`attach` is the only way an actual downstream consumer, outside this module, can obtain
@@ -919,7 +919,7 @@ first produces observable physics (unit 5 or 6), matching `docs/physics-core-sea
 - **Commit sequence** (each a coherent, independently-reviewable unit; ordered so each compiles
   on its own given the one before it):
   1. `feat(world): add Shape sealed hierarchy for physics colliders` — adds
-     `docs/physics-body-model-plan.md` (this document),
+     `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-body-model.md` (this document),
      `gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/physics/Shape.kt` (§5.1,
      including the `internal Shape.halfExtents()` derivation), and its component + deterministic
      tests (`ShapeTest.kt`, `ShapeValidationLawsTest.kt`, `AabbDimensionsRoundTripTest.kt`).
@@ -965,7 +965,7 @@ Appended to `[Unreleased]` → `### Added`, after the existing `(#47)` `ZoneInde
 ### 7.2 README.md edit
 
 Only the **world** row of the Modules table (`README.md:149`), the surface this unit adds, per
-architecture §10's per-unit rule (mirroring `docs/physics-core-seams-plan.md` §3.4's identical
+architecture §10's per-unit rule (mirroring `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` §3.4's identical
 scoping for its own unit).
 
 Before: `...ZoneIndex, EntityChangedZone (#47); physics and vision are still to come`
@@ -1006,7 +1006,7 @@ architecture §10.
   `step` are typed against. **Flagged discrepancy for alignment:** the cross-unit contract
   sketch this plan was given renders `PhysicsBody`'s signature without an `owner: VisibleObject`
   parameter and without the `internal constructor` marker; this plan follows
-  `docs/issue-49-physics-architecture.md` §4.3's complete, authoritative signature instead
+  `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` §4.3's complete, authoritative signature instead
   (`internal constructor(val owner: VisibleObject, shape: Shape, inverseMass: Double, restitution:
   Double)`), since `owner` is structurally required for `PhysicsBody`'s entire "delegates
   position, never duplicates it" design (§2.3) — omitting it would not compile against
@@ -1070,6 +1070,6 @@ architecture §10.
   (beyond the one Modules-table row this unit edits) is unit 6's to write once the whole
   pipeline (detection → resolution → system → wiring) is real and demonstrable end to end.
 - No release is cut by this plan. `5.2.0` must be released before `5.3.0` per
-  `docs/phase-1-map-and-space-plan.md`'s own sequencing note (restated in the architecture
+  `docs/plans/86-phase-1-map-and-space/plan.md`'s own sequencing note (restated in the architecture
   header); this unit's commits simply add to `[Unreleased]` like every other in-flight unit
   today.

@@ -24,8 +24,8 @@ private typealias ExperimentalMarkedTypeAlias = ExperimentalMarkedClass
 /**
  * Covers [ExperimentalGameToolsApi]'s five-target compile shape and its runtime-observable
  * meta-annotation facts. Its own `@RequiresOptIn(ERROR)` gate is a compile-time fact, verified
- * manually (`docs/world-system-core-plan.md` §6 Level 1), not asserted here - `RequiresOptIn` is
- * itself `BINARY`-retained and invisible to runtime reflection.
+ * manually (`docs/plans/87-world-systems/76-world-system-core/plan.md` §6 Level 1), not asserted
+ * here - `RequiresOptIn` is itself `BINARY`-retained and invisible to runtime reflection.
  */
 class ExperimentalGameToolsApiTest {
 

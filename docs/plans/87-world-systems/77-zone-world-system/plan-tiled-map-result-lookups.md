@@ -13,9 +13,9 @@
   The user judged this a small decision rather than an issue of its own, so it is recorded as part of
   #77's design and lands in #77's one PR (C27, C31). It reworks parts of #46's and #47's merged,
   unreleased map and zone models.
-- **Architecture:** `docs/world-system-binding-architecture.md`, unit `tiled-map-result-lookups`
+- **Architecture:** `docs/plans/87-world-systems/77-zone-world-system/architecture.md`, unit `tiled-map-result-lookups`
   (§10's third row; §1.2 C23–C34; §4.6; §7.5–§7.6; §8; §11.1; §13). Siblings:
-  `docs/world-system-binding-plan.md` (unit 1) and `docs/zone-world-system-plan.md` (unit 2). Both
+  `docs/plans/87-world-systems/77-zone-world-system/plan-world-system-binding.md` (unit 1) and `docs/plans/87-world-systems/77-zone-world-system/plan-zone-world-system.md` (unit 2). Both
   land first, and this unit changes neither their content nor their commit order (C27, C31).
 - **Branch:** `feature/77-zone-world-system` (units 1 and 2's commits underneath).
 - **Commit:** TBD — this plan is committed in this unit's first commit (§8), so `git log --follow`
@@ -289,7 +289,7 @@ These were compile- and run-verified on Kotlin 2.2.0 in two scratch probes outsi
   after `Throwable`'s constructor has run `fillInStackTrace` — which reads nothing.
 - **`TiledMap.terrainAt` is a pure pass-through** of `terrain.terrainAt(tileAt(point))`, with no
   bounds check of its own and no re-wrapping (C26, C28).
-- **`isWalkable` unwraps with `fold`**, the idiom `docs/physics-narrow-phase-plan.md` §2.11 already
+- **`isWalkable` unwraps with `fold`**, the idiom `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-narrow-phase.md` §2.11 already
   plans for `TerrainLayer.terrainAt`. `contains` stays first.
 - **`ZoneIndex.step` is left alone.** It unwraps with `getOrNull()`, which is indifferent to the
   failure type.
@@ -866,7 +866,7 @@ separate, later plan. Related issue: #133, which defines a selective Level-5 `te
 
 | # | Message | Files | Needs |
 |---|---|---|---|
-| 1 | `feat(world): return a Result from TiledMap.spawnPoint` | **`docs/tiled-map-result-lookups-plan.md` (this plan)**; `MissingSpawnPointException` (new) and its test; `TiledMap.spawnPoint` and its KDoc; the spawn sites of `TiledMapTest` (with `assertNoSpawnPoint`), `MapLoaderIntegrationTest`, `MapDrivenWorldE2ETest`, `ZoneDrivenSimulationE2ETest`, `ZoneIndexSimulationLoopE2ETest` | unit 2's commits; no open decision |
+| 1 | `feat(world): return a Result from TiledMap.spawnPoint` | **`docs/plans/87-world-systems/77-zone-world-system/plan-tiled-map-result-lookups.md` (this plan)**; `MissingSpawnPointException` (new) and its test; `TiledMap.spawnPoint` and its KDoc; the spawn sites of `TiledMapTest` (with `assertNoSpawnPoint`), `MapLoaderIntegrationTest`, `MapDrivenWorldE2ETest`, `ZoneDrivenSimulationE2ETest`, `ZoneIndexSimulationLoopE2ETest` | unit 2's commits; no open decision |
 | 2 | `feat(world): return a Result from TiledMap.terrainAt, failing with OutOfGridException` | `OutOfGridException` (new) and its test; `TerrainLayer.terrainAt` and its KDoc; `TiledMap.terrainAt`, `isWalkable` and their KDoc; the terrain sites of `TerrainLayerTest`, `TiledMapTest` (with `assertOffGrid` and two new tests), `TiledMapQueryLawsTest`, `MapLoaderIntegrationTest`; `TiledMapQueryThroughputTest` (new) | commit 1; no open decision |
 | 3 | `feat(world): fail ZoneGrid.zoneAt with a stackless UnzonedPointException` | `UnzonedPointException` (new) and its test; `ZoneGrid.zoneAt` and its KDoc `@return`; `ZoneGridTest`'s off-grid test; `ZoneGridPartitionLawsTest`'s law; `ZoneGridQueryThroughputTest` (new) | commit 2; no open decision (OD11 → (a), C34) |
 | 4 | `docs: document the Result lookups in README, CONTRIBUTING and CHANGELOG` | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md` (§4.9, including `TileIndex`) | commit 3; unit 2's docs commits |
@@ -966,7 +966,7 @@ The user chose (a), so neither change is made, and no commit waits on a decision
   and zone sub-lists of the README and CONTRIBUTING rows unit 2 also edits. `ZoneIndex.step` keeps its
   `getOrNull()`, and unit 2's `ZoneIndex` tests stay unchanged and green.
 - **#79 graduation:** nothing. The new types are untagged, so they are not in its removal list.
-- **#49 physics:** the `TerrainCollisionIndex.build` that `docs/physics-narrow-phase-plan.md` §2.11
+- **#49 physics:** the `TerrainCollisionIndex.build` that `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-narrow-phase.md` §2.11
   plans folds `terrain.terrainAt(TileIndex(x, y))` with `{ false }` on failure, which is compatible
   with any failure type, so it needs no change. #49's re-plan should unwrap `TiledMap.terrainAt`'s
   `Result` wherever it used the nullable.

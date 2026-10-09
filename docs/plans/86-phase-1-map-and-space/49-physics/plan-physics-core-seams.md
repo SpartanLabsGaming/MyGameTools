@@ -3,7 +3,7 @@
 > **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** This unit had
 > two halves; a 2026-10-01 addendum follows them.
 >
-> - **The `@SupportedExtension` half is superseded.** #76 (`docs/world-system-core-plan.md`) now
+> - **The `@SupportedExtension` half is superseded.** #76 (`docs/plans/87-world-systems/76-world-system-core/plan.md`) now
 >   creates `com.spartanlabs.gaming.annotation.SupportedExtension` in exactly the parameterless
 >   shape §2.2/§3.1 below settled, beside an Experimental opt-in marker, `@ExperimentalGameToolsApi`,
 >   in the same package. Its first user is `WorldSystem`, at #79. Do not re-create it: §3.1, its
@@ -11,9 +11,9 @@
 > - **The `World.reconcileSpatialIndex()` widening half stands** and stays #49's to re-plan, but its
 >   named caller changes. It is no longer the retired `WorldSystems.step()` (§1.2 point 2, §2.3,
 >   §2.4's diagram, §3.2's KDoc draft, §9 "Provides to unit 6"). It is now `PhysicsWorldSystem.step()`
->   (#80, `docs/physics-world-system-plan.md`), which calls it immediately before
+>   (#80, `docs/plans/87-world-systems/80-physics-world-system/superseded/plan-2026-09-30.md`), which calls it immediately before
 >   `physicsSystem.step(world)` from inside `World.stepSystems()`.
-> - **Addendum — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`):
+> - **Addendum — 2026-10-01, issue #77's design (`docs/plans/87-world-systems/77-zone-world-system/architecture.md`):
 >   the second half's named caller changes again.** `PhysicsSystem` (#49, unbuilt) is itself the
 >   physics `WorldSystem` — it extends the new `AbstractWorldSystem`, claims
 >   `CoreWorldSystemSlot.PHYSICS`, declares `uniqueRole = PhysicsSystem::class`, and its `step()`
@@ -21,7 +21,7 @@
 >   `World.reconcileSpatialIndex()`'s named caller is no longer `PhysicsWorldSystem.step()`. Where
 >   that call lives is #49's re-plan's decision.
 >
-> Architecture: `docs/world-systems-implementation-architecture.md`.
+> Architecture: `docs/plans/87-world-systems/architecture.md`.
 
 ## Header / Association
 
@@ -29,7 +29,7 @@
   — *"Phase 1: physics — motion integration + collision resolution (push-out / slide)"* (item 4
   of 5 in `docs/framework-vision-and-roadmap.md` §3 Phase 1). This plan covers **unit 1 of 6**
   only.
-- **Architecture:** `docs/issue-49-physics-architecture.md`, unit slug `physics-core-seams`
+- **Architecture:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md`, unit slug `physics-core-seams`
   (§10 decomposition table, row 1; scope defined in §4.2 and §4.7 hazard 1).
 - **Branch:** `feature/49-physics-core-seams`, off current `master`.
 - **Commit:** TBD
@@ -50,10 +50,10 @@
   (`CONTRIBUTING.md` §Releasing), out of scope here.
 - **Dependencies:** none. This unit depends on nothing else in the decomposition and lands
   first; units 4 (`physics-resolution`) and 6 (`world-systems`) depend on it.
-- **Related docs:** `docs/issue-49-physics-architecture.md` (§4.1 system inventory, §4.2
+- **Related docs:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (§4.1 system inventory, §4.2
   package placement, §4.7 hazard 1, §8 stability tiers, §10 decomposition, §12 open decisions);
   `docs/api-openness-decisions-6.0.0.md` D1 (assumes `@SupportedExtension` exists for
-  `Movement`'s `6.0.0` opening); `docs/issue-48-spatial-index-rework-plan.md` (the incremental
+  `Movement`'s `6.0.0` opening); `docs/plans/86-phase-1-map-and-space/48-spatial-index-rework/plan.md` (the incremental
   reconcile this method implements).
 
 ---
@@ -422,7 +422,7 @@ respectively, matching the file's existing per-bullet `(#issue)` citation conven
   `CONTRIBUTING.md`'s own note).
 - **Boundary Ring (protocol/integration):** not touched. No wire format, no `ClientCommand`, no
   cross-service concern in this unit.
-- **Architectural Outer Layer:** `docs/issue-49-physics-architecture.md` already documents this
+- **Architectural Outer Layer:** `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` already documents this
   unit's design; no update owed to it. `docs/api-openness-decisions-6.0.0.md`'s D1 footnote
   (confirming `@SupportedExtension` now exists, with its real package) is explicitly assigned to
   **unit 6** by architecture §10 ("Unit 6 owns... the §7 roadmap corrections") and is
@@ -586,7 +586,7 @@ question does not arise in practice; the new component test follows the existing
   planned commit(s) on its own branch.
 - **Commit sequence** (each a coherent, independently-reviewable unit):
   1. `feat(annotation): add SupportedExtension stability-tier marker` — adds
-     `docs/physics-core-seams-plan.md` (this document) and
+     `docs/plans/86-phase-1-map-and-space/49-physics/plan-physics-core-seams.md` (this document) and
      `gametools-core/src/main/kotlin/com/spartanlabs/gaming/annotation/SupportedExtension.kt`
      (§3.1) plus its component test (§5). Body: why the tier and the package placement (§2.1),
      referencing #49 and D1 in `docs/api-openness-decisions-6.0.0.md`.
@@ -659,5 +659,5 @@ question does not arise in practice; the new component test follows the existing
 - **Follow-up owed elsewhere, not here:** the `docs/api-openness-decisions-6.0.0.md` D1 footnote
   (§9) is unit 6's to write once all six units have landed and the full picture is real.
 - No release is cut by this plan. `5.2.0` must be released before `5.3.0` per
-  `docs/phase-1-map-and-space-plan.md`'s own sequencing note (restated in architecture header);
+  `docs/plans/86-phase-1-map-and-space/plan.md`'s own sequencing note (restated in architecture header);
   this unit's commits simply add to `[Unreleased]` like every other in-flight unit today.
