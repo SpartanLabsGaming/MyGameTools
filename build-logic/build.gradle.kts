@@ -15,7 +15,7 @@ dependencies {
     // version. Kotlin and its serialization plugin stay in lockstep on one version.
     implementation("org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:2.2.0")
     implementation("org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin:2.2.0")
-    implementation("com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.36.0")
+    implementation("com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin:0.37.0")
     implementation("org.jetbrains.dokka:org.jetbrains.dokka.gradle.plugin:2.2.0")
 
     // Test - JUnit 5 + Gradle TestKit. Literal coordinate strings: this repo has no version
