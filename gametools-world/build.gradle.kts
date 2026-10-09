@@ -18,6 +18,13 @@ mavenPublishing {
     }
 }
 
+// Test-only, module-wide opt-in to the Experimental WorldSystem seam (#77), mirroring
+// gametools-core's block. Never add this to the main source set - library code must not silently
+// opt in. Removed when #79 graduates the seam.
+tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compileTestKotlin") {
+    compilerOptions.optIn.add("com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi")
+}
+
 dokka {
     dokkaSourceSets.configureEach {
         sourceLink {
