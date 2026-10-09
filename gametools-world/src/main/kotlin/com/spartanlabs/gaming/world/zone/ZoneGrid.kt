@@ -19,11 +19,10 @@ import kotlin.math.floor
  * A static, uniform `columns x rows` partition of a [Space]'s [Space.bounds] into named
  * rectangular [Zone]s, covering the space's full extent with no gaps or overlaps. Phase 1 ships
  * this uniform-grid partition only; irregular zones are a later addition behind [zoneAt]'s
- * existing contract (`docs/phase-1-map-and-space-plan.md` Open Decision 11).
+ * existing contract.
  *
  * Built once from [space]'s [Space.bounds] at construction time, not a live reference to
- * [space] - this grid does not react to a map mutated afterwards (see the class's risk note in
- * the plan this package implements).
+ * [space] - this grid does not react to a map mutated afterwards.
  *
  * @param space the playfield to partition; only [Space.bounds] is read at construction time -
  *   the grid does not track subsequent changes to [space]
