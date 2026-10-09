@@ -80,15 +80,23 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   purely documentary (no compiler gate, `BINARY` retention): it marks a likely-but-non-core seam
   that carries the same semver guarantee as Stable Core. Nothing carries `SupportedExtension` yet.
   (#76)
-- `WorldSystem` — an opt-in, per-frame or event-driven add-on contract for a `World`, with
-  `installOn`/`uninstallFrom`/`step` hooks and an optional `coreSlot` claim on a library-reserved
-  `CoreWorldSystemSlot` (`PHYSICS`, then `ZONE`), which steps in that relative order whatever order
-  the systems were installed in; every other system steps afterwards, in install order. `World`
-  gains `installSystem`/`uninstallSystem`/`installedSystems`/`stepSystems` to host it;
-  `World.tick()` is unchanged and never calls `stepSystems()` — a driver does, e.g. from a
-  `SimulationLoop`'s `onTick`. Ships Experimental: implementing `WorldSystem`, or using `World`'s
-  new members, the slot types or `coreSlot`, requires opting in to `ExperimentalGameToolsApi`.
-  (#76)
+- `WorldSystem` — an opt-in, per-frame or event-driven add-on contract for a `World`. A system is
+  bound to exactly one `World` for life and reads it as `system.world`; its hooks `onInstalled()` /
+  `onUninstalled()` / `step()` take no parameters. `AbstractWorldSystem` is the ready-made base
+  class that holds the binding and fails clearly if `world` is read before install. A system may
+  claim a library-reserved `CoreWorldSystemSlot` via `coreSlot` (`PHYSICS`, then `ZONE`), which
+  steps in that relative order whatever order the systems were installed in, and may declare a
+  `uniqueRole` so `World` rejects a second installed system holding the same role; every other
+  system steps afterwards, in install order. `World` gains `installSystem` / `uninstallSystem` /
+  `installedSystems` / `stepSystems` to host it — `installSystem` checks, binds, records, then
+  calls `onInstalled()`, and rolls the install back (rethrowing the original exception) if that
+  throws — and `systemOf(role)` (or the reified `systemOf<T>()`) to find an installed system by its
+  `uniqueRole`, returned as a `Result` — a failure carrying the new `MissingWorldSystemException`,
+  a stackless `NoSuchElementException` that names the role, if no installed system declared that
+  role. `World.tick()` is unchanged and never calls `stepSystems()` — a driver does, e.g. from a
+  `SimulationLoop`'s `onTick`. Ships Experimental: implementing `WorldSystem` or
+  `AbstractWorldSystem`, or using `World`'s new members, the slot types, `coreSlot`, `uniqueRole`
+  or `MissingWorldSystemException`, requires opting in to `ExperimentalGameToolsApi`. (#76, #77)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,
