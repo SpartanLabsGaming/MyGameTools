@@ -23,7 +23,7 @@
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Client / UI | **Out of scope.** A separate project owns the client and rendering. GameTools ships the authoritative server plus the shared wire-protocol types both ends compile against. |
+| 1 | Client / UI | **Client networking in scope; rendering and UI out of scope** *(amended 2026-10-08, #132; originally "Out of scope")*. GameTools ships the authoritative server, the shared wire-protocol types both ends compile against, and the client half of the protocol: a `GameClient` counterpart to `GameServer` (#132), covering handshake, keepalive, state decoding and typed command sending. A separate project still owns rendering, UI, input mapping and audio. |
 | 2 | Concurrent games / sessions | **One `World` per server process.** No lobby, matchmaking, or room manager. Running many games means running many processes — that is deployment's job. |
 | 3 | Networking ambition | **Scalable authoritative.** Stable entity IDs, per-tick delta snapshots, per-player interest filtering, tick + input sequence numbers, server-authoritative movement. |
 | 4 | Gameplay systems in the framework | **All four:** abilities & effects, inventory & items/equipment, AI & pathfinding, physics & collision response. |
