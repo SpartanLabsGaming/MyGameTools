@@ -1,5 +1,35 @@
 # Plan: `physics-world-system` — the `PhysicsWorldSystem` adapter (World Systems Stage 5 of 5)
 
+> **Superseded — 2026-09-30, issue #77's design (`docs/world-system-binding-architecture.md`);
+> recorded 2026-10-01.** #80 is resolved by #49 (the GitHub issue is not touched), so this whole
+> plan is now historical. The design that replaces it:
+>
+> - **No `PhysicsWorldSystem`.** `PhysicsSystem` (#49, unbuilt) is itself the physics `WorldSystem`,
+>   the case §2.6's last row anticipated: it extends the new `AbstractWorldSystem`, claims
+>   `CoreWorldSystemSlot.PHYSICS`, declares `uniqueRole = PhysicsSystem::class`, and its `step()`
+>   takes no `World`. Where `World.reconcileSpatialIndex()` is called from (§2.2) is #49's re-plan's
+>   decision; it is no longer `PhysicsWorldSystem.step()`.
+> - **Bind-for-life lives in the base class.** `AbstractWorldSystem` holds a write-once binding: a
+>   system is bound to one `World` for life (another `World` gets `IllegalArgumentException`;
+>   re-installing on the same `World` is legal). That closes the "same instance on a second
+>   `World`" hazard §2.4's guard and OD1 (§9) worried about — both are moot.
+> - **Hooks are parameterless.** `WorldSystem`'s hooks are `onInstalled()`, `onUninstalled()` and
+>   `step()`, and `val world: World` is the one `World` a system serves; the `installOn(world)`,
+>   `uninstallFrom(world)` and `step(world)` shapes below are history.
+> - **`ZoneIndex(grid)` is itself the zone `WorldSystem`:** it claims `ZONE`, declares
+>   `uniqueRole = ZoneIndex::class`, has a public constructor and does its bookkeeping in `step()`,
+>   with no `refresh` method. `ZoneWorldSystem` does not exist, and `ZoneIndex.refresh` mentions
+>   below are historical precedent only. *(2026-10-02: `zoneOf` returns `Result<Zone>` — binding
+>   architecture C22 — so §5's headline test's `zoneWorldSystem.zoneIndex.zoneOf(...)` assertion is
+>   doubly historical.)*
+> - **Unchanged:** the physics → zone ordering requirement — `PHYSICS` (order 0) steps before `ZONE`
+>   (order 1) whatever the install order — which §2.3 and §5's headline test lock in.
+> - **Kept as history, not deleted.** The 2026-09-28 revisions and "flag" notes added after #77's
+>   verification (in §1.1, §2.1, §2.4, §2.5, §3.1, §5, §6, §8 and §9 OD1) are all superseded too.
+>   References below to sections of `docs/zone-world-system-plan.md` (§2.2, cited in §2.1 and
+>   §2.4's flag) point at the superseded version of that plan, replaced 2026-09-30; only its
+>   committed predecessor survives, in git history (commit `7f19cff`).
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#80](https://github.com/SpartanLabsGaming/MyGameTools/issues/80)
@@ -76,12 +106,17 @@
   PhysicsBody>`) is keyed **only** by `EntityId`, with no `World` component to the key
   (`docs/physics-system-plan.md` §2.3) — the same shape `ZoneIndex.indexed` already has. This is
   the fact §2.4 below builds the install-guard recommendation on.
-- **`ZoneWorldSystem` (#77) is not yet planned or built.** Its declaration is given by the
-  architecture doc (§4.5) as `class ZoneWorldSystem(val zoneIndex: ZoneIndex) : WorldSystem`,
-  `coreSlot = CoreWorldSystemSlot.ZONE`, `step(world) = zoneIndex.refresh(world)`, with `installOn`
-  guarding "only against the *same instance* being installed on a second `World` concurrently."
+- **`ZoneWorldSystem` (#77) is planned (`docs/zone-world-system-plan.md`) but not yet built.**
+  Its declaration (architecture §4.5, revised 2026-09-28 by #77's verification) is
+  `class ZoneWorldSystem(grid: ZoneGrid) : WorldSystem`, building and exposing its own
+  `val zoneIndex: ZoneIndex`, with `coreSlot = CoreWorldSystemSlot.ZONE`,
+  `step(world) = zoneIndex.refresh(world)` (`ZoneIndex`'s constructor and `refresh` are `internal`
+  since #77, so `ZoneWorldSystem` is the only way to build and refresh one), and an `installOn`
+  that binds the instance to the first `World` it is installed on, for its lifetime (see §2.4's
+  flag).
   This unit's tests construct a `ZoneWorldSystem` purely as a **test fixture** to exercise
-  ordering against — `PhysicsWorldSystem.kt` itself never imports it.
+  ordering against — never a `ZoneIndex` directly — and `PhysicsWorldSystem.kt` itself never
+  imports it.
 - **`ZoneIndex.refresh`** (`gametools-world/src/main/kotlin/com/spartanlabs/gaming/world/zone/ZoneIndex.kt:38-62`)
   reads `obj.location` directly and never touches `world.spatialIndex` (verified: zero
   occurrences of `spatialIndex` in `ZoneIndex.kt`) — confirming, independent of #77's own plan,
@@ -161,7 +196,8 @@ class PhysicsWorldSystem(val physicsSystem: PhysicsSystem) : WorldSystem {
 ```
 
 The guard uses `check` → `IllegalStateException`, exactly like `ZoneWorldSystem`'s
-(`docs/zone-world-system-plan.md` §2.2). It tests this receiver's own state (already attached
+(`docs/zone-world-system-plan.md` §2.2 — same exception type, although `ZoneWorldSystem`'s guard
+is now bind-for-life; see §2.4's flag). It tests this receiver's own state (already attached
 elsewhere), not the validity of the `world` argument. The rule shared by all three adapters
 (architecture "Cross-plan alignment"):
 - a guard on the adapter's own state throws `IllegalStateException` via `check`;
@@ -231,20 +267,33 @@ headline test exists to lock in — with install order **deliberately reversed**
 
 `PhysicsSystem`'s body registry is `EntityId`-keyed with no `World` component to the key (§1.1) —
 the same shape `ZoneIndex.indexed` has, which is exactly why architecture §4.5 gives
-`ZoneWorldSystem` its own concurrent-install guard rather than relying on `World.installSystem`'s
+`ZoneWorldSystem` its own install guard rather than relying on `World.installSystem`'s
 identity/slot checks (both of which are scoped to *one* `World`'s own registry and cannot see a
 second `World` at all). Installing the same `PhysicsWorldSystem` instance on two `World`s at once
 would let `PhysicsSystem.step` mix two worlds' `EntityId` spaces in one `bodies` map — a live
 hazard since `World`'s own `EntityId` allocator restarts at `1` for every `World` instance
 (`World.kt:127,165` per the architecture doc's own citation), so a collision is the *common* case,
-not an edge case, the moment two worlds are in play. **Recommendation: mirror `ZoneWorldSystem`'s
-guard shape exactly** (§2.1's `installedOn` field) — same reasoning, same shape, same limitation.
+not an edge case, the moment two worlds are in play. **Recommendation (drafted before #77's
+verification): mirror `ZoneWorldSystem`'s guard as it was then designed** (§2.1's
+release-on-uninstall `installedOn` field) — same reasoning, same shape, same limitation.
 This does **not** fully close the hazard: two *different* `PhysicsWorldSystem` instances wrapping
 the *same* underlying `PhysicsSystem` and installed on two different `World`s would each pass
-their own guard independently while still corrupting the shared `bodies` map — an identical,
-pre-existing limitation of `ZoneWorldSystem`/`ZoneIndex`'s own shape, not a new gap this unit
-introduces, and not fixed here. See Open Decisions (§9 OD1) and the re-verification checklist
-(§2.5) for how this could change once #49's actual `PhysicsSystem` shape lands.
+their own guard independently while still corrupting the shared `bodies` map — the limitation
+`ZoneWorldSystem` originally shared, which #77 has since closed by building its own `ZoneIndex`
+(see the flag below); not fixed here. See Open Decisions (§9 OD1) and the re-verification
+checklist (§2.5) for how this could change once #49's actual `PhysicsSystem` shape lands.
+
+> **Flag from #77's verification (2026-09-28) — not a redesign of this unit.** The hazard is not
+> only concurrent. An uninstall-then-install-on-another-`World` sequence leaves the first
+> `World`'s `EntityId`-keyed state in place, and the next step mixes it into the second `World`'s.
+> `ZoneWorldSystem` closed this with **bind for life** — its `installOn` rejects any `World` other
+> than the first it was installed on, before or after uninstall — and by building its own
+> `ZoneIndex`, so two adapters never share one (architecture §4.5;
+> `docs/zone-world-system-plan.md` §2.2). The same sequential multi-`World` hazard applies to
+> `PhysicsSystem`'s `EntityId`-keyed `bodies` map under §2.1's release-on-uninstall guard.
+> Bind-for-life is the #77 precedent; whether this unit adopts it — and whether the adapter should
+> likewise own its `PhysicsSystem` — is decided at this unit's re-verification (§2.5, OD1), not
+> here.
 
 ### 2.5 Re-verification checklist (run before writing a line of this unit's code)
 
@@ -262,8 +311,10 @@ introduces, and not fixed here. See Open Decisions (§9 OD1) and the re-verifica
 5. Confirm whether `PhysicsSystem` now holds any per-`World` state (would change or remove the
    need for §2.4's guard).
 6. Confirm `ZoneWorldSystem`'s actual constructor/`installOn` guard shape (#77) for this unit's
-   test fixtures to match exactly, and check whether #77 introduced any shared `World`-with-two-zones
-   test-fixture helper this unit's headline test should reuse instead of duplicating.
+   test fixtures to match exactly — #77's plan now specifies `ZoneWorldSystem(grid: ZoneGrid)`,
+   exposing `val zoneIndex`, with a bind-for-life guard — and check whether #77 introduced any
+   shared `World`-with-two-zones test-fixture helper this unit's headline test should reuse
+   instead of duplicating.
 7. Confirm whether `gametools-world` already has a file-level logger convention established by
    whichever of #49/#77 landed first, to keep `PhysicsWorldSystem.kt`'s own logging consistent in
    style (level choices, message shape) with its sibling adapter.
@@ -300,8 +351,7 @@ Full declaration per §2.1, with KDoc:
  * A single [PhysicsWorldSystem] instance may be installed on only one [World] at a time -
  * [installOn] rejects a second, concurrent installation. This does not protect two *different*
  * [PhysicsWorldSystem] instances that wrap the *same* [PhysicsSystem] from being installed on two
- * [World]s at once; that remains a caller-managed invariant, matching
- * [com.spartanlabs.gaming.world.zone.ZoneWorldSystem]'s identical shape and limitation.
+ * [World]s at once; that remains a caller-managed invariant.
  *
  * @param physicsSystem the physics orchestrator this adapter steps every frame
  * @throws IllegalStateException from [installOn] if this instance is already installed on a
@@ -309,6 +359,10 @@ Full declaration per §2.1, with KDoc:
  */
 class PhysicsWorldSystem(val physicsSystem: PhysicsSystem) : WorldSystem { /* §2.1 */ }
 ```
+
+> **Flag (2026-09-28):** the KDoc's last paragraph used to call this limitation identical to
+> `ZoneWorldSystem`'s. That comparison was removed because #77 has since closed the limitation
+> there (own index, bind-for-life — §2.4's flag). Revisit the paragraph together with OD1.
 
 **Error handling:** `installOn` throws `IllegalStateException` via `check` for the one
 caller-wiring precondition (§2.4). That is a programmer error, not an operational failure, so it
@@ -447,14 +501,14 @@ level 2/4a tests below.
     keep this test decoupled from #49's actual implementation details (§9 OD4).
 - **`PhysicsWorldSystemZoneOrderingTest.kt` — the headline regression test**, adapted from
   `docs/world-systems-plan-draft.md` §5's Level 2 "Headline test" to the tier-1-slot mechanism:
-  build a real `World`, a `ZoneGrid`/`ZoneIndex` pair with two adjacent zones split by a line, a
+  build a real `World`, a `ZoneGrid` with two adjacent zones split by a line, a
   `PhysicsSystem` (default resolver) with two overlapping attached bodies positioned so resolving
-  them pushes one across that line, wrap them as `ZoneWorldSystem(zoneIndex)` and
-  `PhysicsWorldSystem(physicsSystem)`, and:
+  them pushes one across that line, construct `ZoneWorldSystem(grid)` (which builds its own
+  `ZoneIndex`) and wrap the physics system as `PhysicsWorldSystem(physicsSystem)`, and:
   - **Obvious install order**, `PhysicsWorldSystem` then `ZoneWorldSystem`. After one
     `world.tick()` and one `world.stepSystems()`, assert that the pushed entity's
-    `zoneIndex.zoneOf(...)` already reflects the new zone, and that a matching `EntityChangedZone`
-    was published on `world.events` during that same `stepSystems()` call.
+    `zoneWorldSystem.zoneIndex.zoneOf(...)` already reflects the new zone, and that a matching
+    `EntityChangedZone` was published on `world.events` during that same `stepSystems()` call.
   - **Reversed install order**, `ZoneWorldSystem` then `PhysicsWorldSystem` — the case the
     superseded install-order design got wrong. Identical assertions, identical result. This proves
     §2.3's claim (tier-1 order holds regardless of install order) is not an accident of one
@@ -464,7 +518,7 @@ level 2/4a tests below.
 
 A real `World` with a `TiledMap`-backed `space` (via `MapLoader`, matching `MapLoaderIntegrationTest`'s
 own convention), several attached `Actor`s (including one colliding with `StaticGeometry` and one
-crossing non-walkable terrain), a `ZoneGrid`/`ZoneIndex`/`ZoneWorldSystem`, and a
+crossing non-walkable terrain), a `ZoneGrid`/`ZoneWorldSystem` (which builds its own `ZoneIndex`), and a
 `PhysicsSystem`/`PhysicsWorldSystem`, driven for several `world.tick()` + `world.stepSystems()`
 cycles with install order reversed as in the headline test. Asserts `EntityChangedZone` events
 fire in the documented order relative to each frame's physics resolution across a realistic,
@@ -483,7 +537,7 @@ incidental nondeterminism beyond what #49/#77 already guarantee individually.
 ### Level 4b — e2e (`.../testing/e2e/world/physics/PhysicsWorldSystemSimulationE2ETest.kt`)
 
 Loads `fixture-map.json` through `MapLoader` (reusing `world.map`'s existing fixture, matching
-`ZoneDrivenSimulationE2ETest`'s precedent), builds `World` + `ZoneGrid`/`ZoneIndex`/`ZoneWorldSystem`
+`ZoneDrivenSimulationE2ETest`'s precedent), builds `World` + `ZoneGrid`/`ZoneWorldSystem`
 + `PhysicsSystem`/`PhysicsWorldSystem`, and drives it with a real
 `com.spartanlabs.gaming.simulation.SimulationLoop` via its public `advance(realElapsedNanos)`,
 with `onTick = { world.stepSystems() }`. It is the second `gametools-world` e2e test to do so,
@@ -532,9 +586,10 @@ something a UAT pass could actually evaluate. No harness is built for that here.
   §2.6 row 1 is the concrete mitigation; must be checked, not assumed, at branch-cut time.
 - **Same-`World` invariant is only partially enforced.** §2.4's `installedOn` guard stops the
   same `PhysicsWorldSystem` instance from serving two `World`s at once, but not two different
-  adapter instances sharing one underlying `PhysicsSystem` — an inherited, not new, limitation
-  matching `ZoneWorldSystem`/`ZoneIndex`'s identical shape (architecture §4.5). Documented, not
-  fixed, in both places.
+  adapter instances sharing one underlying `PhysicsSystem`, nor one instance moved to a second
+  `World` after being uninstalled from the first. `ZoneWorldSystem` originally had the same
+  limitations; #77 has since closed both there (own index, bind-for-life — architecture §4.5,
+  2026-09-28). Flagged for OD1 (§2.4's flag); documented, not fixed, here.
 - **Sequencing/scope risk if #80 is implemented before #79 lands.** The adapter then needs the
   propagating `@ExperimentalGameToolsApi` marker (architecture §4.8's stated fallback) rather than
   landing untagged; #79 strips it along with the other two adapters' markers when it lands. Not
@@ -597,8 +652,10 @@ something a UAT pass could actually evaluate. No harness is built for that here.
   implements `WorldSystem`, returns `coreSlot = CoreWorldSystemSlot.PHYSICS`, and is installed/
   uninstalled/stepped exclusively through `World`'s registry — it never calls `installOn`/`step`
   on itself or on any other `WorldSystem`.
-- **Depends on `zone-world-system` (#77) — test-only.** `class ZoneWorldSystem(val zoneIndex:
-  ZoneIndex) : WorldSystem` with `coreSlot = CoreWorldSystemSlot.ZONE`. Used solely as a fixture
+- **Depends on `zone-world-system` (#77) — test-only.** `class ZoneWorldSystem(grid: ZoneGrid) :
+  WorldSystem`, building and exposing its own `val zoneIndex: ZoneIndex`, with
+  `coreSlot = CoreWorldSystemSlot.ZONE` and a bind-for-life `installOn` guard (architecture §4.5,
+  revised 2026-09-28). Used solely as a fixture
   in this unit's own headline/integration/e2e tests to prove ordering; `PhysicsWorldSystem.kt`'s
   production code has zero reference to it. If #77's actual constructor or guard shape differs
   from architecture §4.5's sketch, only this unit's test fixtures need updating, not
@@ -631,6 +688,12 @@ something a UAT pass could actually evaluate. No harness is built for that here.
    adapter instances sharing one `PhysicsSystem`. Must be re-confirmed once #49's actual
    `PhysicsSystem` shape lands (§2.5 item 5) — if it turns out to hold per-`World` state, the
    guard may become unnecessary rather than merely redundant.
+   **Flag (2026-09-28, #77's verification):** the same sequential multi-`World` hazard applies to
+   `PhysicsSystem`'s `EntityId`-keyed `bodies` map — an instance uninstalled from one `World` and
+   installed on another carries the first `World`'s bodies with it (§2.4's flag). `ZoneWorldSystem`
+   is no longer "identical": it is now bind-for-life and builds its own `ZoneIndex`, and that is
+   the #77 precedent. Re-decide this OD against it at re-verification; the recommendation above
+   predates the change.
 2. **OD2 — whether to keep the explicit `reconcileSpatialIndex()` call by default (§2.2, §2.6).**
    **Recommendation:** keep it, matching the last-planned shape, but gate this unit's branch-cut
    on #49's re-plan explicitly stating where the reconcile call lives, not merely on #49's code

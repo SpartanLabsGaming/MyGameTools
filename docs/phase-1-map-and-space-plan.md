@@ -18,10 +18,30 @@
 > - §4's `WorldSystemsIntegrationTest`.
 >
 > Zones run as `ZoneWorldSystem` (#77, `world.zone`) and physics as `PhysicsWorldSystem` (#80,
-> `world.physics`); no `world.system` package exists. The physics-before-zone order is enforced by
+> `world.physics`); no `world.system` package exists. *(Corrected 2026-10-01: there is no
+> `ZoneWorldSystem` or `PhysicsWorldSystem` — zones run as `ZoneIndex` itself and physics as
+> `PhysicsSystem` itself; see the addendum below.)* The physics-before-zone order is enforced by
 > library-reserved slots. It reverses §2.5's zone-then-physics lean, as
 > `docs/issue-49-physics-architecture.md` §4.9 already had. Architecture:
 > `docs/world-systems-implementation-architecture.md`.
+>
+> **Addendum — 2026-10-01 (#77), correcting the callout above.** There is no `ZoneWorldSystem` and
+> no `PhysicsWorldSystem`; nothing wraps either class. `ZoneIndex(grid)` (`world.zone`) is itself
+> the zone `WorldSystem`: it extends `AbstractWorldSystem`, claims `CoreWorldSystemSlot.ZONE`,
+> declares `uniqueRole = ZoneIndex::class`, and has a public constructor and no `refresh` method. A
+> consumer installs it with `World.installSystem`; `World.stepSystems()` then drives it, always
+> after any `PHYSICS`-slot system. Installing publishes nothing, and one `ZoneIndex` serves one
+> `World`, for life. §2.3's queries (`zoneIndex.entitiesIn(zone)`, `zoneIndex.zoneOf(entityId)`) are
+> reads on that same `ZoneIndex`, which carries a class-level `@ExperimentalGameToolsApi` until #79,
+> so using zones, those reads included, needs opt-in until then. *(2026-10-02, #77: `zoneOf`
+> returns a `Result<Zone>`, a failure carrying `UnzonedEntityException` when the entity is in no
+> zone — binding architecture C22; §2.3's own wording is left as written.)* Code holding only a
+> `World` finds it with `world.systemOf<ZoneIndex>()`, which returns a `Result`. Physics runs as `PhysicsSystem`
+> (#49) itself, which extends `AbstractWorldSystem` and claims `CoreWorldSystemSlot.PHYSICS`; #80 is
+> resolved by #49. The physics-before-zone order via library-reserved slots is unchanged, and no
+> `world.system` package exists. This reverses the 2026-09-29 decision that made `ZoneIndex`'s
+> constructor and `refresh` `internal`, with `ZoneWorldSystem` the only way to use zones; it never
+> reached a commit or a release. Architecture: `docs/world-system-binding-architecture.md`.
 
 ## Header / Association
 

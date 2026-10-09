@@ -1,7 +1,7 @@
 # Plan: `physics-core-seams` — the `gametools-core` seams Phase 1 physics builds on
 
 > **Partly superseded — 2026-09-22, World Systems Implementation (issues #76–#80).** This unit had
-> two halves.
+> two halves; a 2026-10-01 addendum follows them.
 >
 > - **The `@SupportedExtension` half is superseded.** #76 (`docs/world-system-core-plan.md`) now
 >   creates `com.spartanlabs.gaming.annotation.SupportedExtension` in exactly the parameterless
@@ -13,6 +13,13 @@
 >   §2.4's diagram, §3.2's KDoc draft, §9 "Provides to unit 6"). It is now `PhysicsWorldSystem.step()`
 >   (#80, `docs/physics-world-system-plan.md`), which calls it immediately before
 >   `physicsSystem.step(world)` from inside `World.stepSystems()`.
+> - **Addendum — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`):
+>   the second half's named caller changes again.** `PhysicsSystem` (#49, unbuilt) is itself the
+>   physics `WorldSystem` — it extends the new `AbstractWorldSystem`, claims
+>   `CoreWorldSystemSlot.PHYSICS`, declares `uniqueRole = PhysicsSystem::class`, and its `step()`
+>   takes no `World` — so there is no `PhysicsWorldSystem` (#80 is resolved by #49) and
+>   `World.reconcileSpatialIndex()`'s named caller is no longer `PhysicsWorldSystem.step()`. Where
+>   that call lives is #49's re-plan's decision.
 >
 > Architecture: `docs/world-systems-implementation-architecture.md`.
 

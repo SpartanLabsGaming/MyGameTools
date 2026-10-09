@@ -1,5 +1,66 @@
 # Architecture: `WorldSystem` Core Mechanism (#76)
 
+> **Reworked in part — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`).**
+> #77's design pass reworks the `WorldSystem` core this note designs (merged as PR #130). The
+> rework is planned in `docs/world-system-binding-plan.md` and `docs/zone-world-system-plan.md`;
+> its binding decisions are C1–C39 in §1.2 of `docs/world-system-binding-architecture.md`.
+> Throughout the body below, the hooks `installOn(world)`, `uninstallFrom(world)` and
+> `step(world)` become `onInstalled()`, `onUninstalled()` and `step()`, and `WorldSystem` gains
+> `val world: World`, the one `World` a system serves. Superseded, by section:
+>
+> 1. **Header, "Does not cover" (and §3's closing sentence).** `ZoneWorldSystem` and
+>    `PhysicsWorldSystem` do not exist: `ZoneIndex` is itself the zone `WorldSystem` (#77) and
+>    `PhysicsSystem` the physics one (#49, which resolves #80). #77 also reworks this registry.
+> 2. **§1.2, last bullet.** `installedSystems` contains a system while its `onInstalled()` runs,
+>    and a throwing hook is rolled back (the record is removed, the original exception is rethrown
+>    unchanged, `onUninstalled()` is not called, the binding is kept), so failure-atomicity holds
+>    by record-then-roll-back. #78's in-hook uniqueness guard, which relied on the old guarantee,
+>    is replaced by a declared `uniqueRole`.
+> 3. **Reservations: §2 finding 2, the §3 and §4.1 rows, §4.2, §7 R1, and the mentions in §8, §10
+>    and §12.** The reservation machinery (`Reservation`, `installReservations`, R1) is deleted as
+>    dead code. `installSystem` is checks (already installed or re-entrant, core slot free, not
+>    bound to a different `World`, uniqueness) → bind → record → `onInstalled()`; a re-entrant
+>    self-install or same-slot install from a hook is still an `IllegalArgumentException`, now as
+>    "already installed" or "slot occupied". `stepSystems()` and self-uninstall from inside
+>    `onInstalled()` are legal but discouraged, with no guard. Helpers a failing hook installed
+>    still stay installed. §4.2's three diagrams are replaced by
+>    `docs/world-system-binding-architecture.md` §5.1.
+> 4. **§4.5, lifecycle.** A system is also bound: bound to its `World` at its first install that
+>    passes the checks, it stays bound after an uninstall or a rolled-back install. Replaced by
+>    §5.2 of that architecture.
+> 5. **§4.6, contract clauses.** The `installOn` clause (it runs before the system is recorded, so
+>    `installedSystems` never contains it, and records nothing if it throws) is superseded by
+>    items 2 and 3. "At most one per `World` is the implementor's job" is replaced by a
+>    `uniqueRole` the system declares (`KClass<out WorldSystem>?`) and `World` enforces:
+>    `IllegalArgumentException` for a role equal to an installed system's, or one the system is
+>    not an instance of.
+> 6. **§4.6, "Multi-World use" (and §3's `WorldSystem` row) — reversed.** One instance can no
+>    longer serve several `World`s. A system is bound to one `World` for life: the new
+>    `AbstractWorldSystem` holds a write-once binding (a direct implementor supplies `world`
+>    itself and `World` checks `world === this`), installing it on another `World` throws
+>    `IllegalArgumentException`, and re-installing on the same `World` is legal.
+> 7. **§5, the `ExperienceSystem` row.** #78 no longer relies on `installedSystems` excluding a
+>    system mid-install, and "unaffected by the reservation guard" is moot: it will extend
+>    `AbstractWorldSystem` and declare `uniqueRole = ExperienceSystem::class`.
+> 8. **§6, marker matrix.** The hook rows describe `onInstalled()`, `onUninstalled()` and `step()`.
+>    Add `AbstractWorldSystem`, `WorldSystem.uniqueRole` and `World.systemOf` (the `KClass` form
+>    and a reified `systemOf<T>()`, each returning `Result<T>`), all Experimental until #79. The
+>    last row's "reservation/installed record" is the installed-system record alone, which also
+>    holds the read-once `uniqueRole`. *(2026-10-02: also add `MissingWorldSystemException`, the
+>    type a `systemOf` miss carries — class-level `@ExperimentalGameToolsApi`, likewise Experimental
+>    until #79; binding architecture C21.)*
+> 9. **Cross-plan alignment, "The seam #77–#80 consume".** The list records the seam as merged:
+>    its "nothing recorded if `installOn` throws" and "`installedSystems` never containing the
+>    system mid-`installOn`" bullets, and the "All hold" sentence, are superseded (items 2 and 3);
+>    its "thrown before `installOn`" bullet now also covers a system bound to another `World` and
+>    a `uniqueRole` clash, thrown before `onInstalled()`.
+>
+> Not superseded: the rest of §4.1 (the single ordered record list, tier-1 / tier-2 step order),
+> §4.3 and §4.4 apart from the hook names, R2 (re-entrant `stepSystems()` is an
+> `IllegalStateException`), R9 (the step-pass snapshot holds records, compared by identity),
+> single-threaded operation, and the deferral of every World Systems website update to Phase 1's
+> close (#86; I2, F1). The body below is kept as the historical record of #76 as merged.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76)
@@ -68,7 +129,9 @@ install order) from an explicit driver call, never from `World.tick()`.
      `@ExperimentalGameToolsApi`-tagged surface bumps **Feature**, not Major, with graduation
      recorded in `CHANGELOG.md`.
 - **I2 — no website change in #76.** `website/index.html:206,259`'s `World` description is
-  accurate but silent on installed systems; that edit is owed to #79 (§12 follow-up F1).
+  accurate but silent on installed systems; that edit is deferred (§12 follow-up F1) — originally
+  to #79, and since 2026-09-28 (user decision) to Phase 1's close (tracking issue #86), with every
+  other World Systems website update.
 - **I3** — planner-internal, no design impact.
 
 ---
@@ -388,7 +451,7 @@ tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compile
    `CHANGELOG.md`.
 
 **Website (I2):** no change in #76. `website/index.html:206,259` stays as-is; the installed-systems
-description is owed to #79 (§12 F1).
+description waits for Phase 1's close (#86) — §12 F1, revised 2026-09-28.
 
 ---
 
@@ -490,8 +553,9 @@ open decisions — reasons and evidence below.
    re-plan's interview (I1) adds two more `CONTRIBUTING.md` edits. Recorded here as new, user-given
    scope for this document's decomposition unit, not as a correction of anything wrong upstream.
 8. **R8 — Scope clarification: I2 explicitly defers the website edit.** The grand design does not
-   mention `website/index.html` for #76 at all (silence, not a decision); I2 makes the deferral to
-   #79 explicit rather than leaving it implicit.
+   mention `website/index.html` for #76 at all (silence, not a decision); I2 makes the deferral
+   explicit rather than leaving it implicit — originally to #79, since 2026-09-28 to Phase 1's
+   close (#86).
 9. **R9 — Completion: the step-pass snapshot holds installation records, compared by identity.**
    The grand design says a system uninstalled earlier in a pass is skipped and a system installed
    mid-pass steps from the next call, but not how the pass tells them apart. Checking whether the
@@ -596,7 +660,8 @@ and its blast radius against the other four units' known designs is already chec
 ## 12. Follow-ups
 
 - **F1 (I2).** `website/index.html:206,259`'s `World` description should gain a line on installed
-  systems once the mechanism is Stable Core — owed to #79, not #76.
+  systems — not in #76. **Revised 2026-09-28 (user decision):** not #79's either; every World
+  Systems website update waits for Phase 1's close (tracking issue #86).
 - **F2.** Re-verify `docs/zone-world-system-plan.md`, `docs/experience-system-plan.md`,
   `docs/world-system-graduation-plan.md`, and `docs/physics-world-system-plan.md` against this
   document's §7 refinements (the reservation guard, `stepSystems()`'s one rejection case) once
@@ -636,7 +701,7 @@ consume.
   - `installSystem`/`uninstallSystem` at INFO, `stepSystems` at DEBUG;
   - `@SubclassOptInRequired` on `WorldSystem`, plain markers elsewhere;
   - the `gametools-core` test opt-in block, identical in shape to #77's
-    (`docs/zone-world-system-plan.md:423-424`).
+    (`docs/zone-world-system-plan.md` §3.4).
 
   All hold. R1, R2 and R9 are additive: no downstream design installs re-entrantly, calls
   `stepSystems()` from a `step()`, or relies on a mid-pass uninstall-and-reinstall being stepped

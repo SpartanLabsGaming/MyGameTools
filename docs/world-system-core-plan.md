@@ -1,5 +1,33 @@
 # Plan: `world-system-core` — `WorldSystem` core mechanism (opt-in per-`World` system registry)
 
+> **Reworked in part — 2026-10-01, by issue #77's design.** The `WorldSystem` core this plan
+> describes (landed as PR #130) is reworked in #77's PR. `docs/world-system-binding-plan.md` plans
+> the rework and `docs/world-system-binding-architecture.md` designs it (its §1.2 C1–C39 are the
+> binding decisions); the revision callout atop `docs/world-system-core-architecture.md` lists the
+> superseded parts of the architecture note this plan implements. Superseded in this plan:
+>
+> 1. **Hooks** (§3.1, §3.2, §4.3, §4.5, §4.7, §4.9, §6, §9). `installOn(world)`,
+>    `uninstallFrom(world)` and `step(world)` become `onInstalled()`, `onUninstalled()` and
+>    `step()`, and `WorldSystem` gains `val world: World`, the one `World` a system serves.
+> 2. **Multi-`World` use** (§4.3's KDoc; the Level 3 `WorldSystemEventBusIntegrationTest` row "one
+>    WorldSystem instance installed on two different Worlds"). Reversed: a new
+>    `AbstractWorldSystem` binds a system to one `World` for life, installing it on another throws
+>    `IllegalArgumentException`, and that test row becomes "a second `World` is rejected".
+>    Uniqueness is a `uniqueRole` the system declares and `World` enforces, replacing the
+>    `installedSystems` check inside the hook (§4.3's KDoc).
+> 3. **Install protocol** (§1.2, §3.2, §3.3, §4.5, the Level 2 `WorldInstallSystemTest` rows).
+>    `installSystem` is checks → bind → record → `onInstalled()`. `installedSystems` contains the
+>    system while `onInstalled()` runs (§1.2's "never contains" criterion is reversed), a throwing
+>    `onInstalled()` is rolled back and rethrown unchanged, and the reservation machinery
+>    (`Reservation`, `installReservations`, R1) is deleted. R2 and R9 stand.
+> 4. **Adapters** (§4.4's slot KDoc, Level 5). No `ZoneWorldSystem` or `PhysicsWorldSystem` exists:
+>    `ZoneIndex` itself claims `ZONE` and `PhysicsSystem` (#49) itself claims `PHYSICS`.
+> 5. **New:** `World.systemOf(role)` and a reified `systemOf<T>()`, both returning `Result<T>`.
+>    *(2026-10-02: a miss carries a `MissingWorldSystemException` — a new, stackless
+>    `NoSuchElementException` naming the role; binding architecture C21.)*
+>
+> The body below is kept as the historical record of #76 as merged.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#76](https://github.com/SpartanLabsGaming/MyGameTools/issues/76)
@@ -781,7 +809,7 @@ tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compile
 }
 ```
 
-Identical shape to #77's own `gametools-world` copy (`docs/zone-world-system-plan.md:423-424`);
+Identical shape to #77's own `gametools-world` copy (`docs/zone-world-system-plan.md` §3.4);
 #79 removes both. No main-source-set opt-in, ever.
 
 ### 4.7 Changed: `README.md`
@@ -1327,8 +1355,9 @@ an open decision requiring the user's input.
 - Lands first in the five-unit decomposition; `zone-world-system` (#77) is cut only after this
   branch's PR merges to `master` (no stacking).
 - **F1 (carried from architecture §12).** `website/index.html:206,259`'s `World` description
-  should gain a line on installed systems once the mechanism is Stable Core — owed to #79, not
-  this unit.
+  should gain a line on installed systems. **Revised 2026-09-28 (user decision):** not owed to
+  #79 — every World Systems website update, this one and #77's zone cards alike, waits for Phase
+  1's close (tracking issue #86). Not this unit either.
 - **F2 (carried from architecture §12).** Re-verify `docs/zone-world-system-plan.md`,
   `docs/experience-system-plan.md`, `docs/world-system-graduation-plan.md`, and
   `docs/physics-world-system-plan.md` against this unit's actual landed shape and its R1–R9

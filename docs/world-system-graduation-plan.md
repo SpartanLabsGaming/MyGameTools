@@ -1,5 +1,85 @@
 # Plan: `world-system-graduation` — promote `WorldSystem` from Experimental to `@SupportedExtension`
 
+> **Revise before implementing — 2026-10-01, issue #77's design
+> (`docs/world-system-binding-architecture.md`).** That document ("the binding architecture"
+> below; this plan's own "architecture" is still
+> `docs/world-systems-implementation-architecture.md`) reworks the seam this plan graduates: the
+> `WorldSystem` hooks lose their `World` parameter (`onInstalled()`, `onUninstalled()`, `step()`,
+> with `val world: World`); a new `abstract class AbstractWorldSystem` holds a write-once binding;
+> `WorldSystem` gains `uniqueRole`, and `World` gains `systemOf(role: KClass<T>): Result<T>` plus a
+> reified `systemOf<T>()`, an exact-key lookup whose miss is a `Result.failure`; and
+> `ZoneIndex(grid)` becomes the zone `WorldSystem` itself, with no `ZoneWorldSystem` and no
+> `refresh`. The plan body is left as written except six hunks rewritten the same day to match
+> (`:61`, `:82-85`, `:392-395`, `:429-438`, `:591-595`, `:597-599`), which keep the #86 website
+> deferral and the `ZoneFixtures.kt` reuse. #79's own planning must revise the items below before
+> this unit is implemented. Line numbers are this file's before the callout was added. Unit plans:
+> `docs/world-system-binding-plan.md` and `docs/zone-world-system-plan.md`.
+>
+> 1. **§1.1, the inventory (`:52-63`).** `:54` still quotes the `installOn`/`uninstallFrom`/
+>    `step(world)` hooks; `:61` was rewritten as the `ZoneIndex` row. Add `AbstractWorldSystem`
+>    (`@SubclassOptInRequired(ExperimentalGameToolsApi::class)`, like `WorldSystem`), `uniqueRole`
+>    and both forms of `systemOf` (each `@ExperimentalGameToolsApi`). All four graduate at #79
+>    (both `systemOf` forms with the rest of the registry, by the user's decision), so they join
+>    the removal list, and the completeness check stays as it is: a repo-wide search for
+>    `ExperimentalGameToolsApi` finds only the marker's own declaration (`:120-122`, §2.4). The
+>    counts derived from the table — "four" registry members, "ten" items, "nine" declarations
+>    (e.g. `:105`, `:123`, `:136-138`, `:253`) — change with it. *(2026-10-02: also add
+>    `MissingWorldSystemException` (gametools-core, the type a `systemOf` miss carries) and
+>    `UnzonedEntityException` (gametools-world, the type a `ZoneIndex.zoneOf` miss carries). Each
+>    carries a class-level `@ExperimentalGameToolsApi` that this unit removes, so both join the
+>    removal list — without them the completeness check fails — and the derived counts shift again;
+>    binding architecture C21, C22.)*
+> 2. **"`WorldSystem` alone" (`:17-20`, `:115-116`, `:138-140`, §2.2 `:149-163`).**
+>    `@SupportedExtension` now lands on `WorldSystem` **and** `AbstractWorldSystem`, and both lose
+>    their `@SubclassOptInRequired`. §2.2's reason for "alone" no longer holds as written, and §3
+>    needs an entry for `AbstractWorldSystem.kt`.
+> 3. **Review checkpoint Q1–Q6 (`:82-103`).** Q1 was rewritten for `ZoneIndex`, which keeps no
+>    guard of its own because bind-for-life lives in `AbstractWorldSystem`. Q1–Q2 ask whether a
+>    shipped system needed an install-time view of its peers; `World.systemOf` now answers that
+>    (binding architecture §7.4), so the question becomes "did any shipped system need more than
+>    `uniqueRole` and `systemOf`?". Q2 (`:86-90`) also has `ExperienceSystem` "guarding against a
+>    second instance"; that is `uniqueRole`, enforced by `World`. Q3–Q6 carry the old hook
+>    signatures and the `ZoneWorldSystem` and "adapter" naming; restate them against
+>    `onInstalled()`, `onUninstalled()`, `step()`, `ZoneIndex` and `ExperienceSystem`.
+> 4. **§1.3, acceptance (`:123-125`).** "construct `ZoneWorldSystem`" is now `ZoneIndex`. Until this
+>    unit lands, using zones — including `zoneOf` and `entitiesIn` — needs opt-in, because
+>    `ZoneIndex` carries a class-level `@ExperimentalGameToolsApi`; removing that marker is what
+>    makes the class and its reads untagged Stable Core. *(2026-10-02: `zoneOf` now returns
+>    `Result<Zone>`, its miss an `UnzonedEntityException`, which becomes untagged with `ZoneIndex`;
+>    the same holds for §8's "Consumes from `zone-world-system` (`#77`)" entry — binding
+>    architecture C22.)*
+> 5. **KDoc and CHANGELOG drafts (`:215-230`, `:260-266`, `:354-383`).** The `WorldSystem` KDoc
+>    draft links `[installOn]` and `ZoneWorldSystem`: link `[onInstalled]`, name `ZoneIndex`, and
+>    give `AbstractWorldSystem` a Supported-Extension paragraph of its own. §3.4 targets
+>    `ZoneWorldSystem.kt`; the target is `ZoneIndex.kt`, whose class-level marker and Experimental
+>    KDoc paragraph go. The CHANGELOG drafts (Branches A and B) and the README/CONTRIBUTING
+>    paragraph name `ZoneWorldSystem`, and Branch B lists the old hooks: redraft them around
+>    `ZoneIndex`, the parameterless hooks, `AbstractWorldSystem`, `uniqueRole` and `systemOf`.
+> 6. **§5 tests (`:417`, `:429-438`).** `:417` builds a minimal system "implementing only
+>    `installOn`"; every hook now has a default and `world` is abstract on `WorldSystem`, so the
+>    minimal system extends `AbstractWorldSystem`. The zero-opt-in proof should also cover
+>    `AbstractWorldSystem`, `uniqueRole` and both `systemOf` forms. `:429-438` was rewritten as
+>    `ZoneIndexGraduationTest`, constructing `ZoneIndex(fixtureGrid())`. *(2026-10-02: the
+>    zero-opt-in proof also covers `MissingWorldSystemException` and `UnzonedEntityException`.)*
+> 7. **§7 commit 2 and §8 interfaces (`:555-556`, `:580-612`).** Commit 2 lists
+>    `ZoneWorldSystem.kt` (it is `ZoneIndex.kt`), and no commit yet covers `AbstractWorldSystem.kt`.
+>    In §8, the `WorldSystem` signature (`:580`), the registry members and their
+>    `IllegalArgumentException` contract (`:584-587`; add `systemOf`, and note `World` now also
+>    rejects a system bound to another `World` and a duplicate `uniqueRole`) and
+>    `ExperienceSystem`'s hooks (`:602-604`, "subscribe + guard") still carry the #76-era shape.
+>    `:591-599` was rewritten for `ZoneIndex`.
+> 8. **#80 (`:33`, `:322`).** Both treat #80 as `PhysicsWorldSystem`, a unit that waits on this
+>    one. #80 is resolved by #49: `PhysicsSystem` is itself the physics `WorldSystem`, and no
+>    `PhysicsWorldSystem` exists. The same framing recurs in §8's "Provides to
+>    `physics-world-system` (`#80`)" (`:609-615`) and in §10 (`:642-644`).
+>
+> **Target shape.** `WorldSystem` and `AbstractWorldSystem` become `@SupportedExtension`;
+> `uniqueRole` and both forms of `systemOf` graduate with the rest of the registry; `ZoneIndex`
+> replaces `ZoneWorldSystem` in the removal list (its class-level marker goes, and `zoneOf` and
+> `entitiesIn` become untagged Stable Core); the completeness check is unchanged. *(2026-10-02:
+> `MissingWorldSystemException` graduates with `systemOf`, and `UnzonedEntityException` with
+> `ZoneIndex`, both to untagged Stable Core — binding architecture C21, C22.)*
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#79](https://github.com/SpartanLabsGaming/MyGameTools/issues/79)
@@ -58,7 +138,7 @@ every one of them gated behind the shared, library-wide `@RequiresOptIn(level = 
 | `World.uninstallSystem(system: WorldSystem)` (member) | same file | `@ExperimentalGameToolsApi` |
 | `World.installedSystems: List<WorldSystem>` (member) | same file | `@ExperimentalGameToolsApi` |
 | `World.stepSystems()` (member) | same file | `@ExperimentalGameToolsApi` |
-| `class ZoneWorldSystem(val zoneIndex: ZoneIndex) : WorldSystem` | `gametools-world/.../world/zone/ZoneWorldSystem.kt` | `@ExperimentalGameToolsApi` |
+| `class ZoneIndex(grid: ZoneGrid) : AbstractWorldSystem()` (itself the zone `WorldSystem`; `coreSlot = ZONE`, `uniqueRole = ZoneIndex::class`) | `gametools-world/.../world/zone/ZoneIndex.kt` | `@ExperimentalGameToolsApi` (class-level) |
 | `class ExperienceSystem : WorldSystem` | `gametools-core/.../gameobjects/combat/ExperienceSystem.kt` | `@ExperimentalGameToolsApi` |
 | a `compileTestKotlin` opt-in for `ExperimentalGameToolsApi` | `gametools-core/build.gradle.kts`, `gametools-world/build.gradle.kts` | test-source-set only |
 
@@ -79,10 +159,10 @@ in §3. Answer every question below against the real, merged code; if any answer
 change is needed," **stop before editing anything in §3** and raise it as a new, separately
 designed follow-up (see §9 OD1) rather than folding a fix into this graduation PR.
 
-1. Did `ZoneWorldSystem.installOn`/`uninstallFrom` need anything beyond the per-`World`
-   concurrent-install guard architecture §4.5 designed — in particular, did it need to *inspect*
-   `world.installedSystems` (an install-time view of other installed systems) to detect a
-   conflicting or missing peer system?
+1. `ZoneIndex` is itself the zone `WorldSystem` and keeps no guard of its own: bind-for-life lives
+   in `AbstractWorldSystem`. Did it still need anything beyond that and its `uniqueRole` — in
+   particular, did it need to *inspect* `world.installedSystems` (an install-time view of other
+   installed systems) to detect a conflicting or missing peer system?
 2. Did `ExperienceSystem.installOn` need anything beyond subscribing to `world.events` and
    guarding against a second instance (architecture §4.6) — specifically, did it need install-time
    visibility into other installed systems? (This is the literal example issue `#79`'s own "Out"
@@ -389,6 +469,10 @@ five stages have landed, e.g.:
   Core / `@SupportedExtension` entry in those files reads today (no bespoke "graduated" badge;
   compare `docs/api-openness-decisions-6.0.0.md` D1's plain "Supported Extension" framing for
   `Movement`, with no residual Experimental language once decided).
+- **Website:** none in this unit. Every World Systems website update — `WorldSystem`'s
+  installed-systems line (#76's follow-up F1) and `ZoneIndex` as the zone `WorldSystem` in the zone
+  feature card and `world` module card (#77) — waits for Phase 1's close (tracking issue #86), by
+  the user's decision of 2026-09-28; it is not a duty of this unit.
 
 ---
 
@@ -422,14 +506,16 @@ load-bearing proof of graduation, stronger than any assertion inside the test bo
 - `CoreWorldSystemSlot.ZONE.order` and `.PHYSICS.order` are directly referenceable with no opt-in`
   — a one-line assertion that is really about the reference compiling at all.
 
-**New:** `gametools-world/src/test/kotlin/com/spartanlabs/gaming/testing/component/world/zone/ZoneWorldSystemGraduationTest.kt`
+**New:** `gametools-world/src/test/kotlin/com/spartanlabs/gaming/testing/component/world/zone/ZoneIndexGraduationTest.kt`
 (package `com.spartanlabs.gaming.testing.component.world.zone`), same zero-opt-in constraint:
 
-- `ZoneWorldSystem can be constructed and installed with no opt-in annotation` — construct it
-  over a real `ZoneIndex` fixture (reuse `#77`'s own component-test fixture helpers once they
-  exist — a minimal `Space`/`ZoneGrid`/`ZoneIndex`, not re-derived here), install it on a `World`,
-  call `stepSystems()`, assert `zoneIndex`'s state reflects a refresh (whatever observable
-  `#77`'s own test already asserts after a manual `refresh(world)` call).
+- `ZoneIndex can be constructed and installed with no opt-in annotation` — construct
+  `ZoneIndex(fixtureGrid())`, taking `fixtureGrid()` from `#77`'s shared component fixture,
+  `gametools-world/src/test/kotlin/com/spartanlabs/gaming/testing/component/world/zone/ZoneFixtures.kt`
+  (same package; it references no Experimental API, so the zero-opt-in constraint holds; `ZoneIndex`
+  is itself the zone system, so no wrapper is built), install it on a `World`, call
+  `stepSystems()`, and assert its state reflects the step (the observable `#77`'s own
+  `ZoneIndexTest` asserts after `world.stepSystems()`).
 
 **Changed:** every existing `#76`/`#77`/`#78` component/deterministic test file that currently
 carries a `@file:OptIn(ExperimentalGameToolsApi::class)` (or relies solely on the removed Gradle
@@ -582,13 +668,15 @@ produces no observable behaviour for a human or AI evaluator to assess — there
 - `gametools-core/build.gradle.kts`'s `compileTestKotlin` opt-in block — this unit removes it.
 
 **Consumes from `zone-world-system` (`#77`):**
-- `class ZoneWorldSystem(val zoneIndex: ZoneIndex) : WorldSystem { override val coreSlot = CoreWorldSystemSlot.ZONE; override fun step(world: World) = zoneIndex.refresh(world); override fun installOn(world: World) { /* guard */ }; override fun uninstallFrom(world: World) { /* release guard */ } }`
-  — currently `@ExperimentalGameToolsApi`; this unit's target, and `WorldSystem`'s first named
-  worked example (§3.1).
+- `class ZoneIndex(grid: ZoneGrid) : AbstractWorldSystem() { override val coreSlot = CoreWorldSystemSlot.ZONE; override val uniqueRole = ZoneIndex::class; override fun step() { /* zone bookkeeping; publishes EntityChangedZone */ } }`
+  (itself the zone `WorldSystem`: a public constructor, no `refresh` member, and bind-for-life
+  inherited from `AbstractWorldSystem`) — currently class-level `@ExperimentalGameToolsApi`; this
+  unit's target, and `WorldSystem`'s first named worked example (§3.1). Graduating it is therefore
+  also what makes zones, `zoneOf` and `entitiesIn` included, usable without an opt-in.
 - `gametools-world/build.gradle.kts`'s `compileTestKotlin` opt-in block — this unit removes it.
-- **Expects from `#77`:** its own merged component test fixtures (a minimal `Space`/`ZoneGrid`/
-  `ZoneIndex`) reusable by this unit's new `ZoneWorldSystemGraduationTest` (§5) rather than
-  re-derived from scratch.
+- **Expects from `#77`:** its shared component fixture, `testing/component/world/zone/ZoneFixtures.kt`
+  (`FixtureSpace`, `fixtureGrid()`, `recorder(world)`), reused by this unit's new
+  `ZoneIndexGraduationTest` (§5) rather than re-derived.
 
 **Consumes from `experience-system` (`#78`):**
 - `class ExperienceSystem : WorldSystem { override fun installOn(world: World) { /* subscribe + guard */ }; override fun uninstallFrom(world: World) { /* cancel subscription */ } }`

@@ -12,6 +12,18 @@
 > `world.reconcileSpatialIndex()` then `physicsSystem.step(world)`. #80 treats `step(world: World)`
 > as a provisional contract and adapts if #49's re-plan changes it. Architecture:
 > `docs/world-systems-implementation-architecture.md`.
+>
+> **Addendum — 2026-10-01, issue #77's design (`docs/world-system-binding-architecture.md`).**
+> `PhysicsSystem` is itself the physics `WorldSystem`: it extends the new `AbstractWorldSystem`,
+> claims `CoreWorldSystemSlot.PHYSICS`, declares `uniqueRole = PhysicsSystem::class`, and its
+> `step()` takes no `World`, unlike the `step(world: World)` this plan specifies. There is therefore
+> no `PhysicsWorldSystem` adapter (#80 is resolved by #49), and `World.reconcileSpatialIndex()`'s
+> named caller is no longer `PhysicsWorldSystem.step()`; where that call lives is #49's re-plan's
+> decision. `ZoneIndex(grid)` is itself the zone `WorldSystem`, with no `refresh` method, so this
+> plan's `ZoneIndex.refresh` mentions are historical precedent only. *(2026-10-02: `ZoneIndex.zoneOf`
+> also returns `Result<Zone>` now (binding architecture C22), so §2.3's `bodyFor` precedent —
+> "matching `ZoneIndex.zoneOf`'s own `Zone?`-returning shape" — no longer holds; whether `bodyFor`
+> follows is #49's re-plan's decision.)*
 
 ## Header / Association
 
@@ -264,6 +276,9 @@ purely silent.
 - `detach`: never fails; always returns `Unit`.
 - `bodyFor`: never fails; returns `PhysicsBody?`, matching `ZoneIndex.zoneOf`'s own
   `Zone?`-returning shape (`ZoneIndex.kt:65`) for "look up by id, `null` if not tracked."
+  *(Superseded 2026-10-02: `ZoneIndex.zoneOf` returns `Result<Zone>`, its miss an
+  `UnzonedEntityException`, so this precedent no longer holds; whether `bodyFor` follows is #49's
+  re-plan's decision — binding architecture C22, §7.5.)*
 
 ### 2.4 The `step(world: World)` pipeline — the orchestration this unit exists to write
 

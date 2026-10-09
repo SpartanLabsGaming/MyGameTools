@@ -1,5 +1,19 @@
 # Plan: Phase 1 bounded tiled map model (`TiledMap`, terrain, static geometry, spawn points)
 
+> **Partly superseded — 2026-10-04, issue #77 (unit 3, `docs/tiled-map-result-lookups-plan.md`).**
+> `TiledMap.terrainAt(point)` returns `Result<TerrainType>`. An off-grid miss is an
+> `OutOfGridException` carrying the tile, passed through from `TerrainLayer.terrainAt`, whose own
+> miss is now that same stackless type rather than a stack-traced `IndexOutOfBoundsException`.
+> `TiledMap.spawnPoint(name)` returns `Result<SpawnPoint>`, a miss carrying
+> `MissingSpawnPointException`.
+>
+> So these describe #46 as merged: §3.2's `TiledMap` sketch, with its nullable `terrainAt`,
+> `isWalkable` and `spawnPoint`, and the "Why `terrainAt(Point): TerrainType?` (nullable)" paragraph
+> after it; §3.2's `TerrainLayer` sketch, with its `IndexOutOfBoundsException` failure; and §6's
+> Level 2 `TiledMapTest` bullet ("`terrainAt` in/out of bounds (value / `null`)") and
+> `TerrainLayerTest` bullet. The convention is now `Result` over nullable for lookups that can miss.
+> Architecture: `docs/world-system-binding-architecture.md` (C23–C29).
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)
