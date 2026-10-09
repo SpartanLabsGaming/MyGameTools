@@ -7,7 +7,7 @@
   reusable framework for the common concepts behind the online games Spartak intends to build.
 - **Status:** direction document only. No source, test, or build file has been modified. Each
   phase below is to be planned in its own `docs/` plan document before implementation, in the
-  style of `docs/webtools-2.0.0c-upgrade-plan.md`.
+  style of `docs/plans/18-webtools-2.0.0c-upgrade/plan.md`.
 - **Current baseline:** GameTools `3.0.0` — server-side core: `GameObject → VisibleObject →
   Actor → Alive` hierarchy, `ModularStat`/`CombinedStat`/`StatMod`, `Buff`/`Capability`,
   point-region `Quadtree`, `World` (external tick), and a UDP `GameServer` on WebTools 2.0.0c
@@ -57,7 +57,7 @@ gametools-world        Tiled map + terrain layers, static collision geometry, wa
                        regions, spawn points, zones/chunks, physics (motion integration +
                        collision detection & response), vision / LOS. The spatial index
                        (`SpatialIndex`, `Quadtree`, `UniformGrid`) stays in `gametools-core` -
-                       `World` needs it at compile time (docs/phase-1-map-and-space-plan.md §1.2).
+                       `World` needs it at compile time (docs/plans/86-phase-1-map-and-space/plan.md §1.2).
 gametools-combat       Alive, projectiles, damage types + resistances, crit, threat table,
                        death → respawn lifecycle, kill-credit + XP/leveling hooks.
 gametools-ai           NavProvider (grid A* + flow fields), path following, aggro / target
@@ -152,14 +152,14 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
    Open Decision E).
 
    > **Note — 2026-09-22 (planned, issues #71/#78).** The *XP hook* half is being delivered ahead
-   > of Phase 2. `ExperienceSystem` (#78, `docs/experience-system-plan.md`) reacts to every
+   > of Phase 2. `ExperienceSystem` (#78, `docs/plans/87-world-systems/78-experience-system/plan.md`) reacts to every
    > `GameEvent.EntityDied` and hands it to the dead entity's `ExperienceGrantor`, which owns the
    > credit policy; the shipped default is the MOBA-style `AOEGrantor`. It lives in `gametools-core`'s
    > `gameobjects.combat` package (#71), not in a new `gametools-combat` module. The
    > *kill-credit resolution* half is not delivered. `EntityDied.killer` is still the last
    > `takeDamage` source, and projectile damage bypasses `takeDamage` entirely, so a projectile kill
    > reports a null or stale killer. Last-hit/assist/owner attribution remains this item's work.
-   > See `docs/world-systems-implementation-architecture.md` §4.6 and §12 OD4.
+   > See `docs/plans/87-world-systems/architecture.md` §4.6 and §12 OD4.
 
 *Ships as a Major release (import paths move, combat API reshaped).*
 
@@ -208,7 +208,7 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
 > `gametools-net` that the consumer flushes; and a client-side `onEvent` dispatcher. Not to be
 > planned until the WebTools update above has been adopted. It interlocks with items 1, 2 and
 > 5 and WebTools #9/#14. See
-> [`client-event-feed-plan-draft.md`](client-event-feed-plan-draft.md).
+> [`docs/plans/96-phase-3-authoritative-networking/client-event-feed-plan-draft.md`](plans/96-phase-3-authoritative-networking/client-event-feed-plan-draft.md).
 
 *Ships as a Major release (wire protocol replaced; coordinate with the client project and WebTools).*
 

@@ -1,6 +1,6 @@
 // The root project holds no source. It exists to aggregate the modules' API documentation
 // into one Dokka publication - every other concern lives in a module build file or in a
-// `build-logic` convention plugin. See docs/module-split-plan.md.
+// `build-logic` convention plugin. See docs/plans/32-module-split/plan.md.
 
 plugins {
     // issue #40 (javadoc half): hoist KGP + the Kotlin serialization plugin onto the root's

@@ -25,7 +25,7 @@ whole, `installSystem`/`uninstallSystem` cost, `World.tick()` throughput, and sp
 operations.
 
 **Prompted by:** the #76 QA pass found that the installed-systems registry's install/uninstall
-cost (documented as O(n) in `docs/world-system-core-plan.md` §7) is never timed.
+cost (documented as O(n) in `docs/plans/87-world-systems/76-world-system-core/plan.md` §7) is never timed.
 `WorldSystemRegistryRobustnessTest` does its 1,000 installs in untimed setup. That gap is one area
 the profiler would cover, not its whole purpose.
 
