@@ -51,8 +51,8 @@ class ZoneDrivenSimulationE2ETest {
         val index = ZoneIndex(grid).also(world::installSystem)
         val events = recorder(world)
 
-        val redSpawn = checkNotNull(map.spawnPoint("red-spawn"))
-        val blueSpawn = checkNotNull(map.spawnPoint("blue-spawn"))
+        val redSpawn = checkNotNull(map.spawnPoint("red-spawn").getOrNull())
+        val blueSpawn = checkNotNull(map.spawnPoint("blue-spawn").getOrNull())
 
         // Hero travels +x, 10 units/tick, crossing three zones; ally holds its spawn position.
         val hero = Actor(location = Point(redSpawn.position)).apply { movement = Movement.Directional; angle = 0 }

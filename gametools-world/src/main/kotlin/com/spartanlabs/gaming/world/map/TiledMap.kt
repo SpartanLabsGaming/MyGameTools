@@ -96,11 +96,16 @@ class TiledMap(
     private val spawnPointsByName: MutableMap<String, SpawnPoint> = spawnPoints.associateByTo(LinkedHashMap()) { it.name }
 
     /**
-     * The named spawn point, or `null` if no spawn point of that name exists.
+     * The spawn point named [name], as a [Result]: [Result.success] with it if this map was built with
+     * it or it was added with [addSpawnPoint], otherwise [Result.failure] carrying a
+     * [MissingSpawnPointException] for [name]. Never throws and never returns `null`.
      *
      * @param name the spawn point's [SpawnPoint.name]
+     * @return the spawn point, or a failure carrying a [MissingSpawnPointException] if none is named
+     *   [name]
      */
-    fun spawnPoint(name: String): SpawnPoint? = spawnPointsByName[name]
+    fun spawnPoint(name: String): Result<SpawnPoint> =
+        spawnPointsByName[name]?.let { Result.success(it) } ?: Result.failure(MissingSpawnPointException(name))
 
     /**
      * Registers an additional spawn point at runtime - the map owns the ones it was built with;
