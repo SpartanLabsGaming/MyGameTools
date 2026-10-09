@@ -3,10 +3,10 @@ package com.spartanlabs.gaming.testing.e2e.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
-import com.spartanlabs.gaming.gameobjects.WorldSystem
 import com.spartanlabs.gaming.simulation.SimulationLoop
 //endregion
 
@@ -14,6 +14,7 @@ import com.spartanlabs.gaming.simulation.SimulationLoop
 // 4.3 Testing
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
 //endregion
 
 /**
@@ -29,9 +30,8 @@ class WorldSystemSimulationLoopE2ETest {
         val name: String,
         override val coreSlot: CoreSystemSlot? = null,
         private val onStep: (World) -> Unit,
-    ) : WorldSystem {
-        override fun installOn(world: World) {}
-        override fun step(world: World) = onStep(world)
+    ) : AbstractWorldSystem() {
+        override fun step() = onStep(world)
     }
 
     @Test
@@ -74,5 +74,29 @@ class WorldSystemSimulationLoopE2ETest {
         loop.advance(nanosPerTick)
 
         assertEquals(listOf("system"), order) // no further step recorded
+    }
+
+    @Test
+    fun `a system built with no World is bound by installSystem, stepped by a SimulationLoop, survives uninstall and re-install on the same World`() {
+        val worldsSeen = mutableListOf<World>()
+        val tickCountsSeen = mutableListOf<Long>()
+        val system = RecordingSystem("system") { w ->
+            worldsSeen += w
+            tickCountsSeen += w.tickCount
+        } // constructed before any World exists
+        val world = World()
+        world.installSystem(system)
+        val loop = SimulationLoop(world, onTick = { world.stepSystems() })
+        val nanosPerTick = (1_000_000_000.0 / loop.settings.tickRateHz).toLong()
+
+        repeat(2) { loop.advance(nanosPerTick) }
+        world.uninstallSystem(system)
+        repeat(2) { loop.advance(nanosPerTick) } // ticks 3 and 4: not installed, never stepped
+        world.installSystem(system)
+        repeat(2) { loop.advance(nanosPerTick) }
+
+        assertSame(world, system.world)
+        assertEquals(List(4) { world }, worldsSeen)
+        assertEquals(listOf(1L, 2L, 5L, 6L), tickCountsSeen)
     }
 }
