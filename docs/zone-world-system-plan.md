@@ -393,6 +393,18 @@ noise at tick rate. There is no failure path of `ZoneIndex`'s own to log (`step(
 in-memory state; the one programmer error is an exception whose message is the diagnostic). Tests
 run under the logback that `gametools.kotlin-library` already supplies.
 
+> **As built (2026-10-08):** changes from the QA pass.
+> - By the user's decision C35 (architecture §1.2), `step()` iterates a snapshot of
+>   `World.gameObjects`, as `World.tick` does. An `EntityChangedZone` listener runs synchronously
+>   inside the loop, so one that added or removed objects used to throw
+>   `ConcurrentModificationException`. Its changes now take effect on the next step.
+> - The class KDoc says `ZoneIndex` is not thread-safe: `zoneOf` and `entitiesIn` belong on the
+>   thread driving the bound `World`.
+> - `step`'s KDoc states the delivery order: owned entities' transitions in `World.gameObjects`
+>   order (including any that left the grid's extent), then the "left the `World`" events in an
+>   unspecified but deterministic order.
+> - `zoneOf`'s KDoc says a miss costs two small allocations, the exception and its `Result` box.
+
 ### 3.2 `src/main/kotlin/com/spartanlabs/gaming/world/zone/EntityChangedZone.kt` — KDoc only
 
 All line numbers are HEAD's. Wording "refresh" → "step"; `[ZoneIndex.refresh]` →
@@ -407,6 +419,9 @@ All line numbers are HEAD's. Wording "refresh" → "step"; `[ZoneIndex.refresh]`
 
 `:7`/imports unchanged (`GameEvent`, `GameObject`, `World` are all used). No code change.
 
+> **As built (2026-10-08):** the KDoc also points to `ZoneIndex.step` for the order in which a
+> step delivers its events.
+
 ### 3.3 `src/main/kotlin/com/spartanlabs/gaming/world/zone/ZoneGrid.kt` — KDoc only (C13)
 
 - `:21-22` — drop the pointer: *"… irregular zones are a later addition behind [zoneAt]'s existing
@@ -418,6 +433,17 @@ All line numbers are HEAD's. Wording "refresh" → "step"; `[ZoneIndex.refresh]`
   the file gains no import for a doc-only reference.)
 - `:70-71` — *"… the contract [ZoneIndex.step] relies on, since silently clamping a departing
   entity to an edge zone would defeat the point of reporting that it left."*
+
+> **As built (2026-10-08):** two #47 code changes from the QA pass ride with this unit.
+> - By the user's decision C36 (architecture §1.2), `ZoneGrid` copies its origin `Point` at
+>   construction. It used to hold a reference to the space's own bounds location, so a later
+>   change to the space's bounds would have moved the grid. The class KDoc now says the grid
+>   copies its origin and cell size, and qualifies the immutability claim: its zones' `bounds` are
+>   shared, mutable GeneralTools geometry that callers must not mutate in place.
+> - By the user's decision C37, `Zone.kt` (not otherwise in this unit) keeps `Zone` a data class
+>   but overrides `equals` and `hashCode` to use only `name`, `column` and `row`, so a zone stays a
+>   stable key for `ZoneIndex` even if its `bounds` are mutated. GeneralTools#8 tracks read-only
+>   geometry views.
 
 ### 3.4 `build.gradle.kts` — commit the existing uncommitted block
 
@@ -446,10 +472,24 @@ is no refresh), so both are renamed with `git mv` (history-following). `ZoneDriv
 keeps its name (it describes the hand-rolled driver, not the method). The four `ZoneWorldSystem*`
 names disappear because the type does.
 
+> **As built (2026-10-05):** both renames were made on disk, not with `git mv`, so nothing was
+> staged. That loses nothing: git stores no renames either way, and detects one at diff time when
+> the old path's deletion and the new path's addition land in the same commit (this unit's commit 3,
+> §8). Measured against `HEAD`, the integration test is about 68% similar to its predecessor, so it
+> will show as a rename. The determinism test is about 38% similar, under git's default 50%
+> threshold, so it will show as a deletion plus an addition, and `git log --follow` will not follow
+> it at the default threshold.
+> - `ZoneRefreshWorldIntegrationTest` → `ZoneIndexWorldIntegrationTest`
+> - `ZoneIndexRefreshDeterminismTest` → `ZoneIndexDeterminismTest`
+
 **Confirming absence.** After unit 1's Step 0, and again before each commit, none of
 `gametools-world/src/main/kotlin/…/zone/ZoneWorldSystem.kt` and
 `…/testing/{component,deterministic,e2e,integration}/world/zone/ZoneWorldSystem*Test.kt` may exist
 (`git status` shows no `??` for them; `grep -r ZoneWorldSystem gametools-world` returns nothing).
+
+> **As built (2026-10-08):** the QA pass added two test files: `component/world/zone/ZoneTest.kt`
+> (C37's equality, four tests) and `nonfunctional/world/zone/ZoneIndexQueryThroughputTest.kt`
+> (§6.7). It also added cases to `ZoneIndexTest` and `ZoneGridTest` (§6.2).
 
 ### 3.6 Documentation files — see §5.
 
@@ -500,6 +540,9 @@ class UnzonedEntityException(val entityId: EntityId) :
   costs one allocation; diagnose from the message and [entityId]. The Experimental paragraph in house
   wording ("may change incompatibly in a Feature release until it graduates; see
   [ExperimentalGameToolsApi]"). `@property entityId` — the id that was looked up. `@see ZoneIndex.zoneOf`.
+
+> **As built (2026-10-08):** the KDoc says a miss costs two small allocations, the exception and
+> the `Result` failure box that carries it, rather than one.
 
 ---
 
@@ -623,6 +666,10 @@ owns two:
 
    No `### Deprecated`/`### Removed` entry: `ZoneIndex`'s former `refresh` never shipped.
 
+   > **As built (2026-10-08):** the QA pass softened "a `ZoneGrid` is immutable" in this bullet to
+   > "a `ZoneGrid` copies its geometry at construction", because its zones' `bounds` stay mutable
+   > (C36, C37).
+
 **`docs/issue-49-physics-architecture.md` — correction (the caller's explicit requirement).** Its
 `:618` row claims *"`ZoneIndex.refresh` remains directly callable exactly as before"* — false: there
 is no `refresh`. The body stays as historical record (C13); the fix is a dated callout item plus two
@@ -658,6 +705,12 @@ edits **bottom-up** (`:618`, `:606`, then the header) so the numbers do not shif
    >    `docs/physics-core-seams-plan.md`, `docs/physics-resolution-plan.md` and
    >    `docs/physics-world-system-plan.md` (the last wholly superseded).
    ```
+
+   > **As built (2026-10-05):** the inserted item 4 cites sections, not line numbers. Inserting it
+   > shifts every later line of `docs/issue-49-physics-architecture.md`, so the line numbers it
+   > first cited were wrong as soon as it landed. The main session corrected the applied text, and
+   > the copy above was updated to match on 2026-10-04. The paragraph below keeps its line numbers,
+   > the file's before the insertion, as the record of how the list was found.
 
    The enumerated list is a superset of the architecture's (§11.1 named `:193`, `:494`,
    `:515-519`, `:596`, `:606`, `:618`, `:785-788`); the additional `:224`, `:450`, `:455`, `:524`,
@@ -857,6 +910,34 @@ logic, through the real registry. Helper pattern for each test:
     { it.name.startsWith("refresh") })` (Java reflection; `kotlin-reflect` is not on the classpath).
     The one automated guard that the design has a single entry point.
 
+> **As built (2026-10-05):** two names differ from the list, because the Kotlin/JVM compiler
+> rejects `;` and `:` in function names ("name contains illegal characters", checked on Kotlin
+> 2.2.0):
+> - test 8 replaces `;` with ` -`:
+>   `the binding is for life - rejected by another World even after uninstall - the bound World accepts it again`;
+> - test 12 replaces `ZoneIndex::class` with "ZoneIndex's class":
+>   `a substitute ZONE-slot system is not found under ZoneIndex's class, and blocks installing a ZoneIndex`.
+
+> **As built (2026-10-08):** test changes from the QA pass, for the user's decisions C35–C37
+> (architecture §1.2).
+> - `ZoneIndexTest` gained two cases. For C35:
+>   `a listener that spawns one object and removes another during a step does not disturb it, and the spawned object is placed on the next step`.
+>   For C37:
+>   `a ZoneIndex still answers entitiesIn and zoneOf correctly after a zone's bounds are mutated in place`.
+> - The new `ZoneTest` covers C37 in four tests: `equality and hashCode ignore bounds`,
+>   `mutating a zone's bounds in place changes neither its equality nor its hashCode`,
+>   `zones differing in name, column or row are not equal`, and
+>   `it stays a data class - copy and componentN still work`.
+> - `ZoneGridTest` gained a C36 case:
+>   `mutating the space's bounds location after construction does not change zoneAt answers`.
+> - `ZoneIndexWorldSystemTest`'s test 4 is now
+>   `stepping an index that was never installed fails with IllegalStateException`, without
+>   "publishes nothing".
+> - `ZoneFixtures` gained `@param` and `@return` KDoc.
+> - Regression proof: with C35–C37 reverted, the new C35, C36 and C37 tests failed, the C35 one
+>   with a real `ConcurrentModificationException`. Two of the `ZoneTest` cases also pass on the old
+>   equality: they check behaviour the old equality already had.
+
 *Dropped as moot (and why):* `each instance builds its own ZoneIndex, so two systems over the same
 grid never share one` (the system no longer builds an index; replaced by 11) and `step matches
 refreshing a ZoneIndex over the same grid directly` (there is now one code path; its script lives on
@@ -982,6 +1063,9 @@ second projection (C22): the final `zoneOf` answer per actor index — the zone'
    on a failure, equal `UnzonedEntityException.entityId`, which is the queried id), and the calls
    publish nothing and leave every `entitiesIn` unchanged. (Two failures are compared by their
    `entityId`, never with `==`: each miss builds a new exception.)
+
+> **As built (2026-10-08):** `runScenario`'s KDoc was corrected. Its moves set absolute positions
+> in −10..90, overshooting the 80×80 space on purpose so actors also leave and re-enter the grid.
 
 ### 6.6 Level 4b — end-to-end (`testing.e2e.world.zone`)
 
@@ -1131,6 +1215,35 @@ After three ticks both assert: `index.zoneOf(hero.entityId).getOrNull() == heroZ
   C22: `zoneOf` returns `Result<Zone>`), the two new exception types, the Level-1 results, and
   the release-order precondition. Update with rebase, never a merge from `master`; lands as a merge
   commit. Publishing to Maven Central is the user's manual step.
+
+> **As built (2026-10-05):** all three units were implemented in one working tree before any commit,
+> so the precondition check before commit 1 does not hold as written. The commits above are cut from
+> that tree by path and, where a file is shared, by hunk:
+> - `ZoneGrid.kt` carries hunks for this unit's commit 3 (the `@param clamped` wording) and commit 4
+>   (the class KDoc's pointers and immutability sentence), and for unit 3's commit 3 (`zoneAt`'s
+>   failure and its `@return`).
+> - `ZoneDrivenSimulationE2ETest` (reworked here) and `ZoneIndexSimulationLoopE2ETest` (new here)
+>   each carry unit 3's commit-1 edit, a `.getOrNull()` on every `spawnPoint` call; this unit's
+>   commit 3 stages them without it.
+> - Four single lines are changed by two units, and the manager hand-splits each: README's Features
+>   installed-systems bullet (unit 1's commit 3 and this unit's commit 5), and README's Modules
+>   world row, README's Map & Space zone bullet and CONTRIBUTING's `gametools-world` row (this
+>   unit's commit 5 and unit 3's commit 4).
+> - In the CHANGELOG, this unit's #47 and #77 bullets (commit 6) and unit 3's #77 bullet (unit 3's
+>   commit 4) form one unbroken run of changed lines, so commit 6 is staged without unit 3's bullet
+>   by editing the hunk.
+> - The two renames are recorded under §3.5.
+
+> **As built (2026-10-08):** the QA pass adds to what each commit carries.
+> - `ZoneGrid.kt` now also carries C36's origin copy and C37's KDoc wording, besides the hunks for
+>   this unit's commits 3 and 4 and unit 3's commit 3.
+> - `ZoneIndexTest.kt` carries this unit's commit-3 rework plus the new C35 and C37 cases.
+> - `ZoneIndex.kt` carries C35's snapshot loop and the new KDoc (§3.1); `Zone.kt` (C37),
+>   `ZoneTest.kt` and `ZoneIndexQueryThroughputTest.kt` are new to this unit.
+> - The CHANGELOG carries the softened `ZoneGrid` wording in this unit's #77 bullet (§5), in the
+>   same run of lines as before.
+> - C36 and C37 are #47 code that rides with this unit. Whether they get `fix` commits of their own
+>   is the manager's call.
 
 ---
 

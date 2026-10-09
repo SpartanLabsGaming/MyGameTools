@@ -341,6 +341,11 @@ and moot while unreleased.
   slot-claiming system the slot check runs first and guards the same thing (overlap accepted). It is
   also the key of `World.systemOf` *(sentence added in Stage 2)*. Experimental like `coreSlot`.
 
+> **As built (2026-10-08):** the QA pass corrected the binding wording in the KDoc of `WorldSystem`
+> and `WorldSystem.world`. A system is bound by the first `World.installSystem` call whose checks
+> pass, before `onInstalled()` runs, and keeps that binding even if the install is rolled back; the
+> KDoc had said "first successful install".
+
 ### 4.2 New: `MAIN/AbstractWorldSystem.kt`
 
 ```kotlin
@@ -385,6 +390,12 @@ abstract class AbstractWorldSystem : WorldSystem {
   with the `@OptIn` a consumer needs), the statement that it is a helper not a seam (`WorldSystem` is the
   substitution point), bind-for-life, "constructible before it has a `World`", and the
   read-before-install failure. `world` KDoc: `@throws IllegalStateException`.
+
+> **As built (2026-10-08):** the same binding-wording correction landed in the KDoc of
+> `AbstractWorldSystem`, `AbstractWorldSystem.world` and `boundWorldOrNull`. And by the user's
+> decision C39 (architecture §1.2), `world`'s runtime message now matches it:
+> `"<class>.world was read before any World.installSystem call for this system passed its checks"`,
+> where `<class>` is the simple name, or the Java name for an anonymous class, as above.
 
 ### 4.3 Changed: `MAIN/World.kt` (registry region `:295-482`, plus the class KDoc `:46-51` and the imports)
 
@@ -570,6 +581,17 @@ with the installed system that declared exactly [role], or [Result.failure] carr
 [MissingWorldSystemException] whose [MissingWorldSystemException.role] is [role] if none did". No `@throws`:
 `systemOf` throws nothing of its own.
 
+> **As built (2026-10-08):** KDoc changes from the QA pass in `World`:
+> - `installSystem` documents `@throws MissingWorldSystemException` (the required-peer pattern's
+>   failure) and states that an exception from `onInstalled()` is rethrown unchanged after the
+>   roll-back. `uninstallSystem` and `stepSystems` state the same for their hooks in a sentence,
+>   because a KDoc `@throws` needs a concrete type.
+> - The Roll-back paragraph documents the single `WARN` line the roll-back logs.
+> - The reified `systemOf` gained `@param T`, and both forms say a miss costs two small allocations
+>   (the exception and its `Result` box).
+> - The KDoc of the private helpers `requireBindableHere` and `rollBack` cites code by name.
+> - The constructor's `@param seed` links `[rng]`.
+
 ### 4.4 Changed: `MAIN/CoreSystemSlot.kt` (KDoc only; base = `HEAD` text after Step 0)
 
 - `:14-16` (class KDoc) — replace "(a deliberate replacement of a shipped adapter)" with: a consumer's
@@ -615,6 +637,10 @@ ends `(#76)` (`HEAD` `:83-91`; locate it by content). Replacement text (names th
 The #47 and #77 bullets belong to unit 2. `CONTRIBUTING.md`: no edit (its core row is a package glob,
 which covers `MissingWorldSystemException`). The README core row (`:159`) is a curated list and does
 not name the exception type — the #76 precedent documents such types in KDoc, not in the module table.
+
+> **As built (2026-10-08):** the QA pass changed two README texts. The installed-systems bullet
+> now also states the binding check, and the core row lists `MissingWorldSystemException`
+> (Experimental) after all.
 
 ### 4.7 Unchanged, asserted
 
@@ -671,6 +697,9 @@ class MissingWorldSystemException(val role: KClass<out WorldSystem>) :
   Experimental paragraph in house wording ("may change incompatibly in a Feature release until it
   graduates; see [ExperimentalGameToolsApi]"). `@property role` — the role that was looked up; compare it
   with `==` and print it with `role.java.name`, never the `KClass` itself. `@see World.systemOf`.
+
+> **As built (2026-10-08):** the KDoc says a miss costs two small allocations, the exception and
+> the `Result` failure box that carries it, rather than one.
 
 ---
 
@@ -737,6 +766,15 @@ every commit (CONTRIBUTING: "run before every push"), plus these owed checks, no
 | `WorldSystemDefaultsTest.kt` | `MinimalSystem` | → `AbstractWorldSystem` (drop the `installed` flag; assert `system.world === world` instead). Tests: `onUninstalled does nothing by default` (was `uninstallFrom`), `step does nothing by default`, `coreSlot is null by default`; **new** `onInstalled does nothing by default` (call it again directly: `World` state and binding unchanged), `uniqueRole is null by default`; **new** `a direct implementor inherits the no-op hooks and null coreSlot and uniqueRole` |
 | `WorldUninstallSystemTest.kt` | `RecordingSystem` | → `AbstractWorldSystem`, `onUninstall: (RecordingSystem) -> Unit`; five of six tests unchanged in intent; `a system can be uninstalled and reinstalled` also asserts `onInstalled` ran twice and `world` is unchanged |
 
+> **As built (2026-10-05):** two test-fake details the table does not spell out, both needed to
+> observe what it asks for. `WorldInstallSystemTest`'s `RecordingSystem` also overrides
+> `onUninstalled` and counts it (`uninstallCount`): the flipped "…genuinely uninstalls" test reads
+> it to show that `onUninstalled` ran before `onInstalled` returned. And each direct implementor in
+> the migrated tests (in `WorldInstallSystemTest` and `WorldSystemDefaultsTest`) captures the
+> installing `World` in a `host` local and returns that from its `world` getter: inside an
+> anonymous `object : WorldSystem`, `get() = world` resolves to the object's own `world` property,
+> so the getter would call itself.
+
 **New files:**
 
 | File | Behaviours locked down |
@@ -749,6 +787,24 @@ every commit (CONTRIBUTING: "run before every push"), plus these owed checks, no
 | `WorldSystemOfTest.kt` (Stage 2) | see §6.2.1 |
 | `WorldSystemOfReifiedTest.kt` (Stage 2; the reified form, C19) | see §6.2.2 |
 | `MissingWorldSystemExceptionTest.kt` (Stage 2; C21) | the same five properties, as five tests, that unit 2's `UnzonedEntityExceptionTest` checks for its type: (1) `role is the role that was looked up` — `MissingWorldSystemException(Probe::class).role == Probe::class` (with `==`); (2) `it is a NoSuchElementException` — `assertIs<NoSuchElementException>(e)`, and a `catch (x: NoSuchElementException)` around `throw e` catches the same instance; (3) `it is stackless` — `e.stackTrace` is empty right after construction, still empty after `throw e` is caught, and `e.fillInStackTrace()` returns `e` itself with the trace still empty; (4) `its message names the role by its Java name` — contains `Probe::class.java.name` and not "Kotlin reflection is not available"; (5) `it has no cause` — `e.cause == null` |
+
+> **As built (2026-10-05):** in `WorldInstallSystemBindingTest`, the step-1 case (§2.2's
+> flowchart) cannot assert "stays unbound": only a system that is already installed, and so
+> already bound, is rejected at step 1 ("already installed"). Its test,
+> `a system rejected as already installed keeps its existing binding unchanged`, asserts that
+> `boundWorldOrNull()` is still the `World` it was installed on. The step-3 and step-4 cases
+> (`a system rejected by the slot check stays unbound`, `a system rejected by the role check stays
+> unbound`) assert unbound, as the row says.
+
+> **As built (2026-10-08):** test changes from the QA pass.
+> - `WorldInstallSystemBindingTest` gained `the identity check runs before the binding check - an
+>   installed direct implementor is rejected as already installed without reading world`.
+> - The `val host = world` aliases carry a comment explaining why they exist, and so do the
+>   assertions that guard against `KClass.toString()`'s fallback text when `kotlin-reflect` is
+>   absent (in `MissingWorldSystemExceptionTest`, `WorldInstallSystemUniquenessTest` and
+>   `WorldSystemOfTest`).
+> - `WorldSystemOfTest`'s `find` helper KDoc names the two tests that assert the failure itself,
+>   instead of citing them by number.
 
 #### 6.2.1 `WorldSystemOfTest` — the `KClass` form, one adapter helper
 
@@ -775,6 +831,13 @@ Tests (names are final as written):
 10. `systemOf uses the role recorded at install, not a re-read` — a `uniqueRole` getter that returns a different class after install (counting reads = 1): still found under the original role, a failure under the new one.
 11. `systemOf has no side effect` — `installedSystems` and every hook counter unchanged across calls, hits and misses alike.
 12. `two Worlds hold independent roles` — same role on two `World`s, each lookup returns its own instance.
+
+> **As built (2026-10-05):** `WorldSystemOfTest` has 14 tests, not 12. Item 7 names three tests,
+> and all three were written (`systemOf no longer finds a system after its install was rolled
+> back`, `systemOf no longer finds a system after it is uninstalled`, `systemOf finds a system again
+> after a re-install`), so items 8–12 are the file's tests 10–14. The required-peer pattern sits
+> inside item 9's test, `systemOf is callable from onInstalled, step and onUninstalled`, as item 9
+> places it.
 
 #### 6.2.2 `WorldSystemOfReifiedTest` — the reified form (C19)
 
@@ -806,6 +869,13 @@ and calling it from inside a system's own `onInstalled()` finds that system.
 ### 6.6 Level 4c — non-functional (`TEST/nonfunctional/gameobjects/`)
 
 `WorldSystemRegistryRobustnessTest.kt`: `NoOpSystem`/`thrower` → `AbstractWorldSystem` (`step() = throw StepFailure()`); existing three tests unchanged in intent (the 10 000-cycle test reuses one instance on one `World` — legal under bind-for-life). **New:** `many throwing installs leave the registry empty and the slot and role free` (10 000 install attempts of a system whose `onInstalled` throws, on one `World`; then a healthy claimant of the same slot and role installs); `systemOf over roughly 1000 installed systems stays within a generous time budget` (1 000 role-less systems plus one role-bearing; 10 000 hits **and** 10 000 misses — each miss allocates one stackless `MissingWorldSystemException` (C21; architecture §12), and the test also asserts that every miss's exception has an empty `stackTrace` — same `< 10 s` framing as the existing step-throughput test; not a hard SLA).
+
+> **As built (2026-10-05):** the throwing-install loop throws the test's own private
+> `InstallFailure`, not `StepFailure`, whose KDoc describes a failing `step()`.
+
+> **As built (2026-10-08):** that loop raises the `com.spartanlabs.gaming.gameobjects` logger to
+> `ERROR` while it runs, and restores the previous level afterwards, so 10 000 roll-back `WARN`
+> lines do not flood the test output.
 
 ### 6.7 Level 5 — UAT
 
@@ -896,6 +966,19 @@ separate, later plan. Related issue: #133, which defines a selective Level-5 `te
 | 1 | `feat(gameobjects): bind a WorldSystem to its World` | `MAIN/WorldSystem.kt`, `MAIN/AbstractWorldSystem.kt` (new), `MAIN/World.kt` (no `systemOf`), `MAIN/CoreSystemSlot.kt`; the nine migrated tests (including the robustness file, plus its new "many throwing installs" test); new `AbstractWorldSystemTest`, `WorldInstallSystemBindingTest`, `WorldInstallSystemUniquenessTest`, `WorldInstallSystemRollbackTest`, `WorldInstallSystemReentrancyTest`; **`docs/world-system-binding-plan.md` and `docs/world-system-binding-architecture.md`** |
 | 2 | `feat(gameobjects): add World.systemOf, a role-keyed lookup of installed systems` | `MAIN/World.kt` (`systemOf` in both forms, returning `Result<T>`), **`MAIN/MissingWorldSystemException.kt` (new, C21)**, the deferred `systemOf` KDoc sentences in `MAIN/WorldSystem.kt` and `MAIN/World.kt`; `WorldSystemOfTest`, `WorldSystemOfReifiedTest`, `WorldSystemOfDeterminismTest`, **`MissingWorldSystemExceptionTest`**; the `systemOf` lookup-budget test added to `WorldSystemRegistryRobustnessTest`. Needs only commit 1 (OD5 resolved 2026-10-02). |
 | 3 | `docs(gameobjects): document the bound WorldSystem contract in README and CHANGELOG` | `README.md`, `CHANGELOG.md` |
+
+> **As built (2026-10-05):** Step 0 ran as planned, but all three units were then implemented in
+> one working tree before any commit, so commits 1–3 above are cut from that tree by path and, where
+> a file is shared, by hunk. One line is shared with unit 2: README's Features installed-systems
+> bullet carries this unit's rewrite (commit 3) and unit 2's `ZoneIndex` clause (unit 2's commit 5)
+> on a single line, so the manager hand-splits it and stages the bullet without the clause for
+> commit 3. This unit's CHANGELOG change, the #76 bullet, is a hunk of its own.
+
+> **As built (2026-10-08):** the QA pass adds to what each commit carries. `World.kt` spans commits
+> 1 and 2, as planned (`systemOf` arrives in commit 2), and now also holds the QA pass's KDoc fixes
+> (§4.3). The README carries this unit's new fixes (§4.6): its core row, and the installed-systems
+> bullet already shared with unit 2. C39's message reword in `AbstractWorldSystem` rides with this
+> unit.
 
 - Message bodies: what & why (binding, `uniqueRole`, roll-back; "reworks #76's unreleased core";
   commit 2 also names the new `MissingWorldSystemException`, the repo's first custom exception type),

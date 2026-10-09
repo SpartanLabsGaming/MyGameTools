@@ -382,6 +382,9 @@ added, so the same PR updates `README.md`, `CONTRIBUTING.md` and `CHANGELOG.md` 
 - `tileAt`'s KDoc ("use [terrainAt] / [contains] to test that") stays true and is unchanged. There is
   no import change. Mutability, concurrency and logging are unchanged.
 
+> **As built (2026-10-08):** `terrainAt`'s KDoc says a miss costs two small objects, the `Result`
+> failure wrapper and the exception, and no stack walk, rather than "one small allocation".
+
 ### 4.2 Changed: `MAP/TerrainLayer.kt`
 
 - `terrainAt`: the failure becomes `Result.failure(OutOfGridException(tile))`; the success branch is
@@ -455,6 +458,10 @@ class OutOfGridException(val tile: TileIndex) :
 
 Immutable (`TileIndex` is an immutable data class). Untagged.
 
+> **As built (2026-10-08):** in both new types' KDoc (§4.3 and this section), "Stackless by design"
+> says a miss costs two small objects, the `Result` failure wrapper and the exception, and no stack
+> walk, rather than "one allocation".
+
 ### 4.5 Changed: `ZONE/ZoneGrid.kt` (C30)
 
 - `zoneAt`: the `!inBounds && !clamped` branch returns `Result.failure(UnzonedPointException(point))`
@@ -472,6 +479,11 @@ Immutable (`TileIndex` is an immutable data class). Untagged.
 
 - No import change (`UnzonedPointException` is in this package). The class is not tagged. Mutability
   and concurrency are unchanged: `ZoneGrid` is all-`val`.
+
+> **As built (2026-10-08):** the `@return` states the stackless rationale generically, "so a caller
+> that meets misses in bulk pays no stack walk for any of them", rather than naming
+> `ZoneIndex.step`. `ZoneGrid.kt` also carries unit 2's C36 and C37 changes (unit 2 §3.3); §8
+> lists how its hunks split.
 
 ### 4.6 New: `ZONE/UnzonedPointException.kt` (C30)
 
@@ -515,6 +527,11 @@ class UnzonedPointException(point: Point) :
 The property is written for OD11 (a). Under (b) it would become a private stored copy behind a
 getter that returns `Point(stored)`, and its KDoc would say "a fresh copy on every read" (§9). It is
 untagged and has no concurrency concerns: each miss builds its own instance.
+
+> **As built (2026-10-08):** the class KDoc's "Stackless by design" paragraph says a miss costs a
+> few small objects (the `Result` failure wrapper, the exception and its copy of the point) and no
+> stack walk, "which matters because a caller may meet misses in bulk". It no longer names
+> `ZoneIndex.step`.
 
 ### 4.7 KDoc: Dokka checks
 
@@ -670,6 +687,10 @@ nothing else uses it; the imports of `MissingSpawnPointException`, `OutOfGridExc
     the grid`: `assertTrue(map.contains(Point(20.0, 5.0)))` and
     `assertFalse(map.isWalkable(Point(20.0, 5.0)))`.
 
+> **As built (2026-10-05):** the `assertNull` import was removed in commit 2, not commit 1. Until
+> commit 2 rewrites the `terrainAt` test, its `assertNull` calls still need the import, so removing
+> it in commit 1 would not compile.
+
 **`ZoneGridTest`** (`TEST/component/world/zone/ZoneGridTest.kt`, commit 3):
 - `zoneAt with clamped = false fails on the far edge and on a negative out-of-bounds point` → rename
   to `zoneAt with clamped = false fails with an UnzonedPointException on the far edge and on a negative
@@ -794,6 +815,14 @@ separate, later plan. Related issue: #133, which defines a selective Level-5 `te
   beyond what `tileAt` already makes. It is verified by review (as built, 2026-10-08, below). Its
   "same answers" half stays automated by the level-4a oracle law (§6.4).
 
+> **As built (2026-10-08):** an automated check for criterion 6 was attempted and dropped. The QA
+> pass's test T6 compared bytes allocated per call by `isWalkable` and by `tileAt`. Run alone it
+> passed, 0 against 0 bytes per call, because escape analysis removed the allocations; in the full
+> test JVM it failed, 48 against 0. Its result depends on JIT state, so it cannot be made reliable.
+> Review confirms that #77 adds no allocation on the in-grid path. The 32-byte iterator T6 exposed
+> was pre-existing, in `StaticGeometry.blocksPoint`, and the user's decision C38 (architecture
+> §1.2) removes it in this PR's own `perf(world)` commit.
+
 ---
 
 ## 7. Risks & edge cases
@@ -853,6 +882,30 @@ separate, later plan. Related issue: #133, which defines a selective Level-5 `te
   history, which is mixed.
 - **PR body** (shared): add this unit's scope — Result lookups for `TiledMap` and `ZoneGrid.zoneAt`
   (C23–C32, C34), with three new untagged exception types.
+
+> **As built (2026-10-05):** commits 3 and 4 needed no deviations, and commits 1 and 2 only the
+> `assertNull` import's move to commit 2 (§6.2). All three units were implemented in one working
+> tree before any commit, so the precondition above does not hold as written. The commits are cut
+> from that tree by path and, where a file is shared, by hunk:
+> - Within this unit, `TiledMap.kt`, `TiledMapTest` and `MapLoaderIntegrationTest` each span
+>   commits 1 and 2: their `spawnPoint` hunks are commit 1's, their `terrainAt` hunks commit 2's.
+> - `ZoneGrid.kt` carries hunks for unit 2's commits 3 and 4 and for this unit's commit 3.
+> - Unit 2's `ZoneDrivenSimulationE2ETest` and `ZoneIndexSimulationLoopE2ETest` carry this unit's
+>   commit-1 edit, a `.getOrNull()` on every `spawnPoint` call.
+> - README's Modules world row and Map & Space zone bullet, and CONTRIBUTING's `gametools-world`
+>   row, are single lines changed by unit 2's commit 5 and this unit's commit 4; the manager
+>   hand-splits them.
+> - In the CHANGELOG, this unit's bullet directly follows unit 2's commit-6 bullets in one unbroken
+>   run of changed lines, so it is separated by editing the hunk.
+
+> **As built (2026-10-08):** the QA pass changed what commits 2 and 3 carry and added one commit.
+> - Commits 2 and 3 carry the reworded KDoc of §4.1 and §4.4–§4.6: two small objects per miss (a
+>   few for `UnzonedPointException`), and a generic stackless rationale that no longer names
+>   `ZoneIndex.step`.
+> - `ZoneGrid.kt` now also carries unit 2's C36 origin copy and C37 KDoc wording, besides the hunks
+>   above.
+> - By the user's decision C38, `StaticGeometry.blocksPoint` becomes an indexed loop with no
+>   iterator allocation, in its own `perf(world)` commit in this PR (§6.8).
 
 ---
 
