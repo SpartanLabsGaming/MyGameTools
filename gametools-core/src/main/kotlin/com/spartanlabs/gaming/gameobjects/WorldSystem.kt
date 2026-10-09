@@ -126,7 +126,8 @@ interface WorldSystem {
      * The granularity is the author's choice: the exact class
      * (`override val uniqueRole get() = Me::class`) or a base type or interface shared by a
      * family of systems. For a system that also claims a [coreSlot], the slot check runs first
-     * and guards the same thing; that overlap is accepted.
+     * and guards the same thing; that overlap is accepted. It is also the key of
+     * [World.systemOf], which finds an installed system by the exact role it declared here.
      *
      * Experimental - may change incompatibly in a Feature release until it graduates; see
      * [ExperimentalGameToolsApi].

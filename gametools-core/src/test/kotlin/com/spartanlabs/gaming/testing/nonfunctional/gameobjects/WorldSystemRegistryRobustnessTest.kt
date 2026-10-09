@@ -6,6 +6,7 @@ import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
 import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
+import com.spartanlabs.gaming.gameobjects.MissingWorldSystemException
 import com.spartanlabs.gaming.gameobjects.World
 import com.spartanlabs.gaming.gameobjects.WorldSystem
 //endregion
@@ -26,6 +27,8 @@ import org.slf4j.LoggerFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 //endregion
 
@@ -52,6 +55,14 @@ class WorldSystemRegistryRobustnessTest {
     }
 
     private class HealthyPhysicsLike : PhysicsLike()
+
+    /** The one role-bearing system among many role-less ones in the lookup-budget test. */
+    private class Findable : AbstractWorldSystem() {
+        override val uniqueRole: KClass<out WorldSystem> get() = Findable::class
+    }
+
+    /** A role nothing declares, so every lookup of it is a miss. */
+    private class Absent : AbstractWorldSystem()
 
     /**
      * Thrown by a failing [WorldSystem.step]. Deliberately not an [IllegalStateException], which is
@@ -127,5 +138,27 @@ class WorldSystemRegistryRobustnessTest {
         val healthy = HealthyPhysicsLike()
         world.installSystem(healthy) // same slot, same role - must not throw
         assertEquals(listOf<WorldSystem>(healthy), world.installedSystems)
+    }
+
+    @Test
+    fun `systemOf over roughly 1000 installed systems stays within a generous time budget`() {
+        val world = World()
+        repeat(1_000) { world.installSystem(NoOpSystem()) }
+        val findable = Findable()
+        world.installSystem(findable) // last, so every hit scans the whole list
+        var misses = 0
+
+        val elapsedMillis = measureNanoTime {
+            repeat(10_000) { assertSame(findable, world.systemOf(Findable::class).getOrNull()) }
+            repeat(10_000) {
+                // Each miss allocates one stackless MissingWorldSystemException.
+                val e = assertIs<MissingWorldSystemException>(world.systemOf(Absent::class).exceptionOrNull())
+                assertTrue(e.stackTrace.isEmpty())
+                misses++
+            }
+        } / 1_000_000
+
+        assertEquals(10_000, misses)
+        assertTrue(elapsedMillis < 10_000, "10000 hits and 10000 misses over 1001 systems took ${elapsedMillis}ms")
     }
 }

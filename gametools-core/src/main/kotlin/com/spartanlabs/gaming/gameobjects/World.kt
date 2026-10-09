@@ -46,8 +46,9 @@ import kotlin.reflect.KClass
  *
  * ### Installed systems
  * A [World] can also host opt-in [WorldSystem]s ([installSystem], [uninstallSystem],
- * [installedSystems]), each bound to exactly one [World] for life. [tick] never steps them: a
- * driver calls [stepSystems] once per frame after [tick], e.g.
+ * [installedSystems]), each bound to exactly one [World] for life, and looked up by role with
+ * [systemOf], a miss being a [Result.failure] carrying a [MissingWorldSystemException]. [tick]
+ * never steps them: a driver calls [stepSystems] once per frame after [tick], e.g.
  * `SimulationLoop(world, onTick = { world.stepSystems() })`. Systems that claim a
  * [CoreSystemSlot] step first, in slot order; the rest follow in install order. A [World] with
  * nothing installed pays nothing for this. Experimental - see [ExperimentalGameToolsApi].
@@ -322,7 +323,7 @@ class World(val seed: Long = Random.nextLong()) {
      * Every installed system's [InstalledSystemRecord], kept in step order at insert time: tier 1
      * ([InstalledSystemRecord.slot] non-null) by [CoreSystemSlot.order], then tier 2 (`slot ==
      * null`) in install order. The only backing structure for [installedSystems], slot occupancy,
-     * role uniqueness, and [stepSystems]'s own order - never a hash- or tree-keyed
+     * role uniqueness, [systemOf], and [stepSystems]'s own order - never a hash- or tree-keyed
      * collection, so iteration order never depends on a [CoreWorldSystemSlot] constant's or a
      * [KClass]'s (identity-based, per-run) hash code.
      */
@@ -373,7 +374,8 @@ class World(val seed: Long = Random.nextLong()) {
      * A roll-back logs one `WARN` line naming [system]'s class, its slot and role, and the cause's
      * type and message; the throwable itself is not attached, because the caller receives it.
      *
-     * [installedSystems] contains [system] while its [WorldSystem.onInstalled] runs. Legal but
+     * [installedSystems] contains [system] while its [WorldSystem.onInstalled] runs, and
+     * [systemOf] finds it under its [WorldSystem.uniqueRole]. Legal but
      * discouraged from inside that hook: [stepSystems] (when no step pass is already running)
      * steps [system] before the hook returns, and [uninstallSystem] with [system] genuinely
      * uninstalls it before the hook returns.
@@ -396,6 +398,8 @@ class World(val seed: Long = Random.nextLong()) {
      *   [World]; if its [WorldSystem.coreSlot] is already claimed (checked before the role); or if
      *   its [WorldSystem.uniqueRole] is not a supertype of [system] or is already held by another
      *   installed system
+     * @throws MissingWorldSystemException if [WorldSystem.onInstalled] unwraps a missing peer's
+     *   [systemOf] lookup with `getOrThrow()` - rethrown unchanged, after the roll-back
      */
     @ExperimentalGameToolsApi
     fun installSystem(system: WorldSystem) {
@@ -521,6 +525,77 @@ class World(val seed: Long = Random.nextLong()) {
     @ExperimentalGameToolsApi
     val installedSystems: List<WorldSystem>
         get() = installedRecords.map { it.system }
+
+    /**
+     * The installed system that declared exactly [role] as its [WorldSystem.uniqueRole], as a
+     * [Result].
+     *
+     * **Exact key.** The lookup compares [role] with the role each system declared at install
+     * (`==`); it is not an `is` check. Given `open class Base : AbstractWorldSystem()` and
+     * `class Derived : Base()`:
+     * - a system that declared no role is never found, under any type;
+     * - a `Derived` that declared `Base::class` is found by `systemOf(Base::class)`, **not** by
+     *   `systemOf(Derived::class)`;
+     * - a substitute that declared a different role is not found under this one, even if it is an
+     *   instance of [role].
+     *
+     * At most one system can match, because [installSystem] rejects a second holder of a role.
+     * A pure read: no hook runs, nothing is logged, and the registry is unchanged.
+     *
+     * It reads the live registry, never a step pass's snapshot: it finds a system from inside its
+     * own [WorldSystem.onInstalled]; it does not find one whose install was rolled back or which
+     * was uninstalled; during a [stepSystems] pass, a system uninstalled earlier in the pass is not
+     * found, and one installed mid-pass is found although it steps only from the next pass.
+     *
+     * Using it:
+     * - Look a peer up when you use it, or be ready for it to disappear: a reference cached in
+     *   [WorldSystem.onInstalled] goes stale if the peer is uninstalled later, and nothing
+     *   notifies the holder.
+     * - A system that requires a peer unwraps the lookup in [WorldSystem.onInstalled] with
+     *   `getOrThrow()`: if the peer is absent, the [MissingWorldSystemException] naming the
+     *   missing role is thrown, the roll-back undoes the install, and nothing stays recorded. The
+     *   exception carries no stack trace, so its message - and the roll-back's log line - is the
+     *   diagnostic. The peer must already be installed when the lookup runs - the lookup neither
+     *   waits for nor orders installs.
+     * - A system that can live without a peer unwraps it with `getOrNull()`, `onSuccess { ... }`
+     *   or `fold(...)`. A miss is cheap but not free: it allocates two small objects - the
+     *   [Result] failure wrapper and a stackless [MissingWorldSystemException] - with no stack
+     *   walk, so polling for an absent optional peer on every [WorldSystem.step] costs those two
+     *   allocations each frame.
+     *
+     * Single-threaded, like every other [World] member; callable from every hook and from
+     * [WorldSystem.step]. Experimental - may change incompatibly in a Feature release until it
+     * graduates; see [ExperimentalGameToolsApi].
+     *
+     * @param role the exact role a system declared as its [WorldSystem.uniqueRole]
+     * @return [Result.success] with the installed system that declared exactly [role], or
+     *   [Result.failure] carrying a [MissingWorldSystemException] whose
+     *   [MissingWorldSystemException.role] is [role] if none did
+     */
+    @ExperimentalGameToolsApi
+    fun <T : WorldSystem> systemOf(role: KClass<T>): Result<T> =
+        installedRecords.firstOrNull { it.role == role } // exact key on the RECORDED role
+            ?.let { Result.success(role.java.cast(it.system)) } // sound: install checked role.isInstance(system)
+            ?: Result.failure(MissingWorldSystemException(role)) // stackless; its message names role.java.name
+
+    /**
+     * The installed system that declared exactly [T] as its [WorldSystem.uniqueRole], as a
+     * [Result] - the same lookup as `systemOf(T::class)`. It reads like `filterIsInstance<T>()`,
+     * but it is the same exact-key lookup: it finds only a system that *declared* [T], never one
+     * that merely is a [T].
+     *
+     * Experimental - may change incompatibly in a Feature release until it graduates; see
+     * [ExperimentalGameToolsApi].
+     *
+     * @param T the exact role a system declared as its [WorldSystem.uniqueRole], and also the
+     *   result's type
+     * @return [Result.success] with the installed system that declared exactly [T], or
+     *   [Result.failure] carrying a [MissingWorldSystemException] whose
+     *   [MissingWorldSystemException.role] is `T::class` if none did
+     * @see systemOf
+     */
+    @ExperimentalGameToolsApi
+    inline fun <reified T : WorldSystem> systemOf(): Result<T> = systemOf(T::class)
 
     /**
      * Steps every currently-installed [WorldSystem] once, tier 1 (by [CoreSystemSlot.order]) then
