@@ -8,6 +8,12 @@ import com.spartanlabs.geometry.Square
 /**
  * One cell of a [ZoneGrid]'s static partition: a named, axis-aligned region of the playfield.
  *
+ * A zone's identity is its grid position: [equals] and [hashCode] compare [name], [column] and
+ * [row] only. [bounds] is shared, mutable GeneralTools geometry and is deliberately not part of
+ * equality, so a zone stays a stable map key (as in a [ZoneIndex]) even if its [bounds] were
+ * mutated in place - which callers still should not do, because [ZoneGrid.zoneAt] answers from the
+ * grid's own cell arithmetic, not from [bounds].
+ *
  * @property name a stable, human-readable identifier ("zone-<column>-<row>"), unique within
  *   the owning [ZoneGrid]
  * @property bounds the zone's extent in world coordinates
@@ -15,4 +21,12 @@ import com.spartanlabs.geometry.Square
  * @property row this zone's 0-based row within its [ZoneGrid], north to south (the engine's
  *   world space is y-down - see [com.spartanlabs.gaming.gameobjects.Space])
  */
-data class Zone(val name: String, val bounds: Square, val column: Int, val row: Int)
+data class Zone(val name: String, val bounds: Square, val column: Int, val row: Int) {
+
+    /** Equal to another [Zone] with the same [name], [column] and [row]; [bounds] is ignored. */
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Zone && name == other.name && column == other.column && row == other.row)
+
+    /** Derived from [name], [column] and [row] only, consistent with [equals]. */
+    override fun hashCode(): Int = 31 * (31 * name.hashCode() + column) + row
+}

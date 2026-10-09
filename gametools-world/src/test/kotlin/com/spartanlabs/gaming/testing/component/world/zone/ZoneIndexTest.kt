@@ -233,4 +233,28 @@ class ZoneIndexTest {
         assertEquals(grid.zoneAt(Point(25.0, 5.0)).getOrThrow(), index.zoneOf(spawned.entityId).getOrNull())
         index.assertUnzoned(victim.entityId) // removed mid-step: reported as gone on the next step
     }
+
+    @Test
+    fun `a ZoneIndex still answers entitiesIn and zoneOf correctly after a zone's bounds are mutated in place`() {
+        val world = World()
+        val grid = fixtureGrid()
+        val index = ZoneIndex(grid).also(world::installSystem)
+        val actor = Actor(location = Point(5.0, 5.0)).also(world::add)
+        world.stepSystems()
+        val zone = grid.zoneAt(Point(5.0, 5.0)).getOrThrow()
+        val events = recorder(world)
+
+        zone.bounds.location.setTo(500.0, 500.0) // callers should not, but it must not corrupt the index
+
+        assertEquals(setOf(actor.entityId), index.entitiesIn(zone))
+        assertEquals(zone, index.zoneOf(actor.entityId).getOrNull())
+
+        actor.location.setTo(15.0, 5.0)
+        world.stepSystems()
+        val next = grid.zoneAt(Point(15.0, 5.0)).getOrThrow()
+
+        assertEquals(listOf(EntityChangedZone(actor, zone, next)), events)
+        assertTrue(index.entitiesIn(zone).isEmpty())
+        assertEquals(setOf(actor.entityId), index.entitiesIn(next))
+    }
 }
