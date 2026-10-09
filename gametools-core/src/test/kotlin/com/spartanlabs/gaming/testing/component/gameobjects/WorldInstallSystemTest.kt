@@ -3,10 +3,17 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
 import com.spartanlabs.gaming.gameobjects.WorldSystem
+//endregion
+
+//region 3. Utility / Catch-all
+// 3.2 Kotlin
+// 3.2.1 Standard library
+import kotlin.reflect.KClass
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -15,59 +22,65 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 //endregion
 
 /**
- * Covers [World.installSystem]'s duplicate/slot checks, failure-atomicity, and its reservation
- * guard against re-entrant calls (R1).
+ * Covers [World.installSystem]'s duplicate/slot checks, its record-then-notify ordering, the
+ * roll-back of a throwing [WorldSystem.onInstalled], and re-entrant calls from inside that hook.
  */
 @OptIn(ExperimentalGameToolsApi::class)
 class WorldInstallSystemTest {
 
-    /** A [WorldSystem] whose [installOn] is fully configurable, for exercising one behaviour at a time. */
+    /** A [WorldSystem] whose [onInstalled] is fully configurable, for exercising one behaviour at a time. */
     private open class RecordingSystem(
         override val coreSlot: CoreSystemSlot? = null,
-        private val onInstall: (World, RecordingSystem) -> Unit = { _, _ -> },
-    ) : WorldSystem {
+        override val uniqueRole: KClass<out WorldSystem>? = null,
+        private val onInstall: (RecordingSystem) -> Unit = {},
+    ) : AbstractWorldSystem() {
         var installCount = 0
             private set
+        var uninstallCount = 0
+            private set
 
-        override fun installOn(world: World) {
+        override fun onInstalled() {
             installCount++
-            onInstall(world, this)
+            onInstall(this)
+        }
+
+        override fun onUninstalled() {
+            uninstallCount++
         }
     }
 
-    private data class EqualDataClassSystem(val tag: String) : WorldSystem {
-        override fun installOn(world: World) {}
-    }
+    private data class EqualDataClassSystem(val tag: String) : AbstractWorldSystem()
 
     @Test
-    fun `installOn is called exactly once, with the installing World`() {
+    fun `onInstalled is called exactly once, and world is the installing World`() {
         val world = World()
         var seen: World? = null
-        val system = RecordingSystem(onInstall = { w, _ -> seen = w })
+        val system = RecordingSystem(onInstall = { self -> seen = self.world })
 
         world.installSystem(system)
 
         assertEquals(1, system.installCount)
-        assertEquals(world, seen)
+        assertSame(world, seen)
     }
 
     @Test
-    fun `installedSystems excludes the system while installOn is running`() {
+    fun `installedSystems contains the system while onInstalled is running`() {
         val world = World()
-        var sawSelf = true
-        val system = RecordingSystem(onInstall = { w, self -> sawSelf = self in w.installedSystems })
+        var sawSelf = false
+        val system = RecordingSystem(onInstall = { self -> sawSelf = self in self.world.installedSystems })
 
         world.installSystem(system)
 
-        assertFalse(sawSelf)
+        assertTrue(sawSelf)
     }
 
     @Test
-    fun `installing the same instance twice throws IllegalArgumentException and does not call installOn again`() {
+    fun `installing the same instance twice throws IllegalArgumentException and does not call onInstalled again`() {
         val world = World()
         val system = RecordingSystem()
         world.installSystem(system)
@@ -78,7 +91,7 @@ class WorldInstallSystemTest {
     }
 
     @Test
-    fun `installing a second system claiming an occupied slot throws IllegalArgumentException naming the slot and the occupant, and does not call its installOn`() {
+    fun `installing a second system claiming an occupied slot throws IllegalArgumentException naming the slot and the occupant, and does not call its onInstalled`() {
         val world = World()
         val first = RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS)
         world.installSystem(first)
@@ -92,20 +105,22 @@ class WorldInstallSystemTest {
     }
 
     @Test
-    fun `if installOn throws, nothing is recorded and the exception propagates`() {
+    fun `if onInstalled throws, nothing is recorded and the exception propagates`() {
         val world = World()
-        val system = RecordingSystem(onInstall = { _, _ -> error("boom") })
+        val boom = IllegalStateException("boom")
+        val system = RecordingSystem(onInstall = { throw boom })
 
-        assertFailsWith<IllegalStateException> { world.installSystem(system) }
+        val thrown = assertFailsWith<IllegalStateException> { world.installSystem(system) }
 
+        assertSame(boom, thrown)
         assertFalse(system in world.installedSystems)
     }
 
     @Test
-    fun `a system whose installOn threw can be installed again later`() {
+    fun `a system whose onInstalled threw can be installed again later`() {
         val world = World()
         var shouldThrow = true
-        val system = RecordingSystem(onInstall = { _, _ -> if (shouldThrow) error("boom") })
+        val system = RecordingSystem(onInstall = { if (shouldThrow) error("boom") })
 
         assertFailsWith<IllegalStateException> { world.installSystem(system) }
         shouldThrow = false
@@ -115,9 +130,9 @@ class WorldInstallSystemTest {
     }
 
     @Test
-    fun `a tier-1 system whose installOn threw releases its slot for another claimant`() {
+    fun `a tier-1 system whose onInstalled threw releases its slot for another claimant`() {
         val world = World()
-        val failing = RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS, onInstall = { _, _ -> error("boom") })
+        val failing = RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS, onInstall = { error("boom") })
         assertFailsWith<IllegalStateException> { world.installSystem(failing) }
 
         val next = RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS)
@@ -142,16 +157,18 @@ class WorldInstallSystemTest {
     @Test
     fun `coreSlot is read exactly once`() {
         var reads = 0
+        val world = World()
+        // Inside the anonymous object, `world` resolves to the object's own property, so `get() = world` would recurse.
+        val host = world
         val system = object : WorldSystem {
+            override val world: World get() = host
+
             override val coreSlot: CoreSystemSlot?
                 get() {
                     reads++
                     return null
                 }
-
-            override fun installOn(world: World) {}
         }
-        val world = World()
 
         world.installSystem(system)
         assertEquals(1, reads)
@@ -166,13 +183,15 @@ class WorldInstallSystemTest {
     @Test
     fun `changing what coreSlot returns after install has no effect on the installed system`() {
         var slot: CoreSystemSlot? = CoreWorldSystemSlot.PHYSICS
+        val world = World()
+        // Inside the anonymous object, `world` resolves to the object's own property, so `get() = world` would recurse.
+        val host = world
         val shifty = object : WorldSystem {
+            override val world: World get() = host
+
             override val coreSlot: CoreSystemSlot?
                 get() = slot
-
-            override fun installOn(world: World) {}
         }
-        val world = World()
         world.installSystem(shifty)
 
         slot = CoreWorldSystemSlot.ZONE
@@ -186,51 +205,62 @@ class WorldInstallSystemTest {
     }
 
     @Test
-    fun `a system that re-entrantly installs itself from its own installOn throws IllegalArgumentException`() {
+    fun `a system that re-entrantly installs itself from its own onInstalled throws IllegalArgumentException, and the outer install is rolled back`() {
         val world = World()
-        val system = RecordingSystem(onInstall = { w, self -> w.installSystem(self) })
+        val system = RecordingSystem(onInstall = { self -> self.world.installSystem(self) })
 
         assertFailsWith<IllegalArgumentException> { world.installSystem(system) }
+
+        assertTrue(world.installedSystems.isEmpty())
     }
 
     @Test
-    fun `a system that re-entrantly installs a second claimant of its own in-flight slot throws IllegalArgumentException`() {
+    fun `a system that re-entrantly installs a second claimant of its own slot throws IllegalArgumentException, and the outer install is rolled back`() {
         val world = World()
         val outer = RecordingSystem(
             coreSlot = CoreWorldSystemSlot.PHYSICS,
-            onInstall = { w, _ -> w.installSystem(RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS)) },
+            onInstall = { self -> self.world.installSystem(RecordingSystem(coreSlot = CoreWorldSystemSlot.PHYSICS)) },
         )
 
         assertFailsWith<IllegalArgumentException> { world.installSystem(outer) }
+
+        assertTrue(world.installedSystems.isEmpty())
     }
 
     @Test
-    fun `a system that installs an unrelated helper from its own installOn succeeds, and the helper is recorded before the outer system`() {
+    fun `a system that installs an unrelated helper from its own onInstalled succeeds, and the helper is recorded after the outer system`() {
         val world = World()
         val helper = RecordingSystem()
-        val outer = RecordingSystem(onInstall = { w, _ -> w.installSystem(helper) })
+        val outer = RecordingSystem(onInstall = { self -> self.world.installSystem(helper) })
 
         world.installSystem(outer)
 
-        assertEquals(listOf<WorldSystem>(helper, outer), world.installedSystems)
+        assertEquals(listOf<WorldSystem>(outer, helper), world.installedSystems)
     }
 
     @Test
-    fun `a system that uninstalls itself from inside its own installOn is a no-op, and the outer install still succeeds`() {
+    fun `a system that uninstalls itself from inside its own onInstalled genuinely uninstalls`() {
         val world = World()
-        val system = RecordingSystem(onInstall = { w, self -> w.uninstallSystem(self) })
+        var uninstallsSeenBeforeReturn = -1
+        val system = RecordingSystem(onInstall = { self ->
+            self.world.uninstallSystem(self)
+            uninstallsSeenBeforeReturn = self.uninstallCount
+        })
 
-        world.installSystem(system)
+        world.installSystem(system) // returns normally
 
-        assertTrue(system in world.installedSystems)
+        assertFalse(system in world.installedSystems)
+        assertEquals(1, uninstallsSeenBeforeReturn) // onUninstalled ran before onInstalled returned
+        assertEquals(1, system.uninstallCount)
+        assertSame(world, system.boundWorldOrNull())
     }
 
     @Test
-    fun `if installOn installs a helper and then throws, the helper stays installed and the outer system is not`() {
+    fun `if onInstalled installs a helper and then throws, the helper stays installed and the outer system is not`() {
         val world = World()
         val helper = RecordingSystem()
-        val outer = RecordingSystem(onInstall = { w, _ ->
-            w.installSystem(helper)
+        val outer = RecordingSystem(onInstall = { self ->
+            self.world.installSystem(helper)
             error("boom")
         })
 

@@ -3,6 +3,7 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
@@ -15,34 +16,39 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 //endregion
 
-/** Covers [World.uninstallSystem]'s remove-then-notify ordering and idempotency. */
+/** Covers [World.uninstallSystem]'s remove-then-notify ordering, idempotency, and kept binding. */
 @OptIn(ExperimentalGameToolsApi::class)
 class WorldUninstallSystemTest {
 
-    /** A [WorldSystem] whose [uninstallFrom] is fully configurable, for exercising one behaviour at a time. */
+    /** A [WorldSystem] whose [onUninstalled] is fully configurable, for exercising one behaviour at a time. */
     private open class RecordingSystem(
         override val coreSlot: CoreSystemSlot? = null,
-        private val onUninstall: (World, RecordingSystem) -> Unit = { _, _ -> },
-    ) : WorldSystem {
+        private val onUninstall: (RecordingSystem) -> Unit = {},
+    ) : AbstractWorldSystem() {
+        var installCount = 0
+            private set
         var uninstallCount = 0
             private set
 
-        override fun installOn(world: World) {}
+        override fun onInstalled() {
+            installCount++
+        }
 
-        override fun uninstallFrom(world: World) {
+        override fun onUninstalled() {
             uninstallCount++
-            onUninstall(world, this)
+            onUninstall(this)
         }
     }
 
     @Test
-    fun `the system is removed from installedSystems before uninstallFrom runs`() {
+    fun `the system is removed from installedSystems before onUninstalled runs`() {
         val world = World()
         var sawSelfAbsent = false
-        val system = RecordingSystem(onUninstall = { w, self -> sawSelfAbsent = self !in w.installedSystems })
+        val system = RecordingSystem(onUninstall = { self -> sawSelfAbsent = self !in self.world.installedSystems })
         world.installSystem(system)
 
         world.uninstallSystem(system)
@@ -73,9 +79,9 @@ class WorldUninstallSystemTest {
     }
 
     @Test
-    fun `if uninstallFrom throws, the system stays removed and the exception propagates`() {
+    fun `if onUninstalled throws, the system stays removed and the exception propagates`() {
         val world = World()
-        val system = RecordingSystem(onUninstall = { _, _ -> error("boom") })
+        val system = RecordingSystem(onUninstall = { error("boom") })
         world.installSystem(system)
 
         assertFailsWith<IllegalStateException> { world.uninstallSystem(system) }
@@ -106,5 +112,7 @@ class WorldUninstallSystemTest {
         world.installSystem(system)
 
         assertTrue(system in world.installedSystems)
+        assertEquals(2, system.installCount)
+        assertSame(world, system.world)
     }
 }

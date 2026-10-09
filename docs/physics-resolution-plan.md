@@ -1,5 +1,13 @@
 # Plan: `physics-resolution` — the `CollisionResolver` seam and its default `PositionalCorrectionResolver`
 
+> **Partly superseded — 2026-10-01, issue #77's design
+> (`docs/world-system-binding-architecture.md`).** `PhysicsSystem` (unit 5) is itself the physics
+> `WorldSystem`: it extends the new `AbstractWorldSystem`, claims `CoreWorldSystemSlot.PHYSICS`,
+> declares `uniqueRole = PhysicsSystem::class`, and its `step()` takes no `World`; there is no
+> `PhysicsWorldSystem` adapter (#80 is resolved by #49). `ZoneIndex(grid)` is itself the zone
+> `WorldSystem`, with no `refresh` method, so this plan's `ZoneIndex.refresh` mention (§2.4, cited
+> as the log-and-skip bulk-operation precedent) is historical precedent only.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#49](https://github.com/SpartanLabsGaming/MyGameTools/issues/49)

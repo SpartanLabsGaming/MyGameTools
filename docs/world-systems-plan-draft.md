@@ -62,6 +62,13 @@
 > and a read-only `installedSystems`. The two tier annotations the design needs
 > (`@ExperimentalGameToolsApi`, `@SupportedExtension`) are created by #76 rather than by #49.
 > `ExperienceSystem` lands under #78, after #71's package move merges.
+>
+> **Reworked 2026-10-01 (issue #77).** The registry that replaced this plan was itself reworked: its
+> hooks are parameterless (`onInstalled()`, `onUninstalled()`, `step()`), a system is bound to one
+> `World` for life, and `ZoneIndex` and `PhysicsSystem` are themselves the zone and physics
+> systems, with no adapter pair — see `docs/world-system-binding-architecture.md`. *(2026-10-02:
+> `ZoneIndex.zoneOf` returns `Result<Zone>` — binding architecture C22 — so §5's Level 2
+> `zoneIndex.zoneOf(...)` assertions, the headline test's included, are historical.)*
 
 ## Header / Association
 

@@ -12,8 +12,9 @@ import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
  * `sealed` so only this module can declare a slot - a consumer cannot mint a competing
  * "core-looking" slot; every library-defined slot is a [CoreWorldSystemSlot] constant. A
  * consumer's own [WorldSystem] may still legitimately return an *existing* [CoreWorldSystemSlot]
- * value (a deliberate replacement of a shipped adapter) - [World.installSystem]'s
- * one-claimant-per-slot check makes that safe.
+ * value to stand in for the shipped system that claims it - [World.installSystem]'s
+ * one-claimant-per-slot check rejects it while the shipped system is installed, so install it
+ * instead of, not beside, the shipped one.
  *
  * Only *relative* [order] across slots is contractual; a future built-in slot may be inserted
  * between two existing ones, renumbering them - do not compare [order] against a literal
@@ -36,9 +37,9 @@ sealed interface CoreSystemSlot {
  */
 @ExperimentalGameToolsApi
 enum class CoreWorldSystemSlot(override val order: Int) : CoreSystemSlot {
-    /** Reserved for a future physics `WorldSystem` adapter. */
+    /** Claimed by `gametools-world`'s `PhysicsSystem` (#49), once that system ships. */
     PHYSICS(0),
 
-    /** Reserved for a future zone-membership `WorldSystem` adapter. */
+    /** Claimed by `gametools-world`'s `ZoneIndex`. */
     ZONE(1),
 }

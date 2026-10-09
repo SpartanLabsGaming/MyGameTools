@@ -39,11 +39,12 @@ class TerrainLayer(
      * raycast walking off the grid edge) can hit routinely, not a programmer error.
      *
      * @param tile the grid coordinate to look up
-     * @return the tile's [TerrainType], or a failed [Result] carrying an
-     *   [IndexOutOfBoundsException] if [tile] is outside the grid
+     * @return the tile's [TerrainType], or a failed [Result] carrying an [OutOfGridException] for
+     *   [tile] if [tile] is outside the grid - an [IndexOutOfBoundsException], so a handler for that
+     *   type still catches it, and stackless, so a miss costs no stack walk
      */
     fun terrainAt(tile: TileIndex): Result<TerrainType> =
         if (tile.x !in 0 until widthTiles || tile.y !in 0 until heightTiles)
-            Result.failure(IndexOutOfBoundsException("$tile is outside a ${widthTiles}x$heightTiles grid"))
+            Result.failure(OutOfGridException(tile))
         else Result.success(palette[tileTypeIndices[tile.y * widthTiles + tile.x]])
 }

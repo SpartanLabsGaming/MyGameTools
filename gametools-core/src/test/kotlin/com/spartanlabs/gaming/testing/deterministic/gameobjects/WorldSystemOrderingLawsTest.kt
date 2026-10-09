@@ -3,10 +3,10 @@ package com.spartanlabs.gaming.testing.deterministic.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
-import com.spartanlabs.gaming.gameobjects.WorldSystem
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -27,9 +27,8 @@ class WorldSystemOrderingLawsTest {
         val name: String,
         override val coreSlot: CoreSystemSlot? = null,
         private val trace: MutableList<String>? = null,
-    ) : WorldSystem {
-        override fun installOn(world: World) {}
-        override fun step(world: World) {
+    ) : AbstractWorldSystem() {
+        override fun step() {
             trace?.add(name)
         }
     }

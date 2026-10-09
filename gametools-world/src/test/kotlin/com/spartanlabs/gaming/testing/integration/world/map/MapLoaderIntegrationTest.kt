@@ -7,9 +7,12 @@ import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.world.map.MapDefinition
 import com.spartanlabs.gaming.world.map.MapLoader
+import com.spartanlabs.gaming.world.map.MissingSpawnPointException
+import com.spartanlabs.gaming.world.map.OutOfGridException
 import com.spartanlabs.gaming.world.map.SpawnPoint
 import com.spartanlabs.gaming.world.map.TerrainTypeSnapshot
 import com.spartanlabs.gaming.world.map.TiledMap
+import com.spartanlabs.gaming.world.map.TileIndex
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -17,6 +20,7 @@ import com.spartanlabs.gaming.world.map.TiledMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 //endregion
 
@@ -46,24 +50,27 @@ class MapLoaderIntegrationTest {
         assertFalse(map.isWalkable(Point(25.0, 5.0)), "tile (2,0) is grass but the obstacle covers this point")
         assertTrue(map.isWalkable(Point(21.0, 5.0)), "tile (2,0) is grass and outside the obstacle")
 
-        val grass = map.terrainAt(Point(5.0, 5.0))
+        val grass = map.terrainAt(Point(5.0, 5.0)).getOrNull()
         checkNotNull(grass)
         assertTrue(grass.walkable)
         assertFalse(grass.blocksVision)
 
-        val water = map.terrainAt(Point(15.0, 15.0))
+        val water = map.terrainAt(Point(15.0, 15.0)).getOrNull()
         checkNotNull(water)
         assertFalse(water.walkable)
         assertTrue(water.blocksVision)
 
+        assertEquals(TileIndex(4, 0), assertIs<OutOfGridException>(map.terrainAt(Point(45.0, 5.0)).exceptionOrNull()).tile)
+
         assertEquals(
             SpawnPoint(name = "red-spawn", position = Point(5.0, 5.0), facing = 0, team = "red"),
-            map.spawnPoint("red-spawn"),
+            map.spawnPoint("red-spawn").getOrNull(),
         )
         assertEquals(
             SpawnPoint(name = "blue-spawn", position = Point(15.0, 25.0), facing = 180, team = "blue"),
-            map.spawnPoint("blue-spawn"),
+            map.spawnPoint("blue-spawn").getOrNull(),
         )
+        assertEquals("nope", assertIs<MissingSpawnPointException>(map.spawnPoint("nope").exceptionOrNull()).name)
     }
 
     @Test

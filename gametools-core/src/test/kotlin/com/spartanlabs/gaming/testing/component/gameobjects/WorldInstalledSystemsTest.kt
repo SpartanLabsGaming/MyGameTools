@@ -3,6 +3,7 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
@@ -21,9 +22,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalGameToolsApi::class)
 class WorldInstalledSystemsTest {
 
-    private class NoOpSystem(override val coreSlot: CoreSystemSlot? = null) : WorldSystem {
-        override fun installOn(world: World) {}
-    }
+    private class NoOpSystem(override val coreSlot: CoreSystemSlot? = null) : AbstractWorldSystem()
 
     @Test
     fun `installedSystems is empty for a World with nothing installed`() {

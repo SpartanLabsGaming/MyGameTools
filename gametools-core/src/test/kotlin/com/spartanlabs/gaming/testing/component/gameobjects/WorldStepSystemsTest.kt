@@ -3,6 +3,7 @@ package com.spartanlabs.gaming.testing.component.gameobjects
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.gameobjects.CoreSystemSlot
 import com.spartanlabs.gaming.gameobjects.CoreWorldSystemSlot
 import com.spartanlabs.gaming.gameobjects.World
@@ -14,6 +15,7 @@ import com.spartanlabs.gaming.gameobjects.WorldSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 //endregion
 
 /**
@@ -29,13 +31,11 @@ class WorldStepSystemsTest {
         override val coreSlot: CoreSystemSlot? = null,
         private val trace: MutableList<String>? = null,
         private val onStep: (World) -> Unit = {},
-    ) : WorldSystem {
+    ) : AbstractWorldSystem() {
         var stepCount = 0
             private set
 
-        override fun installOn(world: World) {}
-
-        override fun step(world: World) {
+        override fun step() {
             stepCount++
             trace?.add(name)
             onStep(world)
@@ -187,6 +187,18 @@ class WorldStepSystemsTest {
         assertFailsWith<IllegalStateException> { world.stepSystems() }
 
         world.stepSystems() // a following, non-nested call succeeds
+    }
+
+    @Test
+    fun `step() reads the World the system was installed on`() {
+        val world = World()
+        var seen: World? = null
+        val system = RecordingSystem("system", onStep = { w -> seen = w })
+        world.installSystem(system)
+
+        world.stepSystems()
+
+        assertSame(world, seen)
     }
 
     @Test

@@ -1,5 +1,63 @@
 # Plan: `experience-system` — `ExperienceSystem` and the `ExperienceGrantor`/`AOEGrantor` reshape
 
+> **Revise before implementing — 2026-10-01, issue #77's design
+> (`docs/world-system-binding-architecture.md`).** That document ("the binding architecture"
+> below; this plan's own "architecture" is still
+> `docs/world-systems-implementation-architecture.md`) reworks the `WorldSystem` contract this
+> plan copies from #76. The plan body is deliberately left as written; #78's own planning must
+> revise the items below before this unit is implemented. Line numbers are this file's before the
+> callout was added, and the list is a sweep, so also search the plan for `installOn`,
+> `uninstallFrom`, `step(world)` and "multi-world".
+>
+> 1. **§2, the copied contract (`:218-232`).** It quotes `installOn(world)`, `uninstallFrom(world)`
+>    and `step(world)`, and says `installedSystems` "never contains the system currently being
+>    installed". Replace it with the reworked contract: the hooks are `onInstalled()`,
+>    `onUninstalled()` and `step()`, and `val world: World` is the one `World` a system serves. A
+>    new `AbstractWorldSystem` binds a system to its first `World` for life (another `World` gets
+>    `IllegalArgumentException`; the same one again is legal). `installSystem` checks, binds,
+>    records, then calls `onInstalled()`, so `installedSystems` **contains** the system during it.
+>    A throwing `onInstalled()` is rolled back: record removed, original exception rethrown
+>    unchanged, no `onUninstalled()`, binding kept. `World` rejects a duplicate from the system's
+>    `uniqueRole` (`KClass<out WorldSystem>?`).
+> 2. **§3.3 and §3.4, the two-`World` diagram and the identity-keyed store (`:277-309`).** §3.3
+>    installs one instance on two `World`s and §3.4 keys a subscription per `World`; one instance
+>    now serves exactly one `World`, for life. Redraw §3.3 around a single `World` (install,
+>    uninstall, re-install on the same `World`); §3.4 goes with the map it describes.
+> 3. **§3.5, the `IdentityHashMap` and the guard (`:356-366`).** Delete `subscriptionsByWorld` and
+>    `require(world.installedSystems.none { it is ExperienceSystem })`: the guard would now find
+>    the system itself in `installedSystems` and reject every install, the first included. Declare
+>    `override val uniqueRole = ExperienceSystem::class` instead; `World` then rejects a second
+>    instance before any of its code runs. The `IdentityHashMap` import (`:433`) goes too.
+> 4. **§4.1, the listing and the method bullets (`:418-439`, `:441-457`).** The listing declares
+>    `class ExperienceSystem : WorldSystem` (`:438`); it extends `AbstractWorldSystem`. The
+>    `installOn(world)` bullet's error handling — an in-hook `require`, "nothing is subscribed" if
+>    it throws, "if `installOn` throws, nothing is recorded" — is superseded by item 1: `World`
+>    checks uniqueness before any hook runs and rolls back a throwing `onInstalled()`. Rename the
+>    two hook bullets to `onInstalled()` and `onUninstalled()`; "a `world` with no tracked
+>    subscription" (`:456-457`) goes with the map. `:452-453` ("The same rule applies to
+>    `ZoneWorldSystem` and `PhysicsWorldSystem`") names two types that do not exist: `ZoneIndex`
+>    is itself the zone `WorldSystem`, and `PhysicsSystem` (#49) is itself the physics one.
+> 5. **§6, `ExperienceSystemTest` (`:643-652`).** It calls the hooks directly "so the test
+>    isolates `ExperienceSystem`'s *own* guard", expects a second instance's `installOn` to throw
+>    because of that guard, and installs one instance on two `World`s. Rework it: go through
+>    `world.installSystem`; assert the duplicate is rejected by `World` (`uniqueRole`); assert an
+>    instance bound to one `World` is rejected by another; and cover a re-install on the same
+>    `World`, which re-subscribes.
+> 6. **§7, "#76 timing" (`:736-737`).** It plans for #76 landing with "a different
+>    duplicate-detection contract" and re-deriving the `installOn`/`uninstallFrom` bodies. #77's
+>    rework is such a change (item 1): restate the risk against it, with the new hook names.
+> 7. **§9, sibling interfaces (`:793-806`).** "Consumes from `world-system-core` (#76)" lists
+>    `installOn`/`uninstallFrom` as overridden, `step(world)` as not, and `installedSystems` as
+>    used by "`installOn`'s own duplicate guard". Restate: `onInstalled()`, `onUninstalled()` and
+>    `uniqueRole` overridden, `step()` not, `AbstractWorldSystem` as the base class, and
+>    `installedSystems` used by tests only. "Provides to `world-system-graduation`" (`:805-806`)
+>    names `ZoneWorldSystem`; that is now `ZoneIndex`.
+>
+> **Target shape.** `ExperienceSystem` extends `AbstractWorldSystem`, with parameterless hooks and
+> one subscription to `world.events` — taken in `onInstalled()`, cancelled in `onUninstalled()`,
+> so a re-install on the same `World` re-subscribes — and `uniqueRole = ExperienceSystem::class`.
+> The per-`World` `IdentityHashMap` and the in-hook guard are gone.
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#78](https://github.com/SpartanLabsGaming/MyGameTools/issues/78)

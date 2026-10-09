@@ -5,6 +5,7 @@ package com.spartanlabs.gaming.testing.integration.gameobjects
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi
+import com.spartanlabs.gaming.gameobjects.AbstractWorldSystem
 import com.spartanlabs.gaming.event.EventBus
 import com.spartanlabs.gaming.event.GameEvent
 import com.spartanlabs.gaming.gameobjects.Actor
@@ -16,6 +17,7 @@ import com.spartanlabs.gaming.gameobjects.WorldSystem
 // 4.3 Testing
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 //endregion
 
 /**
@@ -29,36 +31,24 @@ import kotlin.test.assertEquals
 class WorldSystemEventBusIntegrationTest {
 
     /** A [WorldSystem] that records every [GameEvent] published on the [World] it is installed on, via a real [EventBus] subscription. */
-    private class EventRecordingSystem : WorldSystem {
+    private class EventRecordingSystem : AbstractWorldSystem() {
         val received = mutableListOf<GameEvent>()
         private var subscription: EventBus.Subscription? = null
 
-        override fun installOn(world: World) {
+        override fun onInstalled() {
             subscription = world.events.subscribe { received += it }
         }
 
-        override fun uninstallFrom(world: World) {
+        override fun onUninstalled() {
             subscription?.cancel()
             subscription = null
         }
     }
 
-    /** A [WorldSystem] that keys its subscriptions per-[World], per [WorldSystem]'s own multi-World contract. */
-    private class MultiWorldEventRecordingSystem : WorldSystem {
-        private val receivedByWorld = mutableMapOf<World, MutableList<GameEvent>>()
-
-        override fun installOn(world: World) {
-            val log = receivedByWorld.getOrPut(world) { mutableListOf() }
-            world.events.subscribe { log += it }
-        }
-
-        fun receivedBy(world: World): List<GameEvent> = receivedByWorld[world] ?: emptyList()
-    }
-
     private fun actor(x: Double) = Actor(location = Point(x, 0.0))
 
     @Test
-    fun `a system that subscribes in installOn and cancels in uninstallFrom receives events only while installed`() {
+    fun `a system that subscribes in onInstalled and cancels in onUninstalled receives events only while installed`() {
         val world = World()
         val system = EventRecordingSystem()
         world.installSystem(system)
@@ -81,19 +71,34 @@ class WorldSystemEventBusIntegrationTest {
     }
 
     @Test
-    fun `one WorldSystem instance installed on two different Worlds tracks each World's own events independently, keyed by the World instance`() {
+    fun `a WorldSystem instance installed on one World is rejected by a second World, and keeps receiving only its own World's events`() {
         val worldA = World()
         val worldB = World()
-        val system = MultiWorldEventRecordingSystem()
+        val system = EventRecordingSystem()
         worldA.installSystem(system)
-        worldB.installSystem(system)
 
-        val a = actor(0.0)
+        assertFailsWith<IllegalArgumentException> { worldB.installSystem(system) }
+
         val b = actor(1.0)
+        worldB.add(b) // not recorded: the system never subscribed to worldB
+        val a = actor(0.0)
         worldA.add(a)
-        worldB.add(b)
 
-        assertEquals(listOf<GameEvent>(GameEvent.EntitySpawned(a)), system.receivedBy(worldA))
-        assertEquals(listOf<GameEvent>(GameEvent.EntitySpawned(b)), system.receivedBy(worldB))
+        assertEquals(listOf<GameEvent>(GameEvent.EntitySpawned(a)), system.received)
+    }
+
+    @Test
+    fun `uninstall then re-install on the same World re-subscribes exactly once`() {
+        val world = World()
+        val system = EventRecordingSystem()
+        world.installSystem(system)
+        world.uninstallSystem(system)
+        world.installSystem(system)
+
+        val first = actor(0.0)
+        world.add(first)
+
+        // Delivered once: the binding survives uninstall, the subscription does not.
+        assertEquals(listOf<GameEvent>(GameEvent.EntitySpawned(first)), system.received)
     }
 }

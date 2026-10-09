@@ -19,11 +19,16 @@ import kotlin.math.floor
  * A static, uniform `columns x rows` partition of a [Space]'s [Space.bounds] into named
  * rectangular [Zone]s, covering the space's full extent with no gaps or overlaps. Phase 1 ships
  * this uniform-grid partition only; irregular zones are a later addition behind [zoneAt]'s
- * existing contract (`docs/phase-1-map-and-space-plan.md` Open Decision 11).
+ * existing contract.
  *
  * Built once from [space]'s [Space.bounds] at construction time, not a live reference to
- * [space] - this grid does not react to a map mutated afterwards (see the class's risk note in
- * the plan this package implements).
+ * [space]: the grid copies its own origin and cell size, so it does not react to a map mutated
+ * afterwards, and [zoneAt] answers from that copied cell arithmetic alone. Its [Zone]s'
+ * [Zone.bounds], however, are mutable GeneralTools geometry shared with every caller that reads
+ * them - do not mutate them in place. A zone's identity is its grid position, not its geometry
+ * (see [Zone]), so such a mutation cannot corrupt a [ZoneIndex] keyed by zones, but it would make
+ * [Zone.bounds] disagree with [zoneAt]'s answers. With that caveat, one grid can safely back any
+ * number of [ZoneIndex]es, across [com.spartanlabs.gaming.gameobjects.World]s.
  *
  * @param space the playfield to partition; only [Space.bounds] is read at construction time -
  *   the grid does not track subsequent changes to [space]
@@ -36,8 +41,11 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
         require(columns > 0 && rows > 0) { "columns/rows must be positive" }
     }
 
-    /** The top-left corner of the partitioned space's bounds, captured at construction time. */
-    private val origin: Point = space.bounds.location
+    /**
+     * The top-left corner of the partitioned space's bounds, copied at construction time - the
+     * space's own [Point] is mutable, so it is not kept by reference.
+     */
+    private val origin: Point = Point(space.bounds.location)
 
     /** The world-unit width of one zone: [Space.bounds]'s width divided evenly by [columns]. */
     private val cellWidth: Double = space.bounds.dimensions.width / columns
@@ -67,11 +75,13 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
      * @param clamped if `true` (the default), a [point] outside the grid's covered extent
      *   resolves to its nearest edge zone and this always succeeds - convenient for a caller
      *   that only wants *some* zone to attribute a point to. If `false`, a [point] outside the
-     *   extent fails instead of guessing - the contract [ZoneIndex.refresh] uses internally,
+     *   extent fails instead of guessing - the contract [ZoneIndex.step] relies on,
      *   since silently clamping a departing entity to an edge zone would defeat the point of
      *   reporting that it left.
-     * @return the resolved [Zone] on success; on failure (only possible with `clamped = false`),
-     *   a [Result.failure] wrapping an [IndexOutOfBoundsException]
+     * @return the resolved [Zone] on success; on failure (only possible with `clamped = false`), a
+     *   [Result.failure] carrying an [UnzonedPointException] for [point] - an
+     *   [IndexOutOfBoundsException], so a handler for that type still catches it, and stackless, so
+     *   a caller that meets misses in bulk pays no stack walk for any of them
      */
     fun zoneAt(point: Point, clamped: Boolean = true): Result<Zone> {
         val rawColumn = floor((point.x - origin.x) / cellWidth).toInt()
@@ -79,7 +89,7 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
         val inBounds = rawColumn in 0 until columns && rawRow in 0 until rows
 
         if (!inBounds && !clamped)
-            return Result.failure(IndexOutOfBoundsException("$point is outside a ${columns}x$rows zone grid"))
+            return Result.failure(UnzonedPointException(point))
 
         val column = rawColumn.coerceIn(0, columns - 1)
         val row = rawRow.coerceIn(0, rows - 1)

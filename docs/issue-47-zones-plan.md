@@ -1,5 +1,38 @@
 # Plan: zones / chunks — map partition + entity↔zone index
 
+> **Partly superseded — 2026-10-01, World Systems Stage 2 (issue #77).** The way to use zones is to
+> install `ZoneIndex(grid)` (`gametools-world`, Experimental) on a `World`: it is itself the zone
+> `WorldSystem`. It extends `AbstractWorldSystem`, claims the tier-1 `ZONE` slot, and has a public
+> constructor and no `refresh` method of any visibility. A consumer installs it with
+> `World.installSystem`; `World.stepSystems()` then drives it, always after any `PHYSICS`-slot
+> system. Installing publishes nothing, and one `ZoneIndex` serves one `World`, for life. Its reads
+> (`zoneOf`, `entitiesIn`) stay public, but the class carries `@ExperimentalGameToolsApi` until #79,
+> so using zones, those reads included, needs opt-in until then. Code holding only a `World` finds
+> it with `world.systemOf<ZoneIndex>()`, which returns a `Result`. The zone logic designed below is
+> unchanged; the per-frame recompute-and-diff that §3.4 designs as `refresh` now runs inside its
+> `step()`. This replaces the 2026-09-29 version of this note, which made `ZoneIndex`'s constructor
+> and `refresh` `internal` and `ZoneWorldSystem` the only way to use zones: that decision is
+> reversed (there is no `ZoneWorldSystem`), and it never reached a commit or a release.
+>
+> Everything below that has a consumer construct a `ZoneIndex` and call `refresh` by hand — the
+> header's "a plain method a consumer calls", §3.4's KDoc ("call [refresh] once per frame"), and
+> §3.5's `SimulationLoop`/hand-rolled-loop wiring — describes #47 as merged: a public
+> `refresh(world)` that a consumer called once per frame, never in a release, so removing it is not
+> a breaking change. Plan: `docs/zone-world-system-plan.md`; architecture:
+> `docs/world-system-binding-architecture.md`.
+>
+> **Added 2026-10-02 (#77).** `zoneOf` now returns `Result<Zone>` — `Result.success(zone)` for a
+> placed entity, otherwise `Result.failure(UnzonedEntityException(entityId))`, a new, stackless
+> `NoSuchElementException` naming the entity — so the body's `zoneOf(entityId): Zone?` signatures
+> (§1.1, §3.4, §4), §6's "`zoneOf` returns `null`" test bullet and §8's CHANGELOG draft describe
+> #47 as merged; `entitiesIn` is unchanged (binding architecture C22).
+>
+> **Added 2026-10-05 (#77).** `ZoneGrid.zoneAt(point, clamped = false)` now fails with
+> `UnzonedPointException` — a stackless `IndexOutOfBoundsException` carrying a copy of the point —
+> instead of a stack-traced `IndexOutOfBoundsException`, so §3.3's `ZoneGrid` sketch (its `@return`)
+> and its resolution bullet, §3.6's rejected alternative and §6's Level 2 `ZoneGridTest` bullet
+> describe #47 as merged (binding architecture C30; plan `docs/tiled-map-result-lookups-plan.md`).
+
 ## Header / Association
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#47](https://github.com/SpartanLabsGaming/MyGameTools/issues/47)
@@ -116,6 +149,7 @@ hand-off, irregular (non-grid) zones — all later phases.
   Return `Result.success(value)` or `Result.failure(exception)`." `TerrainLayer.terrainAt`
   already follows this (an out-of-range tile lookup is a `Result`, not a throw); `TiledMap`
   wraps that into a nullable convenience (`terrainAt(point) = terrain.terrainAt(tileAt(point)).getOrNull()`).
+  *(Superseded 2026-10-04: `TiledMap.terrainAt` returns `Result<TerrainType>` — #77, unit 3, C25.)*
   This plan's `ZoneGrid.zoneAt` follows the same "operational lookup → `Result`" house rule
   rather than throwing for an out-of-grid point (§3.3).
 - **Since `e9e7501`**, `git log` shows no further commits on `master` — the baseline the issue
@@ -477,7 +511,8 @@ sequenceDiagram
   "off the grid" (a real, expected condition `ZoneIndex.refresh` must detect precisely) and "an
   internal bug produced an inconsistent state," which `Result.failure(IndexOutOfBoundsException)`
   preserves. The `clamped` parameter keeps the issue's literal "always get *a* zone" ergonomics
-  available as the default for a casual caller.
+  available as the default for a casual caller. *(Superseded 2026-10-04: `TiledMap.terrainAt`
+  returns `Result<TerrainType>` — #77, unit 3, C25. The reasoning above stays as the record.)*
 
 ### 3.7 Blast-radius / adoption check
 

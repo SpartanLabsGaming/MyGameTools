@@ -219,6 +219,24 @@ can ship in any feature release rather than waiting for `6.0.0`.
   (`gametools-net`); `TiledMap`, `TerrainLayer`, `StaticGeometry`, `ZoneGrid` and `ZoneIndex`
   (`gametools-world`). Spartak deferred these on 2026-09-19 and asked to be reminded that the
   review is owed — do it before `6.0.0` is planned.
+  - *Note (2026-10-01, #77):* review `ZoneIndex` in its post-#77 shape — itself a `WorldSystem`
+    (extends `AbstractWorldSystem`), with a public constructor and no `refresh`, and Experimental
+    until #79, its reads (`zoneOf`, `entitiesIn`) included (see
+    `docs/world-system-binding-architecture.md` §8).
+  - *Note (2026-10-02, #77):* `zoneOf` returns `Result<Zone>`, a miss carrying the new
+    `UnzonedEntityException`. Both new exception types — `UnzonedEntityException`
+    (`gametools-world`) and `MissingWorldSystemException` (`gametools-core`, the type a
+    `World.systemOf` miss carries) — are `final` by the planner's call: the library is their only
+    producer, so neither is an extension point (`docs/world-system-binding-architecture.md` §4.5).
+    Include both in the owed review.
+  - *Note (2026-10-04, #77):* `TiledMap.terrainAt` and `spawnPoint` return `Result`, and
+    `ZoneGrid.zoneAt(point, clamped = false)` fails with a dedicated exception. There are three new
+    exception types: `MissingSpawnPointException` and `OutOfGridException` (`gametools-world`'s map
+    package) and `UnzonedPointException` (its zone package, carrying a defensive copy of the point).
+    All three are `final` — the two map types by the planner's call, `UnzonedPointException` by the
+    user's — and untagged, so they become Stable Core with the map model and `ZoneGrid`
+    (`docs/world-system-binding-architecture.md` §4.6, C24–C30). Include all three in the owed
+    review, with `TiledMap`, `TerrainLayer` and `ZoneGrid`.
 - D1–D3 land in `6.0.0` only. D6's strictness parameter is additive and needs no major.
 - D1's `Movement` change must be coordinated with Phase 1 Open Decision 4 (the delta refactor).
   Whoever plans issue #49 (physics) should read D1 first.
