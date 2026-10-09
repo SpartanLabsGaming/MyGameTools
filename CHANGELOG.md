@@ -85,6 +85,15 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   `entitiesIn(zone)` still returns a `Set`, empty when nobody is there. Experimental: using
   `ZoneIndex`, including `zoneOf`/`entitiesIn`, or `UnzonedEntityException`, requires opting in to
   `ExperimentalGameToolsApi`. (#77)
+- Lookups that can miss return a `Result` whose failure is a stackless, dedicated exception.
+  `TiledMap.spawnPoint(name)` is a `Result<SpawnPoint>` — a failure carrying the new
+  `MissingSpawnPointException` (a `NoSuchElementException` naming the spawn point) for an unknown
+  name — and `TiledMap.terrainAt(point)` is a `Result<TerrainType>`, a failure carrying the new
+  `OutOfGridException` (an `IndexOutOfBoundsException` naming the tile) when the point's tile is
+  off the grid. `TerrainLayer.terrainAt` fails with the same `OutOfGridException`, which
+  `TiledMap.terrainAt` passes through, and `isWalkable` answers exactly as before.
+  `ZoneGrid.zoneAt(point, clamped = false)` fails with the new `UnzonedPointException` (an
+  `IndexOutOfBoundsException` carrying a copy of the point) for a point outside the grid. (#77)
 
 - Project website — a GitHub Pages site at <https://spartanlabsgaming.github.io/MyGameTools/>,
   with the aggregated Dokka API reference mounted at `/api/`. The page source is `website/`
