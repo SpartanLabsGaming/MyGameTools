@@ -61,12 +61,30 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   does not consult it, so every existing `World` behaves exactly as before. (#46)
 - `com.spartanlabs.gaming.world.zone` — a static, uniform-grid map partition: `Zone` (a named,
   bounded cell), `ZoneGrid` (partitions any `Space`'s bounds into `columns × rows` zones,
-  `zoneAt(Point, clamped)`), and `ZoneIndex` (entity↔zone bookkeeping, `refresh(World)` once
-  per frame, `zoneOf`/`entitiesIn`). A zone transition — entering, crossing, or leaving —
-  publishes `EntityChangedZone` on `World.events`. Nothing in `World`/`core` changes;
-  `ZoneIndex` is an external consumer of `World`, called explicitly (a `SimulationLoop.onTick`
-  hook is a natural place). The seam Phase 3 interest filtering and Phase 5 zone save/load
-  build on — nothing consumes it yet. (#47)
+  `zoneAt(Point, clamped)`), and `ZoneIndex` (entity↔zone bookkeeping, `zoneOf`/`entitiesIn`;
+  itself an installable `WorldSystem`, below). A zone transition — entering, crossing, or leaving —
+  publishes `EntityChangedZone` on `World.events`. Nothing in `World`/`core` changes for it. The
+  seam Phase 3 interest filtering and Phase 5 zone save/load build on — nothing consumes it yet.
+  (#47)
+- `ZoneIndex` is itself a `WorldSystem` — the zone system. `ZoneIndex(grid)` extends
+  `AbstractWorldSystem` and claims `CoreWorldSystemSlot.ZONE`: install it with
+  `World.installSystem` and every `World.stepSystems()` call recomputes each entity's zone — always
+  after any `PHYSICS`-slot system, whatever the install order — publishing `EntityChangedZone` for
+  every transition. There is no separate refresh call, and installing does not publish; the first
+  step places every entity. One `ZoneIndex` serves one `World` for life (its `EntityId`-keyed
+  bookkeeping cannot be reset): installing it on a second `World`, even after uninstalling it,
+  throws `IllegalArgumentException`, as does installing a second `ZoneIndex` on the same `World`
+  (the `ZONE` slot is taken); a `ZoneGrid` copies its geometry at construction and may back any
+  number of indexes. A `Zone`'s identity is its grid position (`name`, `column`, `row`): its
+  `bounds` are shared, mutable geometry outside its equality, which callers should still not mutate
+  in place, since `zoneAt` answers from the grid's own cell arithmetic. It declares
+  `ZoneIndex::class` as its `uniqueRole`, so `world.systemOf<ZoneIndex>()` (or
+  `world.systemOf(ZoneIndex::class)`) returns the installed index as a `Result`. `zoneOf(entityId)`
+  returns a `Result<Zone>` — a failure carrying the new `UnzonedEntityException`, a stackless
+  `NoSuchElementException` that names the entity, when the entity is in no zone, never `null` — and
+  `entitiesIn(zone)` still returns a `Set`, empty when nobody is there. Experimental: using
+  `ZoneIndex`, including `zoneOf`/`entitiesIn`, or `UnzonedEntityException`, requires opting in to
+  `ExperimentalGameToolsApi`. (#77)
 
 - Project website — a GitHub Pages site at <https://spartanlabsgaming.github.io/MyGameTools/>,
   with the aggregated Dokka API reference mounted at `/api/`. The page source is `website/`
