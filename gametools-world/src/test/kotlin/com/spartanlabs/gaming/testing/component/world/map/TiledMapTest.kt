@@ -7,6 +7,7 @@ import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.world.map.MissingSpawnPointException
+import com.spartanlabs.gaming.world.map.OutOfGridException
 import com.spartanlabs.gaming.world.map.SpawnPoint
 import com.spartanlabs.gaming.world.map.StaticGeometry
 import com.spartanlabs.gaming.world.map.TerrainLayer
@@ -22,7 +23,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 //endregion
 
@@ -41,6 +41,13 @@ class TiledMapTest {
         val result = spawnPoint(name)
         assertTrue(result.isFailure, "expected no spawn point named '$name', but got ${result.getOrNull()}")
         assertEquals(name, assertIs<MissingSpawnPointException>(result.exceptionOrNull()).name)
+    }
+
+    /** Asserts [point] is off the grid: terrainAt is a failure carrying an OutOfGridException for point's tile. */
+    private fun TiledMap.assertOffGrid(point: Point) {
+        val result = terrainAt(point)
+        assertTrue(result.isFailure, "expected $point to be off the grid, but terrainAt returned ${result.getOrNull()}")
+        assertEquals(tileAt(point), assertIs<OutOfGridException>(result.exceptionOrNull()).tile)
     }
 
     /** A 2x2 tile grid, tileSize 10: (0,0)=grass, (1,0)=water, (0,1)=grass, (1,1)=grass, plus one obstacle over tile (1,1). */
@@ -112,13 +119,35 @@ class TiledMapTest {
     }
 
     @Test
-    fun `terrainAt returns the tile's TerrainType in bounds and null out of bounds`() {
+    fun `terrainAt is a success in the grid and an OutOfGridException failure off it`() {
         val map = fixtureMap()
 
-        assertEquals(grass, map.terrainAt(Point(1.0, 1.0)))
-        assertEquals(water, map.terrainAt(Point(11.0, 1.0)))
-        assertNull(map.terrainAt(Point(-1.0, 1.0)))
-        assertNull(map.terrainAt(Point(25.0, 1.0)))
+        assertEquals(grass, map.terrainAt(Point(1.0, 1.0)).getOrNull())
+        assertEquals(water, map.terrainAt(Point(11.0, 1.0)).getOrNull())
+        map.assertOffGrid(Point(-1.0, 1.0))
+        map.assertOffGrid(Point(25.0, 1.0))
+        map.assertOffGrid(Point(20.0, 5.0)) // the far edge: floors to tile (2, 0), off the 2x2 grid
+    }
+
+    @Test
+    fun `terrainAt passes TerrainLayer's failure through unchanged`() {
+        val map = fixtureMap()
+        val p = Point(25.0, 1.0)
+
+        val viaMap = assertIs<OutOfGridException>(map.terrainAt(p).exceptionOrNull())
+        val viaLayer = assertIs<OutOfGridException>(map.terrain.terrainAt(map.tileAt(p)).exceptionOrNull())
+
+        // Identity is not observable - each call builds its own exception - so compare tile and message.
+        assertEquals(viaLayer.tile, viaMap.tile)
+        assertEquals(viaLayer.message, viaMap.message)
+    }
+
+    @Test
+    fun `isWalkable is false exactly on the far edge, where contains is true but the tile is off the grid`() {
+        val map = fixtureMap()
+
+        assertTrue(map.contains(Point(20.0, 5.0)))
+        assertFalse(map.isWalkable(Point(20.0, 5.0)))
     }
 
     @Test

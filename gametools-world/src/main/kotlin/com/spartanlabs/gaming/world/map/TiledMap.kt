@@ -77,21 +77,28 @@ class TiledMap(
     fun tileAt(point: Point): TileIndex = TileIndex(floor(point.x / tileSize).toInt(), floor(point.y / tileSize).toInt())
 
     /**
-     * The terrain at [point], or `null` if [point] is outside the grid - a normal, frequent
-     * query result near a map edge, not treated as a failure (mirrors [Space.isWalkable]'s own
-     * "outside bounds" handling).
+     * The terrain at [point], as a [Result]: [Result.success] with the [TerrainType] of the tile
+     * [point] falls in, or [Result.failure] carrying an [OutOfGridException] for that tile when it is
+     * outside the grid - a normal, frequent outcome near a map edge, including a point exactly on the
+     * far edge, which [contains] accepts but which floors to the next tile (see [tileAt]). The failure
+     * is [terrain]'s own, from [TerrainLayer.terrainAt], passed through unchanged. Never throws and
+     * never returns `null`; a miss costs two small objects - the [Result] failure wrapper and the
+     * exception - and no stack walk.
      *
      * @param point the world coordinate to look up
-     * @return the [TerrainType] at [point], or `null` if [point] is off the grid
+     * @return the [TerrainType] at [point], or a failure carrying an [OutOfGridException] if [point]
+     *   is off the grid
      */
-    fun terrainAt(point: Point): TerrainType? = terrain.terrainAt(tileAt(point)).getOrNull()
+    fun terrainAt(point: Point): Result<TerrainType> = terrain.terrainAt(tileAt(point))
 
     /**
      * Whether an object could stand at [point]: in [bounds], over walkable terrain, and not
      * inside a [staticGeometry] obstacle.
      */
     override fun isWalkable(point: Point): Boolean =
-        contains(point) && terrainAt(point)?.walkable == true && !staticGeometry.blocksPoint(point)
+        contains(point) &&
+            terrainAt(point).fold(onSuccess = { it.walkable }, onFailure = { false }) &&
+            !staticGeometry.blocksPoint(point)
 
     private val spawnPointsByName: MutableMap<String, SpawnPoint> = spawnPoints.associateByTo(LinkedHashMap()) { it.name }
 

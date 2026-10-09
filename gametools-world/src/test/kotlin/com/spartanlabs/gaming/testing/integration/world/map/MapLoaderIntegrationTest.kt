@@ -8,9 +8,11 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.gaming.world.map.MapDefinition
 import com.spartanlabs.gaming.world.map.MapLoader
 import com.spartanlabs.gaming.world.map.MissingSpawnPointException
+import com.spartanlabs.gaming.world.map.OutOfGridException
 import com.spartanlabs.gaming.world.map.SpawnPoint
 import com.spartanlabs.gaming.world.map.TerrainTypeSnapshot
 import com.spartanlabs.gaming.world.map.TiledMap
+import com.spartanlabs.gaming.world.map.TileIndex
 //endregion
 
 //region 4. Programming Infrastructure and Support
@@ -48,15 +50,17 @@ class MapLoaderIntegrationTest {
         assertFalse(map.isWalkable(Point(25.0, 5.0)), "tile (2,0) is grass but the obstacle covers this point")
         assertTrue(map.isWalkable(Point(21.0, 5.0)), "tile (2,0) is grass and outside the obstacle")
 
-        val grass = map.terrainAt(Point(5.0, 5.0))
+        val grass = map.terrainAt(Point(5.0, 5.0)).getOrNull()
         checkNotNull(grass)
         assertTrue(grass.walkable)
         assertFalse(grass.blocksVision)
 
-        val water = map.terrainAt(Point(15.0, 15.0))
+        val water = map.terrainAt(Point(15.0, 15.0)).getOrNull()
         checkNotNull(water)
         assertFalse(water.walkable)
         assertTrue(water.blocksVision)
+
+        assertEquals(TileIndex(4, 0), assertIs<OutOfGridException>(map.terrainAt(Point(45.0, 5.0)).exceptionOrNull()).tile)
 
         assertEquals(
             SpawnPoint(name = "red-spawn", position = Point(5.0, 5.0), facing = 0, team = "red"),

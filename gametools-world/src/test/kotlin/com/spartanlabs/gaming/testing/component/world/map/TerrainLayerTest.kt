@@ -2,6 +2,7 @@ package com.spartanlabs.gaming.testing.component.world.map
 
 //region 1. Organization Internal
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.world.map.OutOfGridException
 import com.spartanlabs.gaming.world.map.TerrainLayer
 import com.spartanlabs.gaming.world.map.TerrainType
 import com.spartanlabs.gaming.world.map.TileIndex
@@ -44,7 +45,7 @@ class TerrainLayerTest {
     }
 
     @Test
-    fun `terrainAt fails with Result rather than throwing for an out-of-range tile on every edge`() {
+    fun `terrainAt fails with an OutOfGridException rather than throwing for an out-of-range tile on every edge`() {
         val layer = fixtureLayer()
 
         listOf(
@@ -53,7 +54,10 @@ class TerrainLayerTest {
         ).forEach { outside ->
             val result = layer.terrainAt(outside)
             assertTrue(result.isFailure, "$outside should be outside the grid")
-            assertIs<IndexOutOfBoundsException>(result.exceptionOrNull())
+            val miss = assertIs<OutOfGridException>(result.exceptionOrNull())
+            assertEquals(outside, miss.tile)
+            assertIs<IndexOutOfBoundsException>(miss)
+            assertTrue(miss.stackTrace.isEmpty())
         }
     }
 

@@ -6,6 +6,7 @@ import com.spartanlabs.geometry.CenteredBox
 import com.spartanlabs.geometry.Dimensions
 import com.spartanlabs.geometry.Point
 // 1.2 Spartan Gaming
+import com.spartanlabs.gaming.world.map.OutOfGridException
 import com.spartanlabs.gaming.world.map.StaticGeometry
 import com.spartanlabs.gaming.world.map.TerrainLayer
 import com.spartanlabs.gaming.world.map.TerrainType
@@ -24,6 +25,7 @@ import kotlin.random.Random
 // 4.3 Testing
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 //endregion
 
 /**
@@ -97,7 +99,12 @@ class TiledMapQueryLawsTest {
     private fun assertQueryLawsHold(map: TiledMap, points: List<Point>) {
         points.forEach { point ->
             assertEquals(naiveTileAt(point.x, point.y), map.tileAt(point), "tileAt disagreed with the oracle at $point")
-            assertEquals(naiveTerrainAt(point.x, point.y), map.terrainAt(point), "terrainAt disagreed with the oracle at $point")
+            val terrain = map.terrainAt(point)
+            assertEquals(naiveTerrainAt(point.x, point.y), terrain.getOrNull(), "terrainAt disagreed with the oracle at $point")
+            if (naiveTerrainAt(point.x, point.y) == null) {
+                val miss = assertIs<OutOfGridException>(terrain.exceptionOrNull(), "terrainAt's miss at $point")
+                assertEquals(naiveTileAt(point.x, point.y), miss.tile, "terrainAt's miss named the wrong tile at $point")
+            }
             assertEquals(naiveIsWalkable(point.x, point.y), map.isWalkable(point), "isWalkable disagreed with the oracle at $point")
         }
     }
