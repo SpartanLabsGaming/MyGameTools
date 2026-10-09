@@ -8,12 +8,12 @@ import com.spartanlabs.gaming.gameobjects.World
 //endregion
 
 /**
- * A [ZoneIndex.refresh] found [entity]'s zone membership had changed since the previous
- * refresh, and published this on the owning [World]'s [World.events] bus.
+ * A [ZoneIndex.step] found [entity]'s zone membership had changed since the previous step, and
+ * published this on the owning [World]'s [World.events] bus.
  *
  * The four shapes this can take:
  * - `from = null`, `to` non-null - [entity] entered a zone for the first time (its first
- *   refresh while inside the grid's extent).
+ *   step while inside the grid's extent).
  * - `from` and `to` both non-null and different - [entity] crossed from one zone directly into
  *   another.
  * - `from` non-null, `to = null` - [entity] left the grid's covered extent, its position no
@@ -26,12 +26,14 @@ import com.spartanlabs.gaming.gameobjects.World
  * whether [entity] still resolves via [World.byId]: if it does, the entity merely left the
  * grid's extent; if it doesn't, the entity despawned.
  *
+ * For when, and in what order, these are published within a step, see [ZoneIndex.step].
+ *
  * Publishing is raw: an entity oscillating exactly on a zone boundary publishes one of these on
- * every [ZoneIndex.refresh] it crosses on. A consumer that wants to dampen that "border flicker"
+ * every [ZoneIndex.step] it crosses on. A consumer that wants to dampen that "border flicker"
  * does so on its own side - Phase 1 reports transitions as they happen and nothing more.
  *
  * @property entity the object whose zone membership changed
- * @property from the zone [entity] was in before this refresh, or `null` if it had none
- * @property to the zone [entity] is in after this refresh, or `null` if it now has none
+ * @property from the zone [entity] was in before this step, or `null` if it had none
+ * @property to the zone [entity] is in after this step, or `null` if it now has none
  */
 data class EntityChangedZone(val entity: GameObject, val from: Zone?, val to: Zone?) : GameEvent

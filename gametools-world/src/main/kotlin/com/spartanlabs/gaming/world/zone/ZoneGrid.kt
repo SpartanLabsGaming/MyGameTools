@@ -67,7 +67,7 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
      * @param clamped if `true` (the default), a [point] outside the grid's covered extent
      *   resolves to its nearest edge zone and this always succeeds - convenient for a caller
      *   that only wants *some* zone to attribute a point to. If `false`, a [point] outside the
-     *   extent fails instead of guessing - the contract [ZoneIndex.refresh] uses internally,
+     *   extent fails instead of guessing - the contract [ZoneIndex.step] relies on,
      *   since silently clamping a departing entity to an edge zone would defeat the point of
      *   reporting that it left.
      * @return the resolved [Zone] on success; on failure (only possible with `clamped = false`),
