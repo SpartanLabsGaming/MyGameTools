@@ -22,7 +22,13 @@ import kotlin.math.floor
  * existing contract.
  *
  * Built once from [space]'s [Space.bounds] at construction time, not a live reference to
- * [space] - this grid does not react to a map mutated afterwards.
+ * [space]: the grid copies its own origin and cell size, so it does not react to a map mutated
+ * afterwards, and [zoneAt] answers from that copied cell arithmetic alone. Its [Zone]s'
+ * [Zone.bounds], however, are mutable GeneralTools geometry shared with every caller that reads
+ * them - do not mutate them in place. A zone's identity is its grid position, not its geometry
+ * (see [Zone]), so such a mutation cannot corrupt a [ZoneIndex] keyed by zones, but it would make
+ * [Zone.bounds] disagree with [zoneAt]'s answers. With that caveat, one grid can safely back any
+ * number of [ZoneIndex]es, across [com.spartanlabs.gaming.gameobjects.World]s.
  *
  * @param space the playfield to partition; only [Space.bounds] is read at construction time -
  *   the grid does not track subsequent changes to [space]
@@ -35,8 +41,11 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
         require(columns > 0 && rows > 0) { "columns/rows must be positive" }
     }
 
-    /** The top-left corner of the partitioned space's bounds, captured at construction time. */
-    private val origin: Point = space.bounds.location
+    /**
+     * The top-left corner of the partitioned space's bounds, copied at construction time - the
+     * space's own [Point] is mutable, so it is not kept by reference.
+     */
+    private val origin: Point = Point(space.bounds.location)
 
     /** The world-unit width of one zone: [Space.bounds]'s width divided evenly by [columns]. */
     private val cellWidth: Double = space.bounds.dimensions.width / columns
