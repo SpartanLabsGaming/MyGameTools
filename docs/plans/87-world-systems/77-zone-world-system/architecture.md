@@ -1162,8 +1162,7 @@ first draft of this section listed only some of them. Line numbers are the worki
     `MissingWorldSystemException`), from `HEAD`'s text and naming no zone class (unit 2 inserts the
     `ZoneIndex` clause into its `PHYSICS`/`ZONE` parenthetical). The curated core row does not list
     the exception type (the #76 precedent: such types are documented in KDoc, not the module table).
-    *(As built 2026-10-08: the QA pass added `MissingWorldSystemException` to the core row, and the
-    installed-systems bullet now states the binding check — unit 1 §4.6.)*
+    *(As built: see [final-implementation.md](final-implementation.md), "architecture.md, §11.1 Owned by the unit plans (the implementer applies them, in the unit's own commits)".)*
   - `CHANGELOG.md` `[Unreleased]` — the #76 `WorldSystem` bullet (`:83-91` at `HEAD`, where Step 0
     leaves it) amended in place: parameterless hooks, `AbstractWorldSystem`, bind-for-life,
     `uniqueRole`, `systemOf` and `MissingWorldSystemException`; credited `(#76, #77)`.

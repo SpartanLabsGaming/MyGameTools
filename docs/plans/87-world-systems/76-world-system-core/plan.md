@@ -902,9 +902,7 @@ After (append): `` Public surface is tiered: Stable Core is untagged, a likely-b
 **3. Versioning rule (`CONTRIBUTING.md`'s `## Versioning`)** — planned as one new row in the then-local
 bump table, immediately after the `feat!:` row:
 
-> **As built (2026-09-28):** #125 moved the bump table to the org-wide guide before this unit
-> landed, so the rule below was written as a prose paragraph under `## Versioning`
-> (`CONTRIBUTING.md:104-107`) instead of a table row — same content.
+> As built: see [final-implementation.md](final-implementation.md), "plan.md, §4.8 Changed: `CONTRIBUTING.md` (the three I1 edits)".
 
 Before/after context:
 ```
