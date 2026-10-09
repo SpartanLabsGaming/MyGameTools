@@ -78,8 +78,10 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
      *   extent fails instead of guessing - the contract [ZoneIndex.step] relies on,
      *   since silently clamping a departing entity to an edge zone would defeat the point of
      *   reporting that it left.
-     * @return the resolved [Zone] on success; on failure (only possible with `clamped = false`),
-     *   a [Result.failure] wrapping an [IndexOutOfBoundsException]
+     * @return the resolved [Zone] on success; on failure (only possible with `clamped = false`), a
+     *   [Result.failure] carrying an [UnzonedPointException] for [point] - an
+     *   [IndexOutOfBoundsException], so a handler for that type still catches it, and stackless, so
+     *   a caller that meets misses in bulk pays no stack walk for any of them
      */
     fun zoneAt(point: Point, clamped: Boolean = true): Result<Zone> {
         val rawColumn = floor((point.x - origin.x) / cellWidth).toInt()
@@ -87,7 +89,7 @@ class ZoneGrid(space: Space, val columns: Int, val rows: Int) {
         val inBounds = rawColumn in 0 until columns && rawRow in 0 until rows
 
         if (!inBounds && !clamped)
-            return Result.failure(IndexOutOfBoundsException("$point is outside a ${columns}x$rows zone grid"))
+            return Result.failure(UnzonedPointException(point))
 
         val column = rawColumn.coerceIn(0, columns - 1)
         val row = rawRow.coerceIn(0, rows - 1)

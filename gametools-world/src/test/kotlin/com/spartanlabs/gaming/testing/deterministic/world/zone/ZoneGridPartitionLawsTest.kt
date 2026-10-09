@@ -7,6 +7,7 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.Square
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Space
+import com.spartanlabs.gaming.world.zone.UnzonedPointException
 import com.spartanlabs.gaming.world.zone.ZoneGrid
 //endregion
 
@@ -20,6 +21,7 @@ import kotlin.random.Random
 // 4.3 Testing
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 //endregion
 
@@ -64,6 +66,10 @@ class ZoneGridPartitionLawsTest {
                 val result = grid.zoneAt(point, clamped = false)
                 assertEquals(space.bounds.contains(point), result.isSuccess, "zoneAt(clamped=false) disagreed with contains() at $point for $config")
                 result.getOrNull()?.let { zone -> assertTrue(zone.bounds.contains(point), "resolved zone does not contain $point for $config") }
+                if (result.isFailure) {
+                    val miss = assertIs<UnzonedPointException>(result.exceptionOrNull(), "zoneAt(clamped=false)'s miss at $point for $config")
+                    assertEquals(point, miss.point, "the miss carried the wrong point for $config")
+                }
             }
         }
     }
