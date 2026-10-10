@@ -4,7 +4,7 @@
 
 - **Covers:** [SpartanLabsGaming/MyGameTools#124](https://github.com/SpartanLabsGaming/MyGameTools/issues/124)
   — *"Adopt webtools-udp 2.0.0 in gametools-net"*, milestone `6.0.0`.
-- **Architecture:** `docs/webtools-udp-2.0.0-upgrade-architecture.md`, unit slug
+- **Architecture:** `docs/plans/124-webtools-udp-2.0.0-upgrade/architecture.md`, unit slug
   `webtools-udp-2.0.0-upgrade` (its only plannable unit, §12). This plan makes that design
   concrete, file by file; it does not revisit any decision in the architecture's §6 — where this
   plan makes an additional staging call the architecture left implicit, it says so.

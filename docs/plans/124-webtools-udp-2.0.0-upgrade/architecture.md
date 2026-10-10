@@ -11,7 +11,7 @@
   replaces the hand-rolled fake socket client. It does not spec method bodies, file-by-file edits,
   or the test matrix — see the implementation plan to follow.
 - **Status:** systems design, reviewed by the planner (amendments listed at the top of §6). One
-  plannable unit (§12); its implementation plan is `docs/webtools-udp-2.0.0-upgrade-plan.md`. No
+  plannable unit (§12); its implementation plan is `docs/plans/124-webtools-udp-2.0.0-upgrade/plan.md`. No
   source, test, or build file has been modified by this document.
 - **Instruction:** Spartak Singh's binding interview answers, 2026-09-27, via a Claude Code planning
   session (recapped in full in §1.2 below). Every design choice in §6 traces back to one of them or
@@ -24,9 +24,9 @@
 - **Related docs:** `docs/api-openness-decisions-6.0.0.md` ("Follow-up" — the owed `gametools-net`
   review, re-homed here to #103, §10); `docs/framework-vision-and-roadmap.md` §3 Phase 3 (upstream
   prerequisite note, now satisfied) and §7 (the WebTools/transport boundary table, now the released
-  `webtools-udp` split); `docs/webtools-2.0.0c-upgrade-plan.md` and
-  `docs/webtools-2.0.0b-upgrade-plan.md` (style precedent for a WebTools-version upgrade);
-  `docs/world-system-core-architecture.md` and `docs/issue-49-physics-architecture.md` (header/
+  `webtools-udp` split); `docs/plans/18-webtools-2.0.0c-upgrade/plan.md` and
+  `docs/plans/14-webtools-2.0.0b-upgrade/plan.md` (style precedent for a WebTools-version upgrade);
+  `docs/plans/87-world-systems/76-world-system-core/architecture.md` and `docs/plans/86-phase-1-map-and-space/49-physics/architecture.md` (header/
   association precedent). Upstream: `SpartanLaboratories/WebTools#38` (blank-name parse), `#39`
   (client-side origin screening on the reliable branch only), `#40` (fixed in 2.0.0), `#41`
   (unbounded WARN volume), `#47` (JDK 23 bytecode vs. a JDK 11+ README claim — already filed).
@@ -63,7 +63,7 @@ pass-through) is explicitly deferred, each to a named Phase 3 issue (§7.2).
 4. **Scope limits.** Code changes only in `gametools-net` and its build file. No client wrapper
    ships (roadmap §1 decision #1). No issues filed against downstream consumer repos
    (`MyGameServer`, `GameGraphics`) — the wire break is CHANGELOG-only. Unrelated uncommitted
-   `WorldSystem` work in `gametools-core` and `docs/client-event-feed-plan-draft.md` are untouched.
+   `WorldSystem` work in `gametools-core` and `docs/plans/96-phase-3-authoritative-networking/client-event-feed-plan-draft.md` are untouched.
    Six docs are updated **at implementation time**, not by this document: `README.md` (four spots),
    `CHANGELOG.md` `[Unreleased]`, `GameServer` KDoc, `website/index.html`, and
    `docs/framework-vision-and-roadmap.md` (two spots). The README's "three coordinates" wording
@@ -600,7 +600,7 @@ table and the release steps — now lives in the
 | `listenTo`'s own `stale.terminate()` call | `GameServer.kt:152-155` | Removed — adopts `webtools-udp`'s own supersede contract (D5) | In scope now |
 | `Connection.actuate`/`push(String)` | `GameServer.kt:157,268,281` | Replaced by `channel(UNRELIABLE)` (D6) | In scope now |
 | `FakeClientHarness`'s hand-rolled `DatagramSocket` client | `FakeClientHarness.kt` | Replaced by a thin wrapper over `MultiConnectionUDPClient` (D9) | In scope now |
-| `FakeClientHarness`'s private wire literals (`"Iam"`, `"REGISTERED"`, `"KA"`) | `FakeClientHarness.kt:113-119` | Retired: well-formed flows go through the real client; the raw helper builds its datagrams from `webtools-udp`'s public `HandshakeWireFormat`/`TransportWireFormat`. This closes the duplication `SpartanLaboratories/WebTools#3` was filed about from the 2.0.0b upgrade (`docs/webtools-2.0.0b-upgrade-plan.md` §9) | In scope now |
+| `FakeClientHarness`'s private wire literals (`"Iam"`, `"REGISTERED"`, `"KA"`) | `FakeClientHarness.kt:113-119` | Retired: well-formed flows go through the real client; the raw helper builds its datagrams from `webtools-udp`'s public `HandshakeWireFormat`/`TransportWireFormat`. This closes the duplication `SpartanLaboratories/WebTools#3` was filed about from the 2.0.0b upgrade (`docs/plans/14-webtools-2.0.0b-upgrade/plan.md` §9) | In scope now |
 | Direct constructions of the harness outside `ServerFixture` | `e2e/ClientServerRoundTripTest.kt`, `nonfunctional/GameServerRobustnessTest.kt` (both call `FakeClientHarness()` themselves) | Move with the harness rewrite; the robustness test's premise is reframed (D9) | In scope now |
 | `ServerFixture.client()` handing out one kind of double | `ServerFixture.kt:61` | Adapted: a second factory for the raw helper | In scope now |
 | `pushToAllPlayers` and its "WebTools never prunes" rationale | `GameServer.kt:249-270` | Method **kept** (roster-defined broadcast, fold unchanged); KDoc rationale corrected (D7) | In scope now (KDoc) |
@@ -807,7 +807,7 @@ them now (§10). This document does not surface a new one.
 ## Cross-plan alignment
 
 Planner's alignment pass, 2026-09-28, over the one implementation plan this design decomposes into:
-`docs/webtools-udp-2.0.0-upgrade-plan.md`. With a single unit there are no sibling plans to
+`docs/plans/124-webtools-udp-2.0.0-upgrade/plan.md`. With a single unit there are no sibling plans to
 reconcile, so the pass checked the plan against this architecture, the user's binding answers,
 and the facts.
 
