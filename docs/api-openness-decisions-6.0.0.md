@@ -13,7 +13,7 @@
 >   registry (`installSystem`/`stepSystems`, #76). That is composition, not subclassing, so D4's
 >   ruling to keep `World` `final` is unaffected, if anything reinforced.
 >
-> Architecture: `docs/world-systems-implementation-architecture.md`.
+> Architecture: `docs/plans/87-world-systems/architecture.md`.
 
 ## Header / Association
 
@@ -31,7 +31,7 @@
 - **Mechanism rule applied:** domain / entity types extend by **inheritance**; systems and
   infrastructure extend by **interface + supplied default implementation**.
 - **Related:** `docs/framework-vision-and-roadmap.md` (Phase 2 is the Major that absorbs
-  breaking changes); `docs/phase-1-map-and-space-plan.md` §9 Open Decision 4 (the `Movement`
+  breaking changes); `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 4 (the `Movement`
   delta refactor, already deferred to `6.0.0` — see D1 below).
 
 ---
@@ -159,7 +159,7 @@ other modules touch.
 
 **Ruling: keep `final`.** Extension stays compositional. If a consumer genuinely needs a
 different container, the answer is the `GameWorld` wrapper already contemplated for Phase 5
-(`docs/phase-1-map-and-space-plan.md` §1.2, Option B) — not subclassing `World`.
+(`docs/plans/86-phase-1-map-and-space/plan.md` §1.2, Option B) — not subclassing `World`.
 
 No interface is extracted either: nothing has asked to substitute the container, and the
 compositional ports already cover the need that would motivate one.
@@ -187,7 +187,7 @@ already prefers, and it is not a closed-surface problem.
 
 **Reviewed at Spartak's instruction on 2026-09-19**, ahead of the other `-net` / `-world`
 surfaces, because an earlier claim in this session — that `MapLoader` being an `object` blocks
-the Tiled `.tmx` importer contemplated in `phase-1-map-and-space-plan.md` §9 Open Decision 1 —
+the Tiled `.tmx` importer contemplated in `docs/plans/86-phase-1-map-and-space/plan.md` §9 Open Decision 1 —
 needed checking. **That claim was wrong.** `fromDefinition(MapDefinition): Result<TiledMap>`
 is public, and `MapDefinition` is the extension seam: a `.tmx` importer produces a
 `MapDefinition` and hands it to `fromDefinition`. Nothing about the format pipeline is closed.
@@ -219,6 +219,24 @@ can ship in any feature release rather than waiting for `6.0.0`.
   (`gametools-net`); `TiledMap`, `TerrainLayer`, `StaticGeometry`, `ZoneGrid` and `ZoneIndex`
   (`gametools-world`). Spartak deferred these on 2026-09-19 and asked to be reminded that the
   review is owed — do it before `6.0.0` is planned.
+  - *Note (2026-10-01, #77):* review `ZoneIndex` in its post-#77 shape — itself a `WorldSystem`
+    (extends `AbstractWorldSystem`), with a public constructor and no `refresh`, and Experimental
+    until #79, its reads (`zoneOf`, `entitiesIn`) included (see
+    `docs/plans/87-world-systems/77-zone-world-system/architecture.md` §8).
+  - *Note (2026-10-02, #77):* `zoneOf` returns `Result<Zone>`, a miss carrying the new
+    `UnzonedEntityException`. Both new exception types — `UnzonedEntityException`
+    (`gametools-world`) and `MissingWorldSystemException` (`gametools-core`, the type a
+    `World.systemOf` miss carries) — are `final` by the planner's call: the library is their only
+    producer, so neither is an extension point (`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §4.5).
+    Include both in the owed review.
+  - *Note (2026-10-04, #77):* `TiledMap.terrainAt` and `spawnPoint` return `Result`, and
+    `ZoneGrid.zoneAt(point, clamped = false)` fails with a dedicated exception. There are three new
+    exception types: `MissingSpawnPointException` and `OutOfGridException` (`gametools-world`'s map
+    package) and `UnzonedPointException` (its zone package, carrying a defensive copy of the point).
+    All three are `final` — the two map types by the planner's call, `UnzonedPointException` by the
+    user's — and untagged, so they become Stable Core with the map model and `ZoneGrid`
+    (`docs/plans/87-world-systems/77-zone-world-system/architecture.md` §4.6, C24–C30). Include all three in the owed
+    review, with `TiledMap`, `TerrainLayer` and `ZoneGrid`.
 - D1–D3 land in `6.0.0` only. D6's strictness parameter is additive and needs no major.
 - D1's `Movement` change must be coordinated with Phase 1 Open Decision 4 (the delta refactor).
   Whoever plans issue #49 (physics) should read D1 first.

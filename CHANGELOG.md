@@ -61,17 +61,69 @@ bug-fix release. Releases are tagged `vX.Y.Z` and published to
   does not consult it, so every existing `World` behaves exactly as before. (#46)
 - `com.spartanlabs.gaming.world.zone` — a static, uniform-grid map partition: `Zone` (a named,
   bounded cell), `ZoneGrid` (partitions any `Space`'s bounds into `columns × rows` zones,
-  `zoneAt(Point, clamped)`), and `ZoneIndex` (entity↔zone bookkeeping, `refresh(World)` once
-  per frame, `zoneOf`/`entitiesIn`). A zone transition — entering, crossing, or leaving —
-  publishes `EntityChangedZone` on `World.events`. Nothing in `World`/`core` changes;
-  `ZoneIndex` is an external consumer of `World`, called explicitly (a `SimulationLoop.onTick`
-  hook is a natural place). The seam Phase 3 interest filtering and Phase 5 zone save/load
-  build on — nothing consumes it yet. (#47)
+  `zoneAt(Point, clamped)`), and `ZoneIndex` (entity↔zone bookkeeping, `zoneOf`/`entitiesIn`;
+  itself an installable `WorldSystem`, below). A zone transition — entering, crossing, or leaving —
+  publishes `EntityChangedZone` on `World.events`. Nothing in `World`/`core` changes for it. The
+  seam Phase 3 interest filtering and Phase 5 zone save/load build on — nothing consumes it yet.
+  (#47)
+- `ZoneIndex` is itself a `WorldSystem` — the zone system. `ZoneIndex(grid)` extends
+  `AbstractWorldSystem` and claims `CoreWorldSystemSlot.ZONE`: install it with
+  `World.installSystem` and every `World.stepSystems()` call recomputes each entity's zone — always
+  after any `PHYSICS`-slot system, whatever the install order — publishing `EntityChangedZone` for
+  every transition. There is no separate refresh call, and installing does not publish; the first
+  step places every entity. One `ZoneIndex` serves one `World` for life (its `EntityId`-keyed
+  bookkeeping cannot be reset): installing it on a second `World`, even after uninstalling it,
+  throws `IllegalArgumentException`, as does installing a second `ZoneIndex` on the same `World`
+  (the `ZONE` slot is taken); a `ZoneGrid` copies its geometry at construction and may back any
+  number of indexes. A `Zone`'s identity is its grid position (`name`, `column`, `row`): its
+  `bounds` are shared, mutable geometry outside its equality, which callers should still not mutate
+  in place, since `zoneAt` answers from the grid's own cell arithmetic. It declares
+  `ZoneIndex::class` as its `uniqueRole`, so `world.systemOf<ZoneIndex>()` (or
+  `world.systemOf(ZoneIndex::class)`) returns the installed index as a `Result`. `zoneOf(entityId)`
+  returns a `Result<Zone>` — a failure carrying the new `UnzonedEntityException`, a stackless
+  `NoSuchElementException` that names the entity, when the entity is in no zone, never `null` — and
+  `entitiesIn(zone)` still returns a `Set`, empty when nobody is there. Experimental: using
+  `ZoneIndex`, including `zoneOf`/`entitiesIn`, or `UnzonedEntityException`, requires opting in to
+  `ExperimentalGameToolsApi`. (#77)
+- Lookups that can miss return a `Result` whose failure is a stackless, dedicated exception.
+  `TiledMap.spawnPoint(name)` is a `Result<SpawnPoint>` — a failure carrying the new
+  `MissingSpawnPointException` (a `NoSuchElementException` naming the spawn point) for an unknown
+  name — and `TiledMap.terrainAt(point)` is a `Result<TerrainType>`, a failure carrying the new
+  `OutOfGridException` (an `IndexOutOfBoundsException` naming the tile) when the point's tile is
+  off the grid. `TerrainLayer.terrainAt` fails with the same `OutOfGridException`, which
+  `TiledMap.terrainAt` passes through, and `isWalkable` answers exactly as before.
+  `ZoneGrid.zoneAt(point, clamped = false)` fails with the new `UnzonedPointException` (an
+  `IndexOutOfBoundsException` carrying a copy of the point) for a point outside the grid. (#77)
 
 - Project website — a GitHub Pages site at <https://spartanlabsgaming.github.io/MyGameTools/>,
   with the aggregated Dokka API reference mounted at `/api/`. The page source is `website/`
   (plain HTML/CSS/JS, no site generator); the new `.github/workflows/pages.yml` regenerates
   the docs and redeploys both on every push to `master`.
+- `com.spartanlabs.gaming.annotation` — the library's API-stability tier markers.
+  `ExperimentalGameToolsApi` is an `@RequiresOptIn(level = ERROR)` gate for a seam whose shape is
+  not yet proven by a real consumer and may change incompatibly in a Feature release until it
+  graduates; opt in with `@OptIn(ExperimentalGameToolsApi::class)` or
+  `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi`. `SupportedExtension` is
+  purely documentary (no compiler gate, `BINARY` retention): it marks a likely-but-non-core seam
+  that carries the same semver guarantee as Stable Core. Nothing carries `SupportedExtension` yet.
+  (#76)
+- `WorldSystem` — an opt-in, per-frame or event-driven add-on contract for a `World`. A system is
+  bound to exactly one `World` for life and reads it as `system.world`; its hooks `onInstalled()` /
+  `onUninstalled()` / `step()` take no parameters. `AbstractWorldSystem` is the ready-made base
+  class that holds the binding and fails clearly if `world` is read before install. A system may
+  claim a library-reserved `CoreWorldSystemSlot` via `coreSlot` (`PHYSICS`, then `ZONE`), which
+  steps in that relative order whatever order the systems were installed in, and may declare a
+  `uniqueRole` so `World` rejects a second installed system holding the same role; every other
+  system steps afterwards, in install order. `World` gains `installSystem` / `uninstallSystem` /
+  `installedSystems` / `stepSystems` to host it — `installSystem` checks, binds, records, then
+  calls `onInstalled()`, and rolls the install back (rethrowing the original exception) if that
+  throws — and `systemOf(role)` (or the reified `systemOf<T>()`) to find an installed system by its
+  `uniqueRole`, returned as a `Result` — a failure carrying the new `MissingWorldSystemException`,
+  a stackless `NoSuchElementException` that names the role, if no installed system declared that
+  role. `World.tick()` is unchanged and never calls `stepSystems()` — a driver does, e.g. from a
+  `SimulationLoop`'s `onTick`. Ships Experimental: implementing `WorldSystem` or
+  `AbstractWorldSystem`, or using `World`'s new members, the slot types, `coreSlot`, `uniqueRole`
+  or `MissingWorldSystemException`, requires opting in to `ExperimentalGameToolsApi`. (#76, #77)
 
 ### Changed
 - `GameEvent` is no longer `sealed` — a plain `interface`, the same shape as `ClientCommand`,

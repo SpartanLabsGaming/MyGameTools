@@ -44,8 +44,8 @@ class MapDrivenWorldE2ETest {
         val world = World()
         world.space = map
 
-        val redSpawn = map.spawnPoint("red-spawn")
-        val blueSpawn = map.spawnPoint("blue-spawn")
+        val redSpawn = map.spawnPoint("red-spawn").getOrNull()
+        val blueSpawn = map.spawnPoint("blue-spawn").getOrNull()
         checkNotNull(redSpawn)
         checkNotNull(blueSpawn)
 
@@ -65,6 +65,6 @@ class MapDrivenWorldE2ETest {
         assertTrue(sameMap === map)
         assertTrue((sameMap as TiledMap).isWalkable(redSpawn.position))
         assertFalse(sameMap.isWalkable(Point(15.0, 15.0)))
-        assertEquals(redSpawn, sameMap.spawnPoint("red-spawn"))
+        assertEquals(redSpawn, sameMap.spawnPoint("red-spawn").getOrNull())
     }
 }

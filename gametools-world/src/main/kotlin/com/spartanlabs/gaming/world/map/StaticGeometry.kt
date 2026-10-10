@@ -22,5 +22,11 @@ class StaticGeometry(val obstacles: List<CenteredBox>) {
      * @param point the world coordinate to test
      * @return `true` if [point] is blocked by at least one obstacle
      */
-    fun blocksPoint(point: Point): Boolean = obstacles.any { it.contains(point) }
+    fun blocksPoint(point: Point): Boolean {
+        // Indexed rather than any { }: no iterator allocation on the TiledMap.isWalkable hot path.
+        // Only for RandomAccess lists - indexing a linked list would make this quadratic.
+        if (obstacles !is RandomAccess) return obstacles.any { it.contains(point) }
+        for (i in obstacles.indices) if (obstacles[i].contains(point)) return true
+        return false
+    }
 }

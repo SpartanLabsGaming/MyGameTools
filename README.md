@@ -79,6 +79,20 @@ classDiagram
         +List~GameObject~ gameObjects
         +SpatialIndex spatialIndex
         +tick()
+        +systemOf(role)
+    }
+    class WorldSystem {
+        <<interface>>
+        +World world
+        +onInstalled()
+        +onUninstalled()
+        +step()
+        +CoreSystemSlot coreSlot
+        +KClass uniqueRole
+    }
+    class AbstractWorldSystem {
+        <<abstract>>
+        +World world
     }
     class Space {
         <<interface>>
@@ -115,6 +129,9 @@ classDiagram
     World "1" o-- "*" GameObject
     World "1" *-- "1" SpatialIndex
     World "1" o-- "0..1" Space
+    World "1" o-- "*" WorldSystem
+    AbstractWorldSystem ..|> WorldSystem
+    WorldSystem "*" --> "1" World : serves exactly one
     TiledMap ..|> Space
     Quadtree ..|> SpatialIndex : (via QuadtreeSpatialIndex)
     Player "1" o-- "*" Alive
@@ -131,9 +148,11 @@ classDiagram
 | `Alive` | open | Adds combat: health, damage, attack timing/range/speed, evasion, faction, and `Player` ownership |
 | `Projectile` / `HomingProjectile` / `DirectionalProjectile` | open/final | Travel-and-hit entities: home in on one target, or pierce in a straight line |
 | `Player` | final | Owns a roster of `Alive` actors and tracks which are still living |
-| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, and publishes lifecycle/combat `GameEvent`s on its `EventBus` |
+| `World` | final | Owns every `GameObject`, reconciles its pluggable `spatialIndex` and rebuilds the `EntityId` index each frame, drives the tick loop, publishes lifecycle/combat `GameEvent`s on its `EventBus`, hosts opt-in installed `WorldSystem`s — each bound to it for life — and finds one by role with `systemOf` (Experimental) |
 | `EventBus` | final | Synchronous, single-threaded `GameEvent` publish/subscribe, delivered in order with per-listener fault isolation |
 | `SimulationLoop` | final | Opt-in fixed-timestep driver for a `World` — a daemon thread calling `tick()` at a live-tunable rate; nothing depends on it |
+| `WorldSystem` | interface | Opt-in, per-frame or event-driven add-on behaviour for a `World` (Experimental): a system serves exactly one `World` (`system.world`); `World.installSystem` binds it and calls `onInstalled()`, a driver calls `World.stepSystems` (`step()`), `uninstallSystem` calls `onUninstalled()`; it may declare a `uniqueRole` so `World` rejects a second system holding it; built-in systems claim a library-reserved `CoreSystemSlot` and step first, everything else steps after them in install order |
+| `AbstractWorldSystem` | abstract | The ready-made base class that holds a `WorldSystem`'s `World` binding and fails clearly if `world` is read before install (Experimental) |
 | `SpatialIndex<E>` | interface | Broad-phase index over positioned elements, maintained incrementally as elements move, join, or leave |
 | `Quadtree<N, E>` | generic | Point-region spatial index for fast broad-phase proximity queries |
 | `UniformGrid<E>` | generic | `SpatialIndex` backed by a uniform grid of fixed-size cells — `O(1)` amortised update, suited to a roughly uniform-density field |
@@ -147,9 +166,9 @@ everything, or on `gametools-core` alone when you don't need the server.
 
 | Module | Coordinate | Contains | Depends on |
 |---|---|---|---|
-| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `EventBus`, `SimulationLoop` — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
+| **core** | `io.github.spartanlabsgaming:gametools-core` | `com.spartanlabs.gaming.{gameobjects,spatial,event,simulation,annotation}.*` — the object hierarchy, stats & buffs, `SpatialIndex`, `Quadtree`, `UniformGrid`, `QuadtreeSpatialIndex`, `Space`, `EntityId`, `World`, `WorldSystem` and `AbstractWorldSystem` (both Experimental), `MissingWorldSystemException` (Experimental), `EventBus`, `SimulationLoop`, and the `@SupportedExtension` / `@ExperimentalGameToolsApi` API-stability markers — plus `com.spartanlabs.geometry.serializations.*` (the `@Serializable` geometry DTOs) | — |
 | **net** | `io.github.spartanlabsgaming:gametools-net` | `com.spartanlabs.gaming.networking.*` — `GameServer`, the `MouseAction` wire type, and the `.command.*` typed `ClientCommand` protocol | `gametools-core` |
-| **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — `com.spartanlabs.gaming.world.map.*`: `TiledMap` (the `Space` implementation), `TerrainLayer`/`TerrainType`, `StaticGeometry`, `SpawnPoint`, and the `MapDefinition`/`MapLoader` JSON file format (#46); `com.spartanlabs.gaming.world.zone.*`: `Zone`, `ZoneGrid`, `ZoneIndex`, `EntityChangedZone` (#47); physics and vision are still to come | `gametools-core` |
+| **world** | `io.github.spartanlabsgaming:gametools-world` | Phase 1 in progress (issues [#46](https://github.com/SpartanLabsGaming/MyGameTools/issues/46)–[#50](https://github.com/SpartanLabsGaming/MyGameTools/issues/50)) — `com.spartanlabs.gaming.world.map.*`: `TiledMap` (the `Space` implementation), `TerrainLayer`/`TerrainType`, `TileIndex`, `StaticGeometry`, `SpawnPoint`, `MissingSpawnPointException` and `OutOfGridException` (the failures its keyed lookups return), and the `MapDefinition`/`MapLoader` JSON file format (#46, #77); `com.spartanlabs.gaming.world.zone.*`: `Zone`, `ZoneGrid`, `UnzonedPointException` (the failure of an unclamped `zoneAt`), `ZoneIndex` (the zone `WorldSystem`, Experimental), `UnzonedEntityException` (Experimental), `EntityChangedZone` (#47, #77); physics and vision are still to come | `gametools-core` |
 | **umbrella** | `io.github.spartanlabsgaming:gametools` | no source; re-exports every module via `api` so one dependency line pulls the whole framework, exactly as the pre-4.0.0 `GameTools` artifact did | `gametools-core`, `gametools-net`, `gametools-world` |
 
 ---
@@ -168,6 +187,7 @@ everything, or on `gametools-core` alone when you don't need the server.
 - **Typed event bus** — `World.events` publishes a `GameEvent` stream (`EntitySpawned`, `EntityRemoved`, `AttackIssued`, `AttackLanded`, `DamageDealt`, `EntityDied`, …) so networking, scoring, or AI can react to what the simulation does without being wired into the code that does it. Synchronous, in-order, single-threaded; a throwing listener is isolated.
 - **Deterministic tick** — every random choice the engine makes goes through a seeded `RandomSource` (`World(seed)` / `World.rng`), so a fixed seed and a fixed input sequence reproduce the run exactly. `World.tickCount` counts frames. The seed is logged on construction; pin it to replay a failure.
 - **Opt-in fixed-timestep loop** — `SimulationLoop` drives `World.tick()` on a daemon thread at a live-tunable `LoopSettings.tickRateHz`, with a bounded catch-up after a stall. Purely a convenience: nothing in the engine depends on it, `World.tick()` stays callable directly, and `SimulationLoop.advance()` lets you drive the timestep from your own loop.
+- **Opt-in installed systems** (Experimental) — a `WorldSystem` adds per-frame or event-driven behaviour to a `World` without subclassing it: extend `AbstractWorldSystem` (or implement `WorldSystem` and supply `world` yourself) and override `onInstalled()` / `step()` / `onUninstalled()` as needed — no hook takes a `World`; a system reads `this.world` — then `World.installSystem(it)` and call `World.stepSystems()` once per frame from your own driver, e.g. `SimulationLoop(world, onTick = { world.stepSystems() })` — `World.tick()` never calls it. `installSystem` checks first (already installed, binding, core slot, role), then binds the system to that `World`, records it and only then calls `onInstalled()`; if that throws, the install is rolled back and the exception reaches you unchanged. A system serves exactly one `World` for life: `uninstallSystem` (which calls `onUninstalled()`) keeps the binding, so re-install it only on the same `World`; another `World` needs another instance. A system may declare a `uniqueRole`, and `World` rejects a second installed system holding the same one; `World.systemOf(role)` — or `world.systemOf<T>()` — returns the installed system that declared it as a `Result`, a failure carrying a `MissingWorldSystemException` (which names the role) if none did (unwrap a peer you cannot do without with `getOrThrow()` in `onInstalled()`, and the install is rolled back when it is missing). Built-in systems claim a library-reserved `CoreSystemSlot` (`CoreWorldSystemSlot.PHYSICS`, then `ZONE`; `gametools-world`'s `ZoneIndex` is the first shipped one, claiming `ZONE`) and always step first, in that order, whatever order they were installed in; your own systems step after them, in install order. Experimental: opt in with `@OptIn(ExperimentalGameToolsApi::class)` or the `-opt-in=com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi` compiler flag — the shape may change incompatibly in a Feature release until it graduates.
 - **Serializable snapshots** (`DrawableSnapshot`) for every visible object and its nested sub-objects, each tagged with its `EntityId`, ready to JSON-encode and ship to clients.
 
 ### 📊 Stat System
@@ -179,9 +199,9 @@ everything, or on `gametools-core` alone when you don't need the server.
 
 ### 🗺️ Map & Space
 - `com.spartanlabs.gaming.gameobjects.Space` — the bounded-playfield port a `World` optionally accepts (`World.space`, `null` by default): `bounds`, `contains(point)`, `isWalkable(point)`. Purely descriptive - `World.tick()` never consults it; a system that wants to enforce it (movement, physics, pathfinding) queries `space` itself.
-- `gametools-world`'s `TiledMap` is the standard `Space` implementation: a `terrain` grid (`TerrainLayer`/`TerrainType`, walkability + a movement cost and height/vision hook for later phases), `staticGeometry` AABB obstacles (`StaticGeometry`, over GeneralTools' `CenteredBox`), and named `SpawnPoint`s (`tileAt`, `terrainAt`, `spawnPoint(name)`, `addSpawnPoint`). The engine's world space is **y-down** throughout: the origin `(0, 0)` is a map's top-left corner and `y` grows downward.
+- `gametools-world`'s `TiledMap` is the standard `Space` implementation: a `terrain` grid (`TerrainLayer`/`TerrainType`, walkability + a movement cost and height/vision hook for later phases), `staticGeometry` AABB obstacles (`StaticGeometry`, over GeneralTools' `CenteredBox`), and named `SpawnPoint`s (`tileAt`, `terrainAt`, `spawnPoint(name)`, `addSpawnPoint`; `terrainAt(point)` and `spawnPoint(name)` return a `Result` — a failure carrying `OutOfGridException` for a point off the grid, or `MissingSpawnPointException` for an unknown name). The engine's world space is **y-down** throughout: the origin `(0, 0)` is a map's top-left corner and `y` grows downward.
 - `MapDefinition` is a pure, `@Serializable` JSON payload (flat, row-major tiles - the same shape as Tiled's own TMX layer format); `MapLoader.fromJson` / `fromDefinition` build a `TiledMap` from it, returning `Result` for malformed or structurally invalid input. `MapLoader` does no file IO - a caller reads the file/asset and hands the text (or a decoded `MapDefinition`) to it.
-- `com.spartanlabs.gaming.world.zone` partitions any `Space` into a static, uniform grid of named `Zone`s (`ZoneGrid(space, columns, rows)`, `zoneAt(point, clamped)`), and `ZoneIndex` tracks which zone each `World`-owned object currently falls in (`refresh(world)` once per frame, `zoneOf`/`entitiesIn`), publishing `EntityChangedZone` on `World.events` for every entering, crossing, or leaving transition. Nothing in `World`/`core` changes - `ZoneIndex` is an external consumer a caller drives explicitly, the seam Phase 3 interest filtering and Phase 5 zone save/load build on.
+- `com.spartanlabs.gaming.world.zone` partitions any `Space` into a static, uniform grid of named `Zone`s (`ZoneGrid(space, columns, rows)`, `zoneAt(point, clamped)` — with `clamped = false`, a point outside the grid is a failure carrying `UnzonedPointException`). `ZoneIndex(grid)` (Experimental) is the zone system: install it on the `World` with `installSystem` and it tracks which zone each `World`-owned object falls in from the tier-1 `ZONE` slot on every `stepSystems()` call (after any physics system), publishing `EntityChangedZone` on `World.events` for every entering, crossing, or leaving transition; installing publishes nothing, and there is no separate refresh call. Read it on the index you installed — `zoneOf(entityId)` returns a `Result<Zone>`, a failure carrying `UnzonedEntityException` when the entity is in no zone, and `entitiesIn(zone)` a `Set`, empty when nobody is there — or, from code that holds only the `World`, get the index with `world.systemOf<ZoneIndex>()` (or `world.systemOf(ZoneIndex::class)`) — a `Result` that is a failure if none is installed. One `ZoneIndex` per `World`, for life (another `World` needs another `ZoneIndex`; one `ZoneGrid` can back both). Using `ZoneIndex`, including its reads, needs the same opt-in as the installed systems above. This is the seam Phase 3 interest filtering and Phase 5 zone save/load build on.
 
 ### 🌐 Networking
 - `GameServer`, built on Spartan Laboratories' `WebTools` `MultiConnectionUDPServer`: handles the `Iam <name>` handshake, replies with the bare token `REGISTERED`, and multiplexes every player's traffic - application data, broadcasts, and keepalives - over one shared socket (NAT-traversable end to end as of WebTools 2.0.0c), decodes `INPUT` datagrams into structured `MouseAction` events and `COMMAND` datagrams into typed `ClientCommand`s, routes everything else to your own callback, and enforces a configurable max player count. Callers are responsible for sending a bare `KA` token on that same socket roughly every 20s to keep their NAT mapping warm.

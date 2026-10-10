@@ -7,6 +7,7 @@ import com.spartanlabs.geometry.Point
 import com.spartanlabs.geometry.Square
 // 1.2 Spartan Gaming
 import com.spartanlabs.gaming.gameobjects.Space
+import com.spartanlabs.gaming.world.zone.UnzonedPointException
 import com.spartanlabs.gaming.world.zone.ZoneGrid
 //endregion
 
@@ -104,16 +105,17 @@ class ZoneGridTest {
     }
 
     @Test
-    fun `zoneAt with clamped = false fails on the far edge and on a negative out-of-bounds point`() {
+    fun `zoneAt with clamped = false fails with an UnzonedPointException on the far edge and on a negative out-of-bounds point`() {
         val grid = fixtureGrid()
 
-        val farEdge = grid.zoneAt(Point(40.0, 30.0), clamped = false)
-        assertTrue(farEdge.isFailure)
-        assertIs<IndexOutOfBoundsException>(farEdge.exceptionOrNull())
-
-        val negative = grid.zoneAt(Point(-5.0, -5.0), clamped = false)
-        assertTrue(negative.isFailure)
-        assertIs<IndexOutOfBoundsException>(negative.exceptionOrNull())
+        listOf(Point(40.0, 30.0), Point(-5.0, -5.0)).forEach { outside ->
+            val result = grid.zoneAt(outside, clamped = false)
+            assertTrue(result.isFailure, "$outside should be outside the grid")
+            val miss = assertIs<UnzonedPointException>(result.exceptionOrNull())
+            assertEquals(outside, miss.point)
+            assertIs<IndexOutOfBoundsException>(miss)
+            assertTrue(miss.stackTrace.isEmpty())
+        }
     }
 
     @Test
@@ -141,5 +143,17 @@ class ZoneGridTest {
         assertFailsWith<IllegalArgumentException> { ZoneGrid(space, columns = 0, rows = 1) }
         assertFailsWith<IllegalArgumentException> { ZoneGrid(space, columns = 1, rows = 0) }
         assertFailsWith<IllegalArgumentException> { ZoneGrid(space, columns = -1, rows = 1) }
+    }
+
+    @Test
+    fun `mutating the space's bounds location after construction does not change zoneAt answers`() {
+        val space = fixtureSpace()
+        val grid = ZoneGrid(space, columns = 4, rows = 3)
+        val probes = listOf(Point(5.0, 5.0), Point(35.0, 25.0), Point(-5.0, -5.0))
+        val before = probes.map { grid.zoneAt(it, clamped = false).getOrNull() }
+
+        space.bounds.location.setTo(100.0, 100.0) // the grid copied its origin, so this cannot reach it
+
+        assertEquals(before, probes.map { grid.zoneAt(it, clamped = false).getOrNull() })
     }
 }

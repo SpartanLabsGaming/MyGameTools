@@ -1,4 +1,4 @@
-// Phase 1 module (docs/phase-1-map-and-space-plan.md): the bounded map model, zones, physics
+// Phase 1 module (docs/plans/86-phase-1-map-and-space/plan.md): the bounded map model, zones, physics
 // and vision systems that build on gametools-core's World. Bootstrapped empty by issue #48;
 // its first public types land with issue #46 (map model).
 
@@ -16,6 +16,13 @@ mavenPublishing {
         name.set("GameTools World")
         description.set("The map, zone, physics and vision systems built on gametools-core's World.")
     }
+}
+
+// Test-only, module-wide opt-in to the Experimental WorldSystem seam (#77), mirroring
+// gametools-core's block. Never add this to the main source set - library code must not silently
+// opt in. Removed when #79 graduates the seam.
+tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>("compileTestKotlin") {
+    compilerOptions.optIn.add("com.spartanlabs.gaming.annotation.ExperimentalGameToolsApi")
 }
 
 dokka {
