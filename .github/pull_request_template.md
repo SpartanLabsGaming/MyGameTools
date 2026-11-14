@@ -13,7 +13,7 @@ Closes #
 
 ## How it was tested
 
-<!-- Which test levels ran, new tests added, anything checked by hand. -->
+<!-- Which test sets ran, new tests added, anything checked by hand. -->
 
 - [ ] `./gradlew componentTest deterministicTest`
 - [ ] `./gradlew integrationTest e2eTest nonfunctionalTest` (if networking / world state touched)
@@ -21,7 +21,7 @@ Closes #
 ## Checklist
 
 - [ ] Follows `.aiassistant/rules/CLAUDE.md` (KDoc, `Result`, logging, import regions, one test class per file)
-- [ ] Tests added or updated at the appropriate level(s)
+- [ ] Tests added or updated in the appropriate set(s)
 - [ ] `CHANGELOG.md` `[Unreleased]` updated (for `feat` / `fix` / breaking changes)
 - [ ] Branch is rebased on the latest `master`
 - [ ] Version bump needed? If so, note it here (done in a separate `release/*` PR)

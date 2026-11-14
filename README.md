@@ -323,15 +323,15 @@ val server = GameServer(
 
 ## 🧪 Testing
 
-Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gaming.testing.<level>`, each independently runnable so CI can gate them separately. Every module carries its own five-level test tree; each Gradle task below fans out across all modules:
+Tests are organized into **named test sets** under `com.spartanlabs.gaming.testing.<set>`, each independently runnable so CI can gate them separately. Every module carries its own test tree, one package per set; each Gradle task below fans out across all modules:
 
-| Gradle task | Level | Scope |
+| Gradle task | Set | Scope |
 |---|---|---|
-| `componentTest` | 2 — Component | Isolated component / business-logic tests |
-| `integrationTest` | 3 — Integration | Integration & external-interface tests (binds real UDP ports) |
-| `deterministicTest` | 4a — Deterministic | Pure-logic input/output and law-based tests |
-| `e2eTest` | 4b — End-to-end | Full client↔server round-trip tests (binds real UDP ports) |
-| `nonfunctionalTest` | 4c — Non-functional | Scalability & robustness tests (binds real UDP ports) |
+| `componentTest` | component | Isolated component / business-logic tests |
+| `integrationTest` | integration | Integration & external-interface tests (binds real UDP ports) |
+| `deterministicTest` | deterministic | Pure-logic input/output and law-based tests |
+| `e2eTest` | e2e | Full client↔server round-trip tests (binds real UDP ports) |
+| `nonfunctionalTest` | nonfunctional | Scalability & robustness tests (binds real UDP ports) |
 
 ```bash
 ./gradlew test              # run everything
@@ -341,7 +341,7 @@ Tests are organized into a **five-level hierarchy** under `com.spartanlabs.gamin
 
 Because a `GameServer` binds a fixed common UDP port, any test task that starts one acquires a shared, single-permit Gradle build service so port-binding tasks never run concurrently.
 
-The `build-logic` convention plugins carry their own Level-3 (integration) check that drives
+The `build-logic` convention plugins carry their own integration check that drives
 the real Gradle build through Gradle TestKit, verifying the `gametools` umbrella's
 `-sources.jar` / `-javadoc.jar` aggregate both modules. It is an included build, so the
 `:build-logic:` prefix is required and it is not part of `./gradlew build`:

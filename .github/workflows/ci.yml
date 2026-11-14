@@ -77,7 +77,7 @@ jobs:
       # against regressing to empty; `assemble` already builds the jars they inspect.
       - run: ./gradlew assemble :gametools:verifyUmbrellaSourcesJar :gametools:verifyUmbrellaJavadocJar --stacktrace
 
-  # Runs the included `build-logic` build's Level-3 TestKit tests, which drive nested Gradle
+  # Runs the included `build-logic` build's integration TestKit tests, which drive nested Gradle
   # builds and are deliberately excluded from `./gradlew build` / the module test jobs.
   build-logic-tests:
     name: build-logic (TestKit)
