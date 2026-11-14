@@ -247,7 +247,7 @@ batched at phase boundaries. Versioning follows `CONTRIBUTING.md` and the
 
 1. In-process simulation sharding for the "don't wall off large" target (Open Decision F).
 2. Binary codec + delta-compression tuning.
-3. Level 4c non-functional tests at the medium target (200 players / 10k entities / 20 Hz)
+3. Nonfunctional tests at the medium target (200 players / 10k entities / 20 Hz)
    and a documented ceiling.
 
 *Ships as a Feature release + a benchmark report.*
@@ -288,7 +288,8 @@ until there is a large open-terrain zone that actually needs it.
 
 ## 6. Constants across all phases
 
-- Every module carries its own five-level test tree (`com.spartanlabs.gaming.testing.<level>`).
+- Every module carries its own test tree, one package per set
+  (`com.spartanlabs.gaming.testing.<set>`).
 - `README.md` and each module README stay current with every phase that changes the
   external shape (per the global README rule).
 - Wire-protocol changes are coordinated with `SpartanLaboratories/WebTools` (transport) and

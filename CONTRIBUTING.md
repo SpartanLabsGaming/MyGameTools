@@ -19,10 +19,10 @@ all live there. This file adds only what is specific to GameTools.
 All code, tests, and documentation follow [`.aiassistant/rules/CLAUDE.md`](.aiassistant/rules/CLAUDE.md):
 Kotlin idioms blended OO/FP, `Result` instead of thrown exceptions for expected failures,
 structured slf4j logging, KDoc on every public declaration, region-grouped imports, one test
-class per file. Tests are organised by the five-level hierarchy into
-`com.spartanlabs.gaming.testing.<level>` packages. Public surface is tiered: Stable Core is
-untagged, a likely-but-non-core seam carries `@SupportedExtension` (the same semver guarantee as
-Stable Core), and an unproven seam is gated `@ExperimentalGameToolsApi` until it graduates.
+class per file. Tests are organised by set into `com.spartanlabs.gaming.testing.<set>` packages.
+Public surface is tiered: Stable Core is untagged, a likely-but-non-core seam carries
+`@SupportedExtension` (the same semver guarantee as Stable Core), and an unproven seam is gated
+`@ExperimentalGameToolsApi` until it graduates.
 
 ## Module layout
 
@@ -41,8 +41,8 @@ Shared build configuration lives in the `build-logic/` included build as the
 file is a `plugins {}` block plus its `coordinates(...)` and `pom {}`. New modules on the
 roadmap (`gametools-combat`, …) are added the same way.
 
-Every module has its own five-level test tree under `src/test/kotlin/com/spartanlabs/gaming/testing/<level>/`.
-The per-level Gradle tasks (`componentTest`, `integrationTest`, `deterministicTest`,
+Every module has its own test tree, one folder per set, under `src/test/kotlin/com/spartanlabs/gaming/testing/<set>/`.
+The per-set Gradle tasks (`componentTest`, `integrationTest`, `deterministicTest`,
 `e2eTest`, `nonfunctionalTest`) and `./gradlew build` span every module; the four CI check
 names are unchanged by the split.
 
@@ -84,9 +84,9 @@ Requires JDK 23. The Gradle wrapper pins Gradle 9.7.1.
 
 | Command | What it runs |
 | --- | --- |
-| `./gradlew componentTest deterministicTest` | Levels 2 + 4a — fast, no sockets. Run before every push. |
-| `./gradlew integrationTest e2eTest nonfunctionalTest` | Levels 3 + 4b + 4c — bind fixed UDP ports; serialized by the `GameServerPortsLock` build service. |
-| `./gradlew test` | Every level. |
+| `./gradlew componentTest deterministicTest` | component + deterministic — fast, no sockets. Run before every push. |
+| `./gradlew integrationTest e2eTest nonfunctionalTest` | integration + e2e + nonfunctional — bind fixed UDP ports; serialized by the `GameServerPortsLock` build service. |
+| `./gradlew test` | Every set. |
 | `./gradlew dokkaGeneratePublicationHtml` | API docs — also catches broken KDoc links. |
 | `./gradlew build` | Compile, test, assemble. |
 
