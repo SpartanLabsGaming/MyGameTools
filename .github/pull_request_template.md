@@ -20,7 +20,6 @@ Closes #
 
 ## Checklist
 
-- [ ] Follows `.aiassistant/rules/CLAUDE.md` (KDoc, `Result`, logging, import regions, one test class per file)
 - [ ] Tests added or updated in the appropriate set(s)
 - [ ] `CHANGELOG.md` `[Unreleased]` updated (for `feat` / `fix` / breaking changes)
 - [ ] Branch is rebased on the latest `master`

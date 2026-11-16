@@ -3,8 +3,7 @@
 All notable changes to **GameTools** are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-Versions follow the project's `Major.Feature.MinorChange` scheme (see
-[`.aiassistant/rules/CLAUDE.md`](.aiassistant/rules/CLAUDE.md) §6); a trailing letter marks a
+Versions follow the project's `Major.Feature.MinorChange` scheme; a trailing letter marks a
 bug-fix release. Releases are tagged `vX.Y.Z` and published to
 [Maven Central](https://central.sonatype.com/artifact/io.github.spartanlabsgaming/gametools)
 (as of `4.0.0` the library ships as three coordinates — `gametools`, `gametools-core`,

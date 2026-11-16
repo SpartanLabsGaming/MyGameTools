@@ -3,7 +3,7 @@
 GameTools follows the organization-wide
 [Spartan Labs contributing guide](https://github.com/SpartanLabsGaming/.github/blob/main/CONTRIBUTING.md) —
 issues and tracking issues, branching, Conventional
-Commits, pull requests, semi-linear merges, versioning, releasing and deployment environments
+Commits, pull requests, semi-linear merges, versioning and deployment environments
 all live there. This file adds only what is specific to GameTools.
 
 - [Coding rules](#coding-rules)
@@ -12,17 +12,14 @@ all live there. This file adds only what is specific to GameTools.
 - [Commit scopes](#commit-scopes)
 - [Running the build and tests](#running-the-build-and-tests)
 - [Versioning](#versioning)
-- [Releasing](#releasing)
 
 ## Coding rules
 
-All code, tests, and documentation follow [`.aiassistant/rules/CLAUDE.md`](.aiassistant/rules/CLAUDE.md):
-Kotlin idioms blended OO/FP, `Result` instead of thrown exceptions for expected failures,
-structured slf4j logging, KDoc on every public declaration, region-grouped imports, one test
-class per file. Tests are organised by set into `com.spartanlabs.gaming.testing.<set>` packages.
-Public surface is tiered: Stable Core is untagged, a likely-but-non-core seam carries
-`@SupportedExtension` (the same semver guarantee as Stable Core), and an unproven seam is gated
-`@ExperimentalGameToolsApi` until it graduates.
+All code, tests, and documentation follow the organization's
+[Policy](https://github.com/SpartanLaboratories/.github/blob/main/POLICY.md) and
+[Design Manifesto](https://github.com/SpartanLaboratories/.github/blob/main/DESIGN.md). In GameTools, the library's test
+packages are `com.spartanlabs.gaming.testing.<set>`, and the Experimental tier's opt-in marker is
+`@ExperimentalGameToolsApi`.
 
 ## Module layout
 
@@ -96,7 +93,7 @@ Requires JDK 23. The Gradle wrapper pins Gradle 9.7.1.
 
 ## Versioning
 
-The scheme and bump table are in the [organization guide](https://github.com/SpartanLabsGaming/.github/blob/main/CONTRIBUTING.md#versioning). In GameTools the
+The scheme and bump table are on the organization's [Versioning page](https://github.com/SpartanLaboratories/.github/blob/main/policy/version/README.md). In GameTools the
 version lives only in the `coordinates(...)` call in each published module's
 `build.gradle.kts` (`gametools-core`, `gametools-net`, `gametools-world`, `gametools`) — every
 module releases together on one version, so the release branch bumps them all.
@@ -105,16 +102,3 @@ One GameTools-specific addition to the bump table: an incompatible change limite
 `@ExperimentalGameToolsApi` surface is a **Feature release, not a Major** — commit it without
 `!` or a `BREAKING CHANGE:` footer (`1.9.0` → `1.10.0`). Graduation out of Experimental is
 recorded in `CHANGELOG.md`.
-
-## Releasing
-
-Follow the [organization release steps](https://github.com/SpartanLabsGaming/.github/blob/main/CONTRIBUTING.md#releasing). In step 2 bump every module's
-`coordinates(...)`. For the manual publish step:
-
-```
-./gradlew publishAndReleaseToMavenCentral
-```
-
-stages and releases every coordinate on Maven Central. Credentials are in
-`~/.gradle/gradle.properties` (`mavenCentralUsername` / `mavenCentralPassword`, `signing.*`).
-`release.yml` creates the GitHub Release from the `v`-prefixed tag.
