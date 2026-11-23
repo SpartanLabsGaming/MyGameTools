@@ -1,4 +1,5 @@
 # Contributing to GameTools
+<!-- {"name":"Contributing to GameTools","code":"P-O-SLG-MGT","id":146} -->
 
 GameTools follows the organization-wide
 [Spartan Labs contributing guide](https://github.com/SpartanLabsGaming/.github/blob/main/CONTRIBUTING.md) —
@@ -6,22 +7,24 @@ issues and tracking issues, branching, Conventional
 Commits, pull requests, semi-linear merges, versioning and deployment environments
 all live there. This file adds only what is specific to GameTools.
 
-- [Coding rules](#coding-rules)
-- [Module layout](#module-layout)
-- [Planning large work](#planning-large-work)
-- [Commit scopes](#commit-scopes)
-- [Running the build and tests](#running-the-build-and-tests)
-- [Versioning](#versioning)
+- [R-1305 (Coding rules)](#coding-rules "1305-T1")
+- [R-1306 (Module layout)](#module-layout "1306-T1")
+- [R-1307 (Planning large work)](#planning-large-work "1307-T1")
+- [R-1308 (Commit scopes)](#commit-scopes "1308-T1")
+- [R-1309 (Running the build and tests)](#running-the-build-and-tests "1309-T1")
+- [R-1310 (Versioning)](#versioning "1310-T1")
 
 ## Coding rules
+<!-- {"name":"Coding rules","code":"P-O-SLG-MGT-CR","id":1305} -->
 
 All code, tests, and documentation follow the organization's
-[Policy](https://github.com/SpartanLaboratories/.github/blob/main/POLICY.md) and
-[Design Manifesto](https://github.com/SpartanLaboratories/.github/blob/main/DESIGN.md). In GameTools, the library's test
+[R-2 (Policy)](https://github.com/SpartanLaboratories/.github/blob/main/POLICY.md "2-T4") and
+[R-3 (Design Manifesto)](https://github.com/SpartanLaboratories/.github/blob/main/DESIGN.md "3-T7"). In GameTools, the library's test
 packages are `com.spartanlabs.gaming.testing.<set>`, and the Experimental tier's opt-in marker is
 `@ExperimentalGameToolsApi`.
 
 ## Module layout
+<!-- {"name":"Module layout","code":"P-O-SLG-MGT-ML","id":1306} -->
 
 Since `4.0.0` the library is a Gradle multi-module build. As of the `gametools-world`
 bootstrap (issue #48) it is published as four Maven coordinates:
@@ -44,6 +47,7 @@ The per-set Gradle tasks (`componentTest`, `integrationTest`, `deterministicTest
 names are unchanged by the split.
 
 ## Planning large work
+<!-- {"name":"Planning large work","code":"P-O-SLG-MGT-PL","id":1307} -->
 
 The tracking-issue, milestone and Project rules are in the
 [organization guide](https://github.com/SpartanLabsGaming/.github/blob/main/CONTRIBUTING.md#planning-large-work). For GameTools, milestones are named after the
@@ -70,12 +74,14 @@ those under "No Phase".
 | World Systems | #87 | #76, #77, #78, #79, #80 | Phase 1, except #78: Phase 2 |
 
 ## Commit scopes
+<!-- {"name":"Commit scopes","code":"P-O-SLG-MGT-CS","id":1308} -->
 
 `gameobjects`, `networking`, `spatial`, `simulation`, `serialization`, `world`, `build`,
 `contributing`, … — for example `fix(networking): …`. Branch names follow the organization guide, e.g.
 `feature/77-zone-world-system`.
 
 ## Running the build and tests
+<!-- {"name":"Running the build and tests","code":"P-O-SLG-MGT-RB","id":1309} -->
 
 Requires JDK 23. The Gradle wrapper pins Gradle 9.7.1.
 
@@ -92,8 +98,9 @@ Requires JDK 23. The Gradle wrapper pins Gradle 9.7.1.
 > not a code failure — stop the stray process and re-run.
 
 ## Versioning
+<!-- {"name":"Versioning","code":"P-O-SLG-MGT-VE","id":1310} -->
 
-The scheme and bump table are on the organization's [Versioning page](https://github.com/SpartanLaboratories/.github/blob/main/policy/version/README.md). In GameTools the
+The scheme and bump table are on the organization's [R-25 (Versioning)](https://github.com/SpartanLaboratories/.github/blob/main/policy/version/README.md "25-T7") page. In GameTools the
 version lives only in the `coordinates(...)` call in each published module's
 `build.gradle.kts` (`gametools-core`, `gametools-net`, `gametools-world`, `gametools`) — every
 module releases together on one version, so the release branch bumps them all.
